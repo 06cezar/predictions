@@ -63,7 +63,7 @@ export function Predict() {
 
   const isSubmissionClosed = settings && settings.currentPhase !== 'submission' && !settings.adminOverride;
   const threshold = settings?.ratingThreshold ?? 40;
-  const showLowRatingWarning = prediction && prediction.avgRating !== null && prediction.avgRating < threshold;
+  const showLowRatingWarning = prediction && prediction.avgRating !== null && prediction.avgRating > threshold;
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><p className="text-white/50">Loading...</p></div>;
 
@@ -84,7 +84,7 @@ export function Predict() {
 
       {showLowRatingWarning && (
         <div className="bg-amber/20 border border-amber/30 rounded-xl px-4 py-3 mb-4 text-amber text-sm">
-          ⚠️ This prediction has a low rating ({prediction.avgRating}%) — consider revising it to be more insightful.
+          ⚠️ This prediction is rated high ({prediction.avgRating}%) — everyone thinks it'll happen, so you'll score fewer points if it does.
         </div>
       )}
 

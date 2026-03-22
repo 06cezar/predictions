@@ -7,6 +7,7 @@ import ratingRoutes from './routes/ratings';
 import outcomeRoutes from './routes/outcomes';
 import leaderboardRoutes from './routes/leaderboard';
 import adminRoutes from './routes/admin';
+import settingsRoutes from './routes/settings';
 
 export function createApp() {
   const app = express();
@@ -34,6 +35,7 @@ export function createApp() {
   app.use('/api/outcomes', outcomeRoutes);
   app.use('/api/leaderboard', leaderboardRoutes);
   app.use('/api/admin', adminRoutes);
+  app.use('/api/settings', settingsRoutes);
 
   return app;
 }

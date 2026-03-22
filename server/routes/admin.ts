@@ -135,4 +135,20 @@ router.post('/phase/advance', requireAdmin, (req, res) => {
   res.json({ success: true, newPhase: nextPhase });
 });
 
+router.post('/phase/reverse', requireAdmin, (req, res) => {
+  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
+
+  const phases: Array<'submission' | 'reveal' | 'done'> = ['submission', 'reveal', 'done'];
+  const currentIndex = phases.indexOf(s.currentPhase);
+
+  if (currentIndex <= 0) {
+    return res.status(400).json({ error: 'Already in first phase' });
+  }
+
+  const prevPhase = phases[currentIndex - 1];
+  db.update(settings).set({ currentPhase: prevPhase }).where(eq(settings.id, 1)).run();
+
+  res.json({ success: true, newPhase: prevPhase });
+});
+
 export default router;

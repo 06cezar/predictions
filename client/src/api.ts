@@ -71,6 +71,9 @@ export const api = {
     me: () => request<User>('/api/users/me'),
     list: () => request<UserRow[]>('/api/users'),
   },
+  settings: {
+    get: () => request<Pick<Settings, 'currentPhase' | 'submissionDeadline' | 'revealDeadline' | 'ratingThreshold'>>('/api/settings'),
+  },
   predictions: {
     mine: () => request<Prediction[]>('/api/predictions/mine'),
     toRate: () => request<Prediction[]>('/api/predictions/to-rate'),
@@ -108,5 +111,6 @@ export const api = {
       method: 'PUT', body: JSON.stringify(data),
     }),
     advancePhase: () => request('/api/admin/phase/advance', { method: 'POST' }),
+    reversePhase: () => request('/api/admin/phase/reverse', { method: 'POST' }),
   },
 };

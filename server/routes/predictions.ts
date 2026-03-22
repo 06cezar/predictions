@@ -109,6 +109,9 @@ router.put('/:id', requireAuth, (req, res) => {
     oldText: pred.currentText,
   }).run();
 
+  // Clear ratings — text changed, old ratings no longer apply
+  db.delete(ratings).where(eq(ratings.predictionId, predId)).run();
+
   const updated = db.update(predictions)
     .set({ currentText: text.trim(), updatedAt: new Date().toISOString() })
     .where(eq(predictions.id, predId))

@@ -14,28 +14,80 @@
 @layer components {
   .card {
     @apply bg-white/5 border border-white/10 rounded-2xl p-5;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card:hover {
+    box-shadow: 0 4px 24px rgba(0,0,0,0.25);
   }
   .btn-primary {
-    @apply text-white px-5 py-2.5 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply text-white px-5 py-2.5 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed;
     background-color: #E8440A;
+    transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
   }
   .btn-primary:hover:not(:disabled) {
     background-color: #d03d09;
+    box-shadow: 0 4px 16px rgba(232, 68, 10, 0.4);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0px);
   }
   .btn-secondary {
-    @apply bg-white/10 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-white/20 transition-colors;
+    @apply bg-white/10 text-white px-5 py-2.5 rounded-xl font-medium transition-colors;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+  }
+  .btn-secondary:hover {
+    @apply bg-white/20;
+    transform: translateY(-1px);
   }
   .btn-ghost {
     @apply text-white/70 px-4 py-2 rounded-xl hover:bg-white/10 transition-colors;
   }
   .input {
     @apply bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none w-full;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
   .input:focus {
     border-color: rgba(232, 68, 10, 0.6);
     box-shadow: 0 0 0 1px rgba(232, 68, 10, 0.3);
   }
   .badge {
-    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium;
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold;
   }
+}
+
+/* Fade-in for page content */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pulseSlow {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.4s ease both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease both;
+}
+
+/* Staggered children */
+.stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger > *:nth-child(2) { animation-delay: 0.1s;  }
+.stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger > *:nth-child(4) { animation-delay: 0.2s;  }
+.stagger > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger > *:nth-child(6) { animation-delay: 0.3s;  }
+
+.animate-pulse-slow {
+  animation: pulseSlow 2.5s ease-in-out infinite;
 }

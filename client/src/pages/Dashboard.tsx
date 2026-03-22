@@ -26,7 +26,7 @@ export function Dashboard({ user, onLogout }: Props) {
   useEffect(() => {
     Promise.all([
       api.users.list(),
-      api.admin.settings().catch(() => null),
+      api.settings.get(),
       api.users.me(),
     ]).then(([userList, s, meData]) => {
       setUsers(userList);
@@ -46,7 +46,7 @@ export function Dashboard({ user, onLogout }: Props) {
 
   return (
     <div className="min-h-screen p-4 pb-24 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between py-6 mb-6">
+      <div className="flex items-center justify-between py-6 mb-6 animate-fade-up">
         <div>
           <h1 className="font-display text-3xl font-bold">Predictions</h1>
           <p className="text-white/40 text-sm mt-1">Welcome back, {user.name}</p>
@@ -55,13 +55,13 @@ export function Dashboard({ user, onLogout }: Props) {
       </div>
 
       {deadline && (
-        <div className="mb-6">
+        <div className="mb-6 animate-fade-up" style={{ animationDelay: '0.05s' }}>
           <Countdown deadline={deadline} label={phase === 'submission' ? 'Submission' : 'Reveal'} />
         </div>
       )}
 
       {me?.stats && (
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-2 gap-3 mb-6 animate-fade-up" style={{ animationDelay: '0.1s' }}>
           <div className="card text-center">
             <p className="font-display text-4xl font-bold text-orange">
               {me.stats.predictionsWritten}
@@ -77,18 +77,18 @@ export function Dashboard({ user, onLogout }: Props) {
         </div>
       )}
 
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between animate-fade-up" style={{ animationDelay: '0.15s' }}>
         <h2 className="font-medium text-white/70">Write predictions for</h2>
         <span className="text-white/40 text-sm">{users.filter(u => u.hasPrediction).length}/{users.length} done</span>
       </div>
 
       {users.length === 0 ? (
-        <div className="card text-center py-12">
+        <div className="card text-center py-12 animate-fade-up" style={{ animationDelay: '0.2s' }}>
           <p className="font-display text-2xl mb-2">✨</p>
           <p className="text-white/50">No other users yet — the future is wide open!</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 stagger">
           {users.map((u, i) => (
             <UserRowComponent key={u.id} user={u} index={i} />
           ))}

@@ -14,6 +14,7 @@ export function Admin() {
   const [newUserName, setNewUserName] = useState('');
   const [newUserToken, setNewUserToken] = useState('');
   const [advanceConfirm, setAdvanceConfirm] = useState(false);
+  const [reverseConfirm, setReverseConfirm] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [expandedPred, setExpandedPred] = useState<number | null>(null);
 
@@ -50,11 +51,22 @@ export function Admin() {
   };
 
   const handleAdvancePhase = async () => {
-    if (!advanceConfirm) { setAdvanceConfirm(true); return; }
+    if (!advanceConfirm) { setAdvanceConfirm(true); setReverseConfirm(false); return; }
     try {
       const result = await api.admin.advancePhase() as any;
       setSettings(prev => prev ? { ...prev, currentPhase: result.newPhase } : prev);
       setAdvanceConfirm(false);
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleReversePhase = async () => {
+    if (!reverseConfirm) { setReverseConfirm(true); setAdvanceConfirm(false); return; }
+    try {
+      const result = await api.admin.reversePhase() as any;
+      setSettings(prev => prev ? { ...prev, currentPhase: result.newPhase } : prev);
+      setReverseConfirm(false);
     } catch (err: any) {
       alert(err.message);
     }
@@ -206,14 +218,24 @@ export function Admin() {
                 <p className="text-sm text-white/60">Current Phase</p>
                 <p className="font-medium capitalize">{settings.currentPhase}</p>
               </div>
-              <button
-                onClick={handleAdvancePhase}
-                className={`px-4 py-2 rounded-xl font-medium text-sm transition-colors ${
-                  advanceConfirm ? 'bg-orange text-white animate-pulse' : 'btn-secondary'
-                }`}
-              >
-                {advanceConfirm ? 'Confirm Advance →' : 'Advance Phase →'}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleReversePhase}
+                  className={`px-4 py-2 rounded-xl font-medium text-sm transition-colors ${
+                    reverseConfirm ? 'bg-violet text-white animate-pulse' : 'btn-ghost'
+                  }`}
+                >
+                  {reverseConfirm ? '← Confirm' : '← Back'}
+                </button>
+                <button
+                  onClick={handleAdvancePhase}
+                  className={`px-4 py-2 rounded-xl font-medium text-sm transition-colors ${
+                    advanceConfirm ? 'bg-orange text-white animate-pulse' : 'btn-secondary'
+                  }`}
+                >
+                  {advanceConfirm ? 'Confirm →' : 'Advance →'}
+                </button>
+              </div>
             </div>
           </div>
 
