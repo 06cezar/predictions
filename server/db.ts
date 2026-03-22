@@ -23,6 +23,9 @@ export function setDb(newDb: typeof _db) {
 
 // Initialize tables if not exists
 export function initDb() {
+  // Run column migrations FIRST (before INSERT OR IGNORE that may reference new columns)
+  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN anonymous_predictions INTEGER NOT NULL DEFAULT 1`); } catch {}
+
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,7 +69,8 @@ export function initDb() {
       reveal_deadline TEXT,
       rating_threshold INTEGER NOT NULL DEFAULT 40,
       auto_advance_phase INTEGER NOT NULL DEFAULT 1,
-      admin_override INTEGER NOT NULL DEFAULT 0
+      admin_override INTEGER NOT NULL DEFAULT 0,
+      anonymous_predictions INTEGER NOT NULL DEFAULT 1
     );
     INSERT OR IGNORE INTO settings (id, current_phase, rating_threshold, auto_advance_phase, admin_override)
     VALUES (1, 'submission', 40, 1, 0);

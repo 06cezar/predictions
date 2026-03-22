@@ -12,16 +12,18 @@ export function RatingSlider({ predictionId, initialScore, avgRating, onRate }: 
   const [score, setScore] = useState<number>(initialScore ?? 50);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async () => {
     setSaving(true);
+    setError('');
     try {
       await api.ratings.submit(predictionId, score);
       setSaved(true);
       onRate?.(score);
       setTimeout(() => setSaved(false), 2000);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      setError(e.message);
     } finally {
       setSaving(false);
     }
@@ -37,10 +39,8 @@ export function RatingSlider({ predictionId, initialScore, avgRating, onRate }: 
     <div className="space-y-3">
       <div className="flex items-center justify-between text-sm">
         <span className="text-white/50">Your rating</span>
-        {avgRating !== null && (
-          <span className="text-white/50">Avg: <span className="text-white font-medium">{avgRating}%</span></span>
-        )}
       </div>
+      <p className="text-xs text-white/30">Rate the probability this prediction will come true (0% = no chance, 100% = certain)</p>
       <div className="flex items-center gap-3">
         <input
           type="range"
@@ -62,6 +62,7 @@ export function RatingSlider({ predictionId, initialScore, avgRating, onRate }: 
       >
         {saved ? '✓ Saved!' : saving ? 'Saving...' : initialScore !== null ? 'Update Rating' : 'Submit Rating'}
       </button>
+      {error && <p className="text-xs text-orange text-center">{error}</p>}
     </div>
   );
 }

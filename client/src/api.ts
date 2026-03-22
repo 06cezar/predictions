@@ -27,6 +27,7 @@ export interface Prediction {
   avgRating: number | null;
   myRating?: number | null;
   ratingThreshold?: number;
+  authorName?: string;
   outcome?: { happened: boolean | null; markedAt: string } | null;
 }
 
@@ -38,6 +39,7 @@ export interface Settings {
   ratingThreshold: number;
   autoAdvancePhase: boolean;
   adminOverride: boolean;
+  anonymousPredictions: boolean;
 }
 
 export interface LeaderboardEntry {
@@ -72,7 +74,7 @@ export const api = {
     list: () => request<UserRow[]>('/api/users'),
   },
   settings: {
-    get: () => request<Pick<Settings, 'currentPhase' | 'submissionDeadline' | 'revealDeadline' | 'ratingThreshold'>>('/api/settings'),
+    get: () => request<Pick<Settings, 'currentPhase' | 'submissionDeadline' | 'revealDeadline' | 'ratingThreshold' | 'anonymousPredictions'>>('/api/settings'),
   },
   predictions: {
     mine: () => request<Prediction[]>('/api/predictions/mine'),
@@ -112,5 +114,6 @@ export const api = {
     }),
     advancePhase: () => request('/api/admin/phase/advance', { method: 'POST' }),
     reversePhase: () => request('/api/admin/phase/reverse', { method: 'POST' }),
+    setPhase: (phase: string) => request('/api/admin/phase/set', { method: 'POST', body: JSON.stringify({ phase }) }),
   },
 };

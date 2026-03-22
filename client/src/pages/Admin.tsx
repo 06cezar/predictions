@@ -15,6 +15,7 @@ export function Admin() {
   const [newUserToken, setNewUserToken] = useState('');
   const [advanceConfirm, setAdvanceConfirm] = useState(false);
   const [reverseConfirm, setReverseConfirm] = useState(false);
+  const [phaseConfirm, setPhaseConfirm] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [expandedPred, setExpandedPred] = useState<number | null>(null);
 
@@ -67,6 +68,17 @@ export function Admin() {
       const result = await api.admin.reversePhase() as any;
       setSettings(prev => prev ? { ...prev, currentPhase: result.newPhase } : prev);
       setReverseConfirm(false);
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleSetPhase = async (phase: string) => {
+    if (phaseConfirm !== phase) { setPhaseConfirm(phase); return; }
+    try {
+      const result = await api.admin.setPhase(phase) as any;
+      setSettings(prev => prev ? { ...prev, currentPhase: result.newPhase } : prev);
+      setPhaseConfirm(null);
     } catch (err: any) {
       alert(err.message);
     }
@@ -213,30 +225,38 @@ export function Admin() {
         <div className="space-y-5">
           <div className="card space-y-4">
             <h3 className="font-medium">Phase Control</h3>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-white/60">Current Phase</p>
-                <p className="font-medium capitalize">{settings.currentPhase}</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleReversePhase}
-                  className={`px-4 py-2 rounded-xl font-medium text-sm transition-colors ${
-                    reverseConfirm ? 'bg-violet text-white animate-pulse' : 'btn-ghost'
-                  }`}
-                >
-                  {reverseConfirm ? '← Confirm' : '← Back'}
-                </button>
-                <button
-                  onClick={handleAdvancePhase}
-                  className={`px-4 py-2 rounded-xl font-medium text-sm transition-colors ${
-                    advanceConfirm ? 'bg-orange text-white animate-pulse' : 'btn-secondary'
-                  }`}
-                >
-                  {advanceConfirm ? 'Confirm →' : 'Advance →'}
-                </button>
-              </div>
+            <div className="grid grid-cols-3 gap-3">
+              {([
+                { id: 'submission', label: 'Submission', emoji: '✍️', color: 'bg-amber/20 border-amber/40 text-amber' },
+                { id: 'reveal',     label: 'Reveal',     emoji: '👁️', color: 'bg-violet/20 border-violet/40 text-[#a99eff]' },
+                { id: 'done',       label: 'Done',       emoji: '🏁', color: 'bg-orange/20 border-orange/40 text-orange' },
+              ] as const).map(({ id, label, emoji, color }) => {
+                const isActive = settings.currentPhase === id;
+                const isConfirming = phaseConfirm === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => !isActive && handleSetPhase(id)}
+                    onBlur={() => setPhaseConfirm(null)}
+                    disabled={isActive}
+                    className={`relative flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all font-medium text-sm
+                      ${isActive
+                        ? `${color} scale-105 shadow-lg cursor-default`
+                        : isConfirming
+                          ? 'bg-white/20 border-white/40 text-white animate-pulse'
+                          : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white/70 hover:border-white/20'
+                      }`}
+                  >
+                    <span className="text-2xl">{emoji}</span>
+                    <span>{isConfirming ? 'Confirm?' : label}</span>
+                    {isActive && (
+                      <span className="absolute -top-2 -right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center text-navy text-xs font-bold">✓</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
+            <p className="text-xs text-white/30 text-center">Click a phase to switch · click again to confirm</p>
           </div>
 
           <div className="card space-y-4">
@@ -264,9 +284,10 @@ export function Admin() {
           <div className="card space-y-4">
             <h3 className="font-medium">Settings</h3>
             <div>
-              <label className="block text-sm text-white/60 mb-2">
-                Rating Threshold: <span className="text-white font-medium">{settings.ratingThreshold}%</span>
+              <label className="block text-sm font-medium mb-0.5">
+                Rating Threshold: <span className="text-orange font-semibold">{settings.ratingThreshold}%</span>
               </label>
+              <p className="text-xs text-white/40 mb-2">Predictions rated above this are considered "likely" — lower ratings score more points</p>
               <input
                 type="range"
                 min={0}
@@ -299,6 +320,22 @@ export function Admin() {
                 className={`w-12 h-6 rounded-full transition-colors ${settings.adminOverride ? 'bg-orange' : 'bg-white/20'}`}
               >
                 <div className={`w-5 h-5 bg-white rounded-full transition-transform mx-0.5 ${settings.adminOverride ? 'translate-x-6' : ''}`} />
+              </button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm">Anonymous Predictions</p>
+                <p className="text-xs text-white/40">
+                  {settings.anonymousPredictions
+                    ? 'Author names are hidden at reveal'
+                    : 'Author names are shown at reveal'}
+                </p>
+              </div>
+              <button
+                onClick={() => handleSettingChange('anonymousPredictions', !settings.anonymousPredictions)}
+                className={`w-12 h-6 rounded-full transition-colors ${settings.anonymousPredictions ? 'bg-violet' : 'bg-white/20'}`}
+              >
+                <div className={`w-5 h-5 bg-white rounded-full transition-transform mx-0.5 ${settings.anonymousPredictions ? 'translate-x-6' : ''}`} />
               </button>
             </div>
           </div>

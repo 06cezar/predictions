@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { users, predictions, outcomes, ratings } from '../schema';
+import { users, predictions, outcomes, ratings, predictionHistory } from '../schema';
 import { eq } from 'drizzle-orm';
 import { requireAuth } from '../auth';
 
@@ -19,20 +19,24 @@ router.get('/', requireAuth, (req, res) => {
       const outcome = db.select().from(outcomes).where(eq(outcomes.predictionId, p.id)).get();
       if (outcome?.happened === true) {
         happened++;
+        const editCount = db.select().from(predictionHistory)
+          .where(eq(predictionHistory.predictionId, p.id)).all().length;
         const ratingRows = db.select({ score: ratings.score }).from(ratings)
           .where(eq(ratings.predictionId, p.id)).all();
+        let bonus: number;
         if (ratingRows.length > 0) {
           const avg = ratingRows.reduce((s, r) => s + r.score, 0) / ratingRows.length;
           // Bonus tiers: lower rating = bolder prediction = more points
-          let bonus: number;
-          if (avg < 10)       bonus = 4.0; // < 10%: nimeni nu credea
-          else if (avg < 25)  bonus = 3.0; // 10–25%: improbabil
-          else if (avg < 50)  bonus = 2.0; // 25–50%: sub 50/50
-          else                bonus = 1.0; // >= 50%: evident
-          totalWeighted += bonus;
+          if (avg < 10)       bonus = 4.0;
+          else if (avg < 25)  bonus = 3.0;
+          else if (avg < 50)  bonus = 2.0;
+          else                bonus = 1.0;
         } else {
-          totalWeighted += 1;
+          bonus = 1.0;
         }
+        // Penalty: -0.5 per edit, minimum 0.5
+        const penalty = editCount * 0.5;
+        totalWeighted += Math.max(0.5, bonus - penalty);
       }
     }
 

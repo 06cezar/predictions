@@ -27,11 +27,14 @@ export function PredictionCard({ prediction, showRating = false, showOutcome = f
           {prediction.targetName && (
             <p className="text-xs text-white/40 uppercase tracking-wider mb-2">About {prediction.targetName}</p>
           )}
+          {prediction.authorName && (
+            <p className="text-xs text-amber/70 uppercase tracking-wider mb-2">✍️ {prediction.authorName}</p>
+          )}
           <p className="text-white/90 leading-relaxed">{prediction.currentText}</p>
         </div>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
           {isEdited && (
-            <span className="badge bg-violet/20 text-[#a99eff] border border-violet/30 text-xs">Edited</span>
+            <span className="badge bg-violet/20 text-[#a99eff] border border-violet/30 text-xs">Edited ×{prediction.editCount}</span>
           )}
         </div>
       </div>

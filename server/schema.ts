@@ -50,4 +50,5 @@ export const settings = sqliteTable('settings', {
   ratingThreshold: integer('rating_threshold').notNull().default(40),
   autoAdvancePhase: integer('auto_advance_phase', { mode: 'boolean' }).notNull().default(true),
   adminOverride: integer('admin_override', { mode: 'boolean' }).notNull().default(false),
+  anonymousPredictions: integer('anonymous_predictions', { mode: 'boolean' }).notNull().default(true),
 });

@@ -166,8 +166,15 @@ router.get('/about-me', requireAuth, (req, res) => {
     const history = db.select().from(predictionHistory)
       .where(eq(predictionHistory.predictionId, p.id)).all();
     const avgRating = getAvgRating(p.id);
-
     const outcome = db.select().from(outcomes).where(eq(outcomes.predictionId, p.id)).get();
+
+    // Reveal author name only if anonymous mode is OFF
+    let authorName: string | undefined;
+    if (!s.anonymousPredictions) {
+      const author = db.select({ name: users.name }).from(users)
+        .where(eq(users.id, p.authorId)).get();
+      authorName = author?.name;
+    }
 
     return {
       id: p.id,
@@ -175,6 +182,7 @@ router.get('/about-me', requireAuth, (req, res) => {
       updatedAt: p.updatedAt,
       editCount: history.length,
       avgRating,
+      authorName,
       outcome: outcome ? { happened: outcome.happened, markedAt: outcome.markedAt } : null,
     };
   });

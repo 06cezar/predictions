@@ -103,7 +103,7 @@ router.get('/settings', requireAdmin, (req, res) => {
 });
 
 router.put('/settings', requireAdmin, (req, res) => {
-  const { currentPhase, submissionDeadline, revealDeadline, ratingThreshold, autoAdvancePhase, adminOverride } = req.body;
+  const { currentPhase, submissionDeadline, revealDeadline, ratingThreshold, autoAdvancePhase, adminOverride, anonymousPredictions } = req.body;
 
   const updates: Record<string, any> = {};
   if (currentPhase !== undefined) updates.currentPhase = currentPhase;
@@ -112,11 +112,22 @@ router.put('/settings', requireAdmin, (req, res) => {
   if (ratingThreshold !== undefined) updates.ratingThreshold = parseInt(ratingThreshold);
   if (autoAdvancePhase !== undefined) updates.autoAdvancePhase = autoAdvancePhase;
   if (adminOverride !== undefined) updates.adminOverride = adminOverride;
+  if (anonymousPredictions !== undefined) updates.anonymousPredictions = anonymousPredictions;
 
   db.update(settings).set(updates).where(eq(settings.id, 1)).run();
 
   const updated = db.select().from(settings).where(eq(settings.id, 1)).get();
   res.json(updated);
+});
+
+router.post('/phase/set', requireAdmin, (req, res) => {
+  const { phase } = req.body;
+  const phases = ['submission', 'reveal', 'done'];
+  if (!phases.includes(phase)) {
+    return res.status(400).json({ error: 'Invalid phase' });
+  }
+  db.update(settings).set({ currentPhase: phase }).where(eq(settings.id, 1)).run();
+  res.json({ success: true, newPhase: phase });
 });
 
 router.post('/phase/advance', requireAdmin, (req, res) => {
