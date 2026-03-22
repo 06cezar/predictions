@@ -1,0 +1,65 @@
+import { useState, useEffect } from 'react';
+
+interface Props {
+  deadline: string | null;
+  label: string;
+}
+
+function formatTime(ms: number) {
+  if (ms <= 0) return { display: 'Time\'s up!', warning: null };
+
+  const totalSeconds = Math.floor(ms / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  let display = '';
+  if (days > 0) display = `${days}d ${hours}h ${minutes}m`;
+  else if (hours > 0) display = `${hours}h ${minutes}m ${seconds}s`;
+  else display = `${minutes}m ${seconds}s`;
+
+  let warning: 'day' | 'hours' | null = null;
+  if (ms < 2 * 60 * 60 * 1000) warning = 'hours';
+  else if (ms < 24 * 60 * 60 * 1000) warning = 'day';
+
+  return { display, warning };
+}
+
+export function Countdown({ deadline, label }: Props) {
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+
+  useEffect(() => {
+    if (!deadline) return;
+
+    const update = () => {
+      setTimeLeft(new Date(deadline).getTime() - Date.now());
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [deadline]);
+
+  if (!deadline) return null;
+
+  const { display, warning } = formatTime(timeLeft);
+
+  return (
+    <div>
+      {warning === 'hours' && (
+        <div className="bg-orange/20 border border-orange/30 rounded-xl px-4 py-3 mb-3 text-orange text-sm font-medium">
+          ⚠️ Less than 2 hours remaining!
+        </div>
+      )}
+      {warning === 'day' && (
+        <div className="bg-amber/20 border border-amber/30 rounded-xl px-4 py-3 mb-3 text-amber text-sm font-medium">
+          ⏰ Last day! {label} closes soon.
+        </div>
+      )}
+      <div className="card">
+        <p className="text-white/50 text-xs uppercase tracking-widest mb-1">{label} closes in</p>
+        <p className="font-display text-3xl font-bold text-amber">{display}</p>
+      </div>
+    </div>
+  );
+}
