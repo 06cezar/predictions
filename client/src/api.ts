@@ -99,14 +99,27 @@ export const api = {
   },
   leaderboard: {
     get: () => request<LeaderboardEntry[]>('/api/leaderboard'),
+    mostCourageous: () => request<{ text: string; authorName: string; targetName: string; avg: number } | null>('/api/leaderboard/most-courageous'),
+    biggestMiss: () => request<{ text: string; authorName: string; targetName: string; avg: number } | null>('/api/leaderboard/biggest-miss'),
+    mostControversial: () => request<{ text: string; authorName: string; targetName: string; avg: number; stdDev: number; individualRatings: number[] } | null>('/api/leaderboard/most-controversial'),
+    mostRevised: () => request<{ text: string; authorName: string | null; targetName: string; editCount: number; history: string[] } | null>('/api/leaderboard/most-revised'),
+    bestFriends: () => request<{ userA: string; userB: string }[]>('/api/leaderboard/best-friends'),
+    mrDoesItAll: () => request<{ name: string; count: number }[]>('/api/leaderboard/mr-does-it-all'),
+    mostUnpredictable: () => request<{ name: string; count: number }[]>('/api/leaderboard/most-unpredictable'),
+    lastMinute: () => request<{ text: string; authorName: string | null; targetName: string; updatedAt: string } | null>('/api/leaderboard/last-minute'),
+    firstToSubmit: () => request<{ names: string[]; tied: boolean } | null>('/api/leaderboard/first-to-submit'),
   },
   admin: {
     users: () => request<any[]>('/api/admin/users'),
-    createUser: (name: string) => request('/api/admin/users', {
-      method: 'POST', body: JSON.stringify({ name }),
+    createUser: (name: string, token?: string) => request('/api/admin/users', {
+      method: 'POST', body: JSON.stringify({ name, token }),
+    }),
+    updateUser: (id: number, data: { name?: string; regenerateToken?: boolean }) => request(`/api/admin/users/${id}`, {
+      method: 'PUT', body: JSON.stringify(data),
     }),
     deleteUser: (id: number) => request(`/api/admin/users/${id}`, { method: 'DELETE' }),
     predictions: () => request<any[]>('/api/admin/predictions'),
+    deletePrediction: (id: number) => request(`/api/admin/predictions/${id}`, { method: 'DELETE' }),
     stats: () => request<any>('/api/admin/stats'),
     settings: () => request<Settings>('/api/admin/settings'),
     updateSettings: (data: Partial<Settings>) => request('/api/admin/settings', {

@@ -19,8 +19,16 @@ export function Admin() {
   const [resetConfirm, setResetConfirm] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [expandedPred, setExpandedPred] = useState<number | null>(null);
+  const [meId, setMeId] = useState<number | null>(null);
+  const [showAboutMe, setShowAboutMe] = useState(false);
+  const [editingUser, setEditingUser] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
+  const [progressMode, setProgressMode] = useState<'submission' | 'rating' | 'outcomes'>('submission');
+  const [customToken, setCustomToken] = useState('');
+  const [tokenMode, setTokenMode] = useState<'auto' | 'custom'>('auto');
 
   useEffect(() => {
+    api.users.me().then(me => setMeId(me.id)).catch(() => {});
     Promise.allSettled([
       api.admin.users(),
       api.admin.predictions(),
@@ -36,53 +44,89 @@ export function Admin() {
 
   const handleCreateUser = async () => {
     if (!newUserName.trim()) return;
+    if (tokenMode === 'custom' && !customToken.trim()) return;
     try {
-      const user = await api.admin.createUser(newUserName.trim()) as any;
+      const user = await api.admin.createUser(newUserName.trim(), tokenMode === 'custom' ? customToken.trim() : undefined) as any;
       setAdminUsers(prev => [...prev, user]);
       setNewUserToken(user.token);
       setNewUserName('');
+      setCustomToken('');
     } catch (err: any) {
       alert(err.message);
     }
   };
 
+  const refreshStats = () => {
+    api.admin.stats().then(s => setStats(s as any)).catch(() => {});
+  };
+
   const handleDeleteUser = async (id: number) => {
-    if (!confirm('Delete this user?')) return;
-    await api.admin.deleteUser(id);
-    setAdminUsers(prev => prev.filter(u => u.id !== id));
+    if (!confirm('Delete this user? All their predictions, ratings and outcomes will also be deleted.')) return;
+    try {
+      await api.admin.deleteUser(id);
+      setAdminUsers(prev => prev.filter(u => u.id !== id));
+      refreshStats();
+    } catch (err: any) { alert(err.message); }
+  };
+
+  const handleRenameUser = async (id: number) => {
+    if (!editName.trim()) return;
+    try {
+      const updated = await api.admin.updateUser(id, { name: editName.trim() }) as any;
+      setAdminUsers(prev => prev.map(u => u.id === id ? { ...u, name: updated.name } : u));
+      setEditingUser(null);
+    } catch (err: any) { alert(err.message); }
+  };
+
+  const handleRegenerateToken = async (id: number) => {
+    if (!confirm('Regenerate token? The user will need the new token to log in.')) return;
+    try {
+      const updated = await api.admin.updateUser(id, { regenerateToken: true }) as any;
+      setAdminUsers(prev => prev.map(u => u.id === id ? { ...u, token: updated.token } : u));
+      setNewUserToken(updated.token);
+      setEditingUser(null);
+    } catch (err: any) { alert(err.message); }
+  };
+
+  const handleDeletePrediction = async (id: number) => {
+    if (!confirm('Delete this prediction? This also removes its ratings and outcomes.')) return;
+    try {
+      await api.admin.deletePrediction(id);
+      setAdminPredictions(prev => prev.filter(p => p.id !== id));
+      refreshStats();
+    } catch (err: any) { alert(err.message); }
+  };
+
+  const applyPhase = (newPhase: string) => {
+    setSettings(prev => prev ? { ...prev, currentPhase: newPhase as any } : prev);
+    if (newPhase === 'submission') setProgressMode('submission');
   };
 
   const handleAdvancePhase = async () => {
     if (!advanceConfirm) { setAdvanceConfirm(true); setReverseConfirm(false); return; }
     try {
       const result = await api.admin.advancePhase() as any;
-      setSettings(prev => prev ? { ...prev, currentPhase: result.newPhase } : prev);
+      applyPhase(result.newPhase);
       setAdvanceConfirm(false);
-    } catch (err: any) {
-      alert(err.message);
-    }
+    } catch (err: any) { alert(err.message); }
   };
 
   const handleReversePhase = async () => {
     if (!reverseConfirm) { setReverseConfirm(true); setAdvanceConfirm(false); return; }
     try {
       const result = await api.admin.reversePhase() as any;
-      setSettings(prev => prev ? { ...prev, currentPhase: result.newPhase } : prev);
+      applyPhase(result.newPhase);
       setReverseConfirm(false);
-    } catch (err: any) {
-      alert(err.message);
-    }
+    } catch (err: any) { alert(err.message); }
   };
 
   const handleSetPhase = async (phase: string) => {
     if (phaseConfirm !== phase) { setPhaseConfirm(phase); return; }
     try {
       const result = await api.admin.setPhase(phase) as any;
-      setSettings(prev => prev ? { ...prev, currentPhase: result.newPhase } : prev);
+      applyPhase(result.newPhase);
       setPhaseConfirm(null);
-    } catch (err: any) {
-      alert(err.message);
-    }
+    } catch (err: any) { alert(err.message); }
   };
 
   const handleSettingChange = async (key: string, value: any) => {
@@ -90,6 +134,10 @@ export function Admin() {
     const updated = { ...settings, [key]: value };
     setSettings(updated);
     await api.admin.updateSettings({ [key]: value });
+    if (key === 'anonymousPredictions') {
+      const fresh = await api.admin.predictions();
+      setAdminPredictions(fresh as any[]);
+    }
   };
 
   const copyToken = (token: string) => {
@@ -130,16 +178,111 @@ export function Admin() {
 
       {tab === 'users' && (
         <div className="space-y-4">
-          <div className="card flex gap-3">
-            <input
-              type="text"
-              value={newUserName}
-              onChange={e => setNewUserName(e.target.value)}
-              placeholder="New user name"
-              className="input flex-1"
-              onKeyDown={e => e.key === 'Enter' && handleCreateUser()}
-            />
-            <button onClick={handleCreateUser} className="btn-primary">Add User</button>
+          {stats && stats.totalUsers > 0 && (
+            <div className="card space-y-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                {([
+                  { id: 'submission', label: '✍️ Submission' },
+                  { id: 'rating', label: '⭐ Rating' },
+                  ...((settings?.currentPhase === 'reveal' || settings?.currentPhase === 'done')
+                    ? [{ id: 'outcomes', label: '🎯 Outcomes' }]
+                    : []),
+                ] as { id: 'submission' | 'rating' | 'outcomes'; label: string }[]).map(mode => (
+                  <button
+                    key={mode.id}
+                    onClick={() => setProgressMode(mode.id)}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                      progressMode === mode.id ? 'bg-white/20 text-white' : 'text-white/40 hover:text-white/60'
+                    }`}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
+              {(() => {
+                if (progressMode === 'outcomes') {
+                  const marked = stats.markedPredictions ?? 0;
+                  const total = stats.submissionCount ?? 0;
+                  const done = total > 0 && marked === total;
+                  return (
+                    <>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-white/40 text-xs">predictions with outcome marked</span>
+                        <span className="font-medium">
+                          <span className={done ? 'text-green-400' : 'text-amber'}>{marked}/{total}</span>
+                          <span className="text-white/30 ml-1">marked</span>
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${done ? 'bg-green-400' : 'bg-amber'}`}
+                          style={{ width: `${total > 0 ? (marked / total) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </>
+                  );
+                }
+                const completed = progressMode === 'submission' ? stats.completedUsers : stats.completedRaters;
+                const total = stats.totalUsers;
+                const done = completed === total;
+                return (
+                  <>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-white/40 text-xs">
+                        {progressMode === 'submission' ? 'wrote all predictions' : 'rated all predictions'}
+                      </span>
+                      <span className="font-medium">
+                        <span className={done ? 'text-green-400' : 'text-amber'}>{completed}/{total}</span>
+                        <span className="text-white/30 ml-1">complete</span>
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${done ? 'bg-green-400' : 'bg-amber'}`}
+                        style={{ width: `${total > 0 ? (completed / total) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+          <div className="card space-y-3">
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={newUserName}
+                onChange={e => setNewUserName(e.target.value)}
+                placeholder="New user name"
+                className="input flex-1"
+                onKeyDown={e => e.key === 'Enter' && handleCreateUser()}
+              />
+              <button onClick={handleCreateUser} className="btn-primary">Add User</button>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex gap-1">
+                {(['auto', 'custom'] as const).map(m => (
+                  <button
+                    key={m}
+                    onClick={() => setTokenMode(m)}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                      tokenMode === m ? 'bg-white/20 text-white' : 'text-white/30 hover:text-white/60'
+                    }`}
+                  >
+                    {m === 'auto' ? '🎲 Auto token' : '✏️ Custom token'}
+                  </button>
+                ))}
+              </div>
+              {tokenMode === 'custom' && (
+                <input
+                  type="text"
+                  value={customToken}
+                  onChange={e => setCustomToken(e.target.value)}
+                  placeholder="e.g. brave-lion-42"
+                  className="input flex-1 text-sm font-mono"
+                />
+              )}
+            </div>
           </div>
 
           {newUserToken && (
@@ -151,26 +294,69 @@ export function Admin() {
 
           <div className="space-y-2">
             {adminUsers.map(u => (
-              <div key={u.id} className="card flex items-center gap-4">
-                <div className="flex-1">
-                  <p className="font-medium">{u.name} {u.isAdmin && <span className="text-amber text-xs ml-1">Admin</span>}</p>
-                  <p className="text-sm text-white/40 font-mono">
-                    {u.token.slice(0, 4)}···{u.token.slice(-4)}
-                  </p>
-                </div>
-                <button
-                  onClick={() => copyToken(u.token)}
-                  className="btn-ghost text-sm"
-                >
-                  {copiedToken === u.token ? '✓ Copied' : 'Copy Token'}
-                </button>
-                {!u.isAdmin && (
-                  <button
-                    onClick={() => handleDeleteUser(u.id)}
-                    className="text-orange/60 hover:text-orange text-sm px-3 py-2"
-                  >
-                    Delete
+              <div key={u.id} className="card space-y-3">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <p className="font-medium flex items-center gap-2">
+                      {u.name}
+                      {u.isAdmin && <span className="text-amber text-xs">Admin</span>}
+                      {stats && (() => {
+                        const arr = progressMode === 'submission' ? stats.userProgress : progressMode === 'rating' ? stats.ratingProgress : stats.outcomesProgress;
+                        const p = arr?.find((x: any) => x.id === u.id);
+                        if (!p || p.expected === 0) return null;
+                        return p.complete
+                          ? <span className="text-xs text-green-400 font-normal">✓ Done</span>
+                          : <span className="text-xs text-white/30 font-normal">{p.written}/{p.expected}</span>;
+                      })()}
+                    </p>
+                    <p className="text-sm text-white/40 font-mono">
+                      {u.token.slice(0, 4)}···{u.token.slice(-4)}
+                    </p>
+                  </div>
+                  <button onClick={() => copyToken(u.token)} className="btn-ghost text-sm">
+                    {copiedToken === u.token ? '✓ Copied' : 'Copy Token'}
                   </button>
+                  <button
+                    onClick={() => { setEditingUser(editingUser === u.id ? null : u.id); setEditName(u.name); }}
+                    className="text-white/40 hover:text-white text-sm px-3 py-2"
+                  >
+                    {editingUser === u.id ? '✕' : 'Edit'}
+                  </button>
+                  {!u.isAdmin && (
+                    <button
+                      onClick={() => handleDeleteUser(u.id)}
+                      className="text-orange/60 hover:text-orange text-sm px-3 py-2"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+                {editingUser === u.id && (
+                  <div className="border-t border-white/10 pt-3 flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={e => setEditName(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleRenameUser(u.id)}
+                        className="input flex-1 text-sm"
+                        placeholder="New name"
+                      />
+                      <button
+                        onClick={() => handleRenameUser(u.id)}
+                        disabled={!editName.trim() || editName.trim() === u.name}
+                        className="btn-primary text-sm px-4 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Rename
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => handleRegenerateToken(u.id)}
+                      className="text-left text-xs text-white/40 hover:text-orange transition-colors"
+                    >
+                      🔄 Regenerate token
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
@@ -180,7 +366,20 @@ export function Admin() {
 
       {tab === 'predictions' && (
         <div className="space-y-3">
-          {adminPredictions.map(p => (
+          {settings?.currentPhase === 'done' && (
+            <div className="bg-orange/10 border border-orange/30 rounded-xl px-4 py-3 text-sm text-orange/90">
+              ⚠️ Game is in <span className="font-semibold">done</span> phase — deleting predictions will affect leaderboard scores and Hall of Fame results.
+            </div>
+          )}
+          {meId !== null && adminPredictions.some(p => p.target?.id === meId) && (
+            <button
+              onClick={() => setShowAboutMe(v => !v)}
+              className="w-full card text-sm text-white/50 hover:text-white/80 transition-colors text-center py-3"
+            >
+              {showAboutMe ? '🙈 Hide predictions about you' : `👁️ Show predictions about you (${adminPredictions.filter(p => p.target?.id === meId).length})`}
+            </button>
+          )}
+          {adminPredictions.filter(p => showAboutMe || p.target?.id !== meId).map(p => (
             <div key={p.id} className="card space-y-2">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
@@ -192,11 +391,19 @@ export function Admin() {
                   </div>
                   <p className="text-white/90 text-sm leading-relaxed">{p.currentText}</p>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  {p.avgRating !== null && (
-                    <p className="font-display font-bold text-amber">{p.avgRating}%</p>
-                  )}
-                  <p className="text-xs text-white/30">{p.ratingCount} ratings</p>
+                <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                  <div className="text-right">
+                    {p.avgRating !== null && (
+                      <p className="font-display font-bold text-amber">{p.avgRating}%</p>
+                    )}
+                    <p className="text-xs text-white/30">{p.ratingCount} ratings</p>
+                  </div>
+                  <button
+                    onClick={() => handleDeletePrediction(p.id)}
+                    className="text-red-400/50 hover:text-red-400 text-xs px-2 py-1 rounded-lg hover:bg-red-500/10 transition-colors"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
               {p.editCount > 0 && (
