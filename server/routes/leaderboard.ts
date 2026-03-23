@@ -8,6 +8,9 @@ const router = Router();
 
 router.get('/', requireAuth, (req, res) => {
   const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
+  if (s.currentPhase !== 'done') {
+    return res.status(403).json({ error: 'Leaderboard is only available after the game is done' });
+  }
   const threshold = s.ratingThreshold;
   const tier1 = Math.floor(threshold * 0.25); // e.g. 10 for threshold=40
   const tier2 = Math.floor(threshold * 0.5);  // e.g. 20 for threshold=40

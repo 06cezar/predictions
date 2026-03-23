@@ -162,4 +162,13 @@ router.post('/phase/reverse', requireAdmin, (req, res) => {
   res.json({ success: true, newPhase: prevPhase });
 });
 
+router.post('/reset', requireAdmin, (req, res) => {
+  db.delete(outcomes).run();
+  db.delete(ratings).run();
+  db.delete(predictionHistory).run();
+  db.delete(predictions).run();
+  db.update(settings).set({ currentPhase: 'submission', submissionDeadline: null, revealDeadline: null }).where(eq(settings.id, 1)).run();
+  res.json({ success: true });
+});
+
 export default router;

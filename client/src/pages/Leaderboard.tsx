@@ -24,6 +24,7 @@ export function Leaderboard() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [tiers, setTiers] = useState({ threshold: 40, tier1: 10, tier2: 20 });
   const [loading, setLoading] = useState(true);
+  const [locked, setLocked] = useState(false);
 
   useEffect(() => {
     api.leaderboard.get().then(data => {
@@ -32,8 +33,22 @@ export function Leaderboard() {
         const { threshold, tier1, tier2 } = data[0] as any;
         if (threshold) setTiers({ threshold, tier1, tier2 });
       }
-    }).finally(() => setLoading(false));
+    }).catch(() => setLocked(true)).finally(() => setLoading(false));
   }, []);
+
+  if (locked) return (
+    <div className="min-h-screen p-4 pb-24 max-w-2xl mx-auto">
+      <div className="flex items-center gap-4 py-6 mb-6">
+        <Link to="/" className="btn-ghost text-sm px-3">← Back</Link>
+        <h1 className="font-display text-2xl font-bold flex-1">Leaderboard</h1>
+      </div>
+      <div className="card text-center py-12 space-y-3">
+        <p className="text-4xl">🔒</p>
+        <p className="font-medium text-white/80">Results are not out yet</p>
+        <p className="text-sm text-white/40">The leaderboard will be revealed when the game is done.</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen p-4 pb-24 max-w-2xl mx-auto">

@@ -16,6 +16,7 @@ export function Admin() {
   const [advanceConfirm, setAdvanceConfirm] = useState(false);
   const [reverseConfirm, setReverseConfirm] = useState(false);
   const [phaseConfirm, setPhaseConfirm] = useState<string | null>(null);
+  const [resetConfirm, setResetConfirm] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [expandedPred, setExpandedPred] = useState<number | null>(null);
 
@@ -338,6 +339,28 @@ export function Admin() {
                 <div className={`w-5 h-5 bg-white rounded-full transition-transform mx-0.5 ${settings.anonymousPredictions ? 'translate-x-6' : ''}`} />
               </button>
             </div>
+          </div>
+
+          <div className="card border border-red-500/20 space-y-3">
+            <h3 className="font-medium text-red-400">Danger Zone</h3>
+            <p className="text-xs text-white/40">Reset the game - all predictions, ratings and outcomes will be deleted. Users are kept. Phase resets to submission.</p>
+            <button
+              onClick={async () => {
+                if (!resetConfirm) { setResetConfirm(true); return; }
+                try {
+                  await api.admin.resetGame();
+                  setResetConfirm(false);
+                  setSettings(prev => prev ? { ...prev, currentPhase: 'submission', submissionDeadline: null, revealDeadline: null } : prev);
+                  window.location.reload();
+                } catch (err: any) { alert(err.message); }
+              }}
+              onBlur={() => setResetConfirm(false)}
+              className={`w-full py-2.5 rounded-xl font-medium text-sm transition-all ${
+                resetConfirm ? 'bg-red-500 text-white animate-pulse' : 'bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20'
+              }`}
+            >
+              {resetConfirm ? '⚠️ Click again to confirm reset' : '🗑️ Reset Game'}
+            </button>
           </div>
         </div>
       )}

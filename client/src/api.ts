@@ -115,5 +115,6 @@ export const api = {
     advancePhase: () => request('/api/admin/phase/advance', { method: 'POST' }),
     reversePhase: () => request('/api/admin/phase/reverse', { method: 'POST' }),
     setPhase: (phase: string) => request('/api/admin/phase/set', { method: 'POST', body: JSON.stringify({ phase }) }),
+    resetGame: () => request('/api/admin/reset', { method: 'POST' }),
   },
 };
