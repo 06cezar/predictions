@@ -50,7 +50,7 @@ export function Leaderboard() {
       ) : entries.length === 0 ? (
         <div className="card text-center py-12">
           <p className="font-display text-3xl mb-3">🏆</p>
-          <p className="text-white/50">No scores yet — mark some outcomes first!</p>
+          <p className="text-white/50">No scores yet - mark some outcomes first!</p>
         </div>
       ) : (
         <div className="space-y-3">

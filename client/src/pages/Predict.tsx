@@ -84,7 +84,7 @@ export function Predict() {
 
       {showLowRatingWarning && (
         <div className="bg-amber/20 border border-amber/30 rounded-xl px-4 py-3 mb-4 text-amber text-sm">
-          ⚠️ This prediction is rated high ({prediction.avgRating}%) — everyone thinks it'll happen, so you'll score fewer points if it does.
+          ⚠️ This prediction is rated high ({prediction.avgRating}%) - everyone thinks it'll happen, so you'll score fewer points if it does.
         </div>
       )}
 

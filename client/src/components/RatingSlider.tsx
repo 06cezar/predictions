@@ -29,36 +29,62 @@ export function RatingSlider({ predictionId, initialScore, avgRating, onRate }: 
     }
   };
 
-  const getColor = (val: number) => {
+  const getScoreColor = (val: number) => {
     if (val >= 70) return 'text-green-400';
     if (val >= 40) return 'text-amber';
     return 'text-orange';
   };
 
+  const getLabel = (val: number) => {
+    if (val <= 10) return 'No chance';
+    if (val <= 25) return 'Unlikely';
+    if (val <= 45) return 'Doubtful';
+    if (val <= 55) return 'Coin flip';
+    if (val <= 75) return 'Probable';
+    if (val <= 90) return 'Very likely';
+    return 'Certain';
+  };
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-white/50">Your rating</span>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs text-white/40 uppercase tracking-wider">Probability</span>
+          {avgRating !== null && (
+            <span className="text-xs text-white/40">Average: <span className="text-white/60 font-medium">{avgRating}%</span></span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-white/40">{getLabel(score)}</span>
+          <span className={`font-display text-2xl font-bold leading-none ${getScoreColor(score)}`}>
+            {score}%
+          </span>
+        </div>
       </div>
-      <p className="text-xs text-white/30">Rate the probability this prediction will come true (0% = no chance, 100% = certain)</p>
-      <div className="flex items-center gap-3">
-        <input
-          type="range"
-          min={0}
-          max={100}
-          step={1}
-          value={score}
-          onChange={e => setScore(parseInt(e.target.value))}
-          className="flex-1 accent-orange h-2"
-        />
-        <span className={`font-display text-xl font-bold w-14 text-right ${getColor(score)}`}>
-          {score}%
-        </span>
+
+      <input
+        type="range"
+        min={0}
+        max={100}
+        step={1}
+        value={score}
+        onChange={e => setScore(parseInt(e.target.value))}
+        className="w-full accent-orange h-2"
+      />
+
+      <div className="flex justify-between text-xs text-white/20 px-0.5">
+        <span>0%</span>
+        <span>25%</span>
+        <span>50%</span>
+        <span>75%</span>
+        <span>100%</span>
       </div>
+
+
       <button
         onClick={handleSubmit}
         disabled={saving}
-        className={`btn-primary w-full text-sm ${saved ? 'bg-green-600' : ''}`}
+        className={`btn-primary w-full text-sm transition-colors ${saved ? '!bg-green-600' : ''}`}
       >
         {saved ? '✓ Saved!' : saving ? 'Saving...' : initialScore !== null ? 'Update Rating' : 'Submit Rating'}
       </button>

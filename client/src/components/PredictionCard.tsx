@@ -7,9 +7,10 @@ interface Props {
   showRating?: boolean;
   showOutcome?: boolean;
   onOutcome?: (id: number, happened: boolean | null) => void;
+  onRated?: (id: number, score: number) => void;
 }
 
-export function PredictionCard({ prediction, showRating = false, showOutcome = false, onOutcome }: Props) {
+export function PredictionCard({ prediction, showRating = false, showOutcome = false, onOutcome, onRated }: Props) {
   const [myRating, setMyRating] = useState(prediction.myRating ?? null);
   const [outcome, setOutcome] = useState(prediction.outcome);
 
@@ -20,8 +21,10 @@ export function PredictionCard({ prediction, showRating = false, showOutcome = f
     onOutcome?.(prediction.id, happened);
   };
 
+  const isRated = myRating !== null;
+
   return (
-    <div className="card space-y-4">
+    <div className={`card space-y-4 transition-all ${showRating ? 'border-l-4 border-l-violet/50' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
           {prediction.targetName && (
@@ -36,10 +39,13 @@ export function PredictionCard({ prediction, showRating = false, showOutcome = f
           {isEdited && (
             <span className="badge bg-violet/20 text-[#a99eff] border border-violet/30 text-xs">Edited ×{prediction.editCount}</span>
           )}
+          {showRating && isRated && (
+            <span className="badge bg-green-500/20 text-green-400 border border-green-500/30 text-xs">✓ Rated</span>
+          )}
         </div>
       </div>
 
-      {prediction.avgRating !== null && (
+      {prediction.avgRating !== null && !showRating && (
         <div className="flex items-center gap-2 text-sm text-white/50">
           <span>Avg rating:</span>
           <span className="text-white font-medium">{prediction.avgRating}%</span>
@@ -52,7 +58,7 @@ export function PredictionCard({ prediction, showRating = false, showOutcome = f
             predictionId={prediction.id}
             initialScore={myRating}
             avgRating={prediction.avgRating}
-            onRate={setMyRating}
+            onRate={score => { setMyRating(score); onRated?.(prediction.id, score); }}
           />
         </div>
       )}

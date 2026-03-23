@@ -13,12 +13,37 @@ export function Rate() {
       .finally(() => setLoading(false));
   }, []);
 
+  const rated = predictions.filter(p => p.myRating !== null).length;
+
+  const handleRated = async (id: number, score: number) => {
+    setPredictions(prev => prev.map(p => p.id === id ? { ...p, myRating: score } : p));
+    const fresh = await api.predictions.toRate();
+    setPredictions(prev => prev.map(p => {
+      const updated = fresh.find((f: any) => f.id === p.id);
+      return updated ? { ...p, avgRating: updated.avgRating } : p;
+    }));
+  };
+
   return (
     <div className="min-h-screen p-4 pb-24 max-w-2xl mx-auto">
-      <div className="flex items-center gap-4 py-6 mb-6">
+      <div className="flex items-center gap-4 py-6 mb-4">
         <Link to="/" className="btn-ghost text-sm px-3">← Back</Link>
-        <h1 className="font-display text-2xl font-bold">Rate Predictions</h1>
+        <div>
+          <h1 className="font-display text-2xl font-bold">Rate Predictions</h1>
+          {predictions.length > 0 && (
+            <p className="text-white/40 text-xs mt-0.5">{rated} out of {predictions.length} rated</p>
+          )}
+        </div>
       </div>
+
+      {predictions.length > 0 && (
+        <div className="rounded-2xl bg-violet/10 border border-violet/20 px-4 py-3 mb-6 flex gap-3 items-start">
+          <span className="text-lg mt-0.5">🎯</span>
+          <p className="text-sm text-white/70 leading-relaxed">
+            For each prediction, rate <span className="text-white font-medium">how likely you think it is to come true</span> - 0% means no chance, 100% means certain. Bolder (lower) ratings score more if they're right.
+          </p>
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-12 text-white/50">Loading...</div>
@@ -31,7 +56,7 @@ export function Rate() {
       ) : (
         <div className="space-y-4">
           {predictions.map(p => (
-            <PredictionCard key={p.id} prediction={p} showRating />
+            <PredictionCard key={p.id} prediction={p} showRating onRated={handleRated} />
           ))}
         </div>
       )}

@@ -42,7 +42,11 @@ export function Dashboard({ user, onLogout }: Props) {
   );
 
   const phase = settings?.currentPhase || 'submission';
-  const deadline = phase === 'submission' ? settings?.submissionDeadline : settings?.revealDeadline;
+  const deadline = phase === 'submission'
+    ? settings?.submissionDeadline
+    : phase === 'reveal'
+      ? settings?.revealDeadline
+      : null;
 
   return (
     <div className="min-h-screen p-4 pb-24 max-w-2xl mx-auto">
@@ -54,11 +58,17 @@ export function Dashboard({ user, onLogout }: Props) {
         <PhaseBadge phase={phase} />
       </div>
 
-      {deadline && (
+      {phase === 'done' ? (
+        <div className="card mb-6 text-center py-5 animate-fade-up border border-orange/20" style={{ animationDelay: '0.05s' }}>
+          <p className="text-2xl mb-1">🏁</p>
+          <p className="font-medium text-white/80">Game over - results are in!</p>
+          <p className="text-xs text-white/40 mt-1">Check the leaderboard to see who won.</p>
+        </div>
+      ) : deadline ? (
         <div className="mb-6 animate-fade-up" style={{ animationDelay: '0.05s' }}>
           <Countdown deadline={deadline} label={phase === 'submission' ? 'Submission' : 'Reveal'} />
         </div>
-      )}
+      ) : null}
 
       {me?.stats && (
         <div className="grid grid-cols-2 gap-3 mb-6 animate-fade-up" style={{ animationDelay: '0.1s' }}>
@@ -85,7 +95,7 @@ export function Dashboard({ user, onLogout }: Props) {
       {users.length === 0 ? (
         <div className="card text-center py-12 animate-fade-up" style={{ animationDelay: '0.2s' }}>
           <p className="font-display text-2xl mb-2">✨</p>
-          <p className="text-white/50">No other users yet — the future is wide open!</p>
+          <p className="text-white/50">No other users yet - the future is wide open!</p>
         </div>
       ) : (
         <div className="space-y-2 stagger">

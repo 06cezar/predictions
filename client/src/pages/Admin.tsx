@@ -107,7 +107,7 @@ export function Admin() {
           <h1 className="font-display text-2xl font-bold">Admin Panel</h1>
           {stats && (
             <p className="text-white/40 text-sm">
-              {stats.submissionCount} predictions · {stats.ratingCount} ratings · avg {stats.avgRating ?? '—'}%
+              {stats.submissionCount} predictions · {stats.ratingCount} ratings · avg {stats.avgRating ?? '-'}%
             </p>
           )}
         </div>
@@ -287,7 +287,7 @@ export function Admin() {
               <label className="block text-sm font-medium mb-0.5">
                 Rating Threshold: <span className="text-orange font-semibold">{settings.ratingThreshold}%</span>
               </label>
-              <p className="text-xs text-white/40 mb-2">Predictions rated above this are considered "likely" — lower ratings score more points</p>
+              <p className="text-xs text-white/40 mb-2">Predictions rated above this are considered "likely" - lower ratings score more points</p>
               <input
                 type="range"
                 min={0}
