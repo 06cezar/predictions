@@ -100,7 +100,7 @@ export function Admin() {
   if (loading) return <div className="min-h-screen flex items-center justify-center"><p className="text-white/50">Loading...</p></div>;
 
   return (
-    <div className="min-h-screen p-4 max-w-4xl mx-auto">
+    <div className="min-h-screen p-4 pb-24 max-w-4xl mx-auto">
       <div className="flex items-center gap-4 py-6 mb-6">
         <Link to="/" className="btn-ghost text-sm px-3">← Back</Link>
         <div>

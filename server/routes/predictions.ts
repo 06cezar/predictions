@@ -123,9 +123,18 @@ router.put('/:id', requireAuth, (req, res) => {
 router.get('/to-rate', requireAuth, (req, res) => {
   const me = getCurrentUser(req)!;
 
-  // Predictions where I am NOT the author AND NOT the target
+  // Targets I have already written a prediction for
+  const myPredictions = db.select({ targetId: predictions.targetId })
+    .from(predictions).where(eq(predictions.authorId, me.id)).all();
+  const myTargetIds = new Set(myPredictions.map(p => p.targetId));
+
+  // Predictions where I am NOT the author AND NOT the target AND target is someone I wrote about
   const all = db.select().from(predictions).all();
-  const rateable = all.filter(p => p.authorId !== me.id && p.targetId !== me.id);
+  const rateable = all.filter(p =>
+    p.authorId !== me.id &&
+    p.targetId !== me.id &&
+    myTargetIds.has(p.targetId)
+  );
 
   const result = rateable.map(p => {
     const history = db.select().from(predictionHistory)

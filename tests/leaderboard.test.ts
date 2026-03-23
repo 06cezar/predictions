@@ -59,12 +59,12 @@ describe('Leaderboard route', () => {
     // Charlie writes prediction about Bob
     const pred3 = createPrediction(db, charlie.id, bob.id, 'Bob will also succeed');
 
-    // Bob has 2 predictions that happen
-    createOutcome(db, pred1.id, true, bob.id);   // happened
-    createOutcome(db, pred3.id, true, bob.id);   // happened
-
-    // Charlie has 1 prediction that did NOT happen
-    createOutcome(db, pred2.id, false, charlie.id); // didn't happen
+    // pred1 (Alice's) → happened → Alice gets 1 point
+    createOutcome(db, pred1.id, true, bob.id);
+    // pred3 (Charlie's) → happened → Charlie gets 1 point
+    createOutcome(db, pred3.id, true, bob.id);
+    // pred2 (Alice's about Charlie) → did NOT happen → no points
+    createOutcome(db, pred2.id, false, charlie.id);
 
     const agent = request.agent(app);
     await loginAs(agent, 'token-alice');
@@ -72,16 +72,14 @@ describe('Leaderboard route', () => {
     const res = await agent.get('/api/leaderboard');
     expect(res.status).toBe(200);
 
-    // Bob should rank first (2 predictions happened)
-    const bobEntry = res.body.find((e: any) => e.name === 'Bob');
-    const charlieEntry = res.body.find((e: any) => e.name === 'Charlie');
     const aliceEntry = res.body.find((e: any) => e.name === 'Alice');
+    const charlieEntry = res.body.find((e: any) => e.name === 'Charlie');
+    const bobEntry = res.body.find((e: any) => e.name === 'Bob');
 
-    expect(bobEntry.score).toBe(2);
-    expect(charlieEntry.score).toBe(0); // prediction about Charlie did NOT happen
-    expect(aliceEntry.score).toBe(0);
-
-    expect(bobEntry.rank).toBe(1);
+    // Alice and Charlie each have 1 correct prediction, Bob has none
+    expect(aliceEntry.score).toBe(1);
+    expect(charlieEntry.score).toBe(1);
+    expect(bobEntry.score).toBe(0);
   });
 
   it('Leaderboard weighted scores incorporate ratings', async () => {
@@ -91,7 +89,7 @@ describe('Leaderboard route', () => {
 
     setPhase(db, 'reveal');
 
-    // Prediction about Bob: rated 80 by Charlie, and it happened
+    // Alice writes prediction about Bob, Charlie rates it 80, it happened → Alice gets credit
     const pred1 = createPrediction(db, alice.id, bob.id, 'Bob will succeed');
     createRating(db, pred1.id, charlie.id, 80);
     createOutcome(db, pred1.id, true, bob.id);
@@ -102,10 +100,11 @@ describe('Leaderboard route', () => {
     const res = await agent.get('/api/leaderboard');
     expect(res.status).toBe(200);
 
-    const bobEntry = res.body.find((e: any) => e.name === 'Bob');
-    expect(bobEntry.score).toBe(1);
-    // weightedScore = avg_rating / 100 = 80/100 = 0.8
-    expect(bobEntry.weightedScore).toBe(0.8);
+    // Alice (author) gets the score, not Bob (target)
+    const aliceEntry = res.body.find((e: any) => e.name === 'Alice');
+    expect(aliceEntry.score).toBe(1);
+    // avg=80 >= threshold(40) → bonus=1.0, no edits → weightedScore=1.0
+    expect(aliceEntry.weightedScore).toBe(1.0);
   });
 
   it('Leaderboard entries have correct rank ordering', async () => {
@@ -137,9 +136,9 @@ describe('Leaderboard route', () => {
     expect(ranks[1]).toBe(2);
     expect(ranks[2]).toBe(3);
 
-    // Bob should be rank 1
-    const bobEntry = res.body.find((e: any) => e.name === 'Bob');
-    expect(bobEntry.rank).toBe(1);
-    expect(bobEntry.score).toBe(2);
+    // Alice should be rank 1 (wrote 2 predictions that happened: pred1 + pred3)
+    const aliceEntry = res.body.find((e: any) => e.name === 'Alice');
+    expect(aliceEntry.rank).toBe(1);
+    expect(aliceEntry.score).toBe(2);
   });
 });

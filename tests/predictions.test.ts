@@ -27,21 +27,25 @@ describe('Predictions routes', () => {
     const charlie = createUser(db, 'Charlie', 'token-charlie');
 
     // Alice writes a prediction about Bob
-    createPrediction(db, alice.id, bob.id, 'Bob will succeed');
+    const pred = createPrediction(db, alice.id, bob.id, 'Bob will succeed');
+    // Charlie also writes about Bob — so Charlie can see predictions about Bob in to-rate
+    createPrediction(db, charlie.id, bob.id, 'Bob will also succeed');
 
-    // Charlie rates — should see it
+    // Charlie rates — should see Alice's prediction about Bob
     const charlieAgent = request.agent(app);
     await loginAs(charlieAgent, 'token-charlie');
     const charlieRes = await charlieAgent.get('/api/predictions/to-rate');
     expect(charlieRes.status).toBe(200);
-    expect(charlieRes.body.length).toBe(1);
+    expect(charlieRes.body.length).toBe(1); // only Alice's (not Charlie's own)
 
-    // Alice (the author) should NOT see her own prediction in to-rate
+    // Alice should NOT see her own prediction in to-rate, but sees Charlie's about Bob
     const aliceAgent = request.agent(app);
     await loginAs(aliceAgent, 'token-alice');
     const aliceRes = await aliceAgent.get('/api/predictions/to-rate');
     expect(aliceRes.status).toBe(200);
-    expect(aliceRes.body.length).toBe(0);
+    // Alice sees Charlie's pred about Bob (Alice wrote about Bob too), but NOT her own
+    const alicePredIds = aliceRes.body.map((p: any) => p.id);
+    expect(alicePredIds).not.toContain(pred.id);
   });
 
   it('/api/predictions/to-rate: target cannot see predictions about them', async () => {
@@ -51,6 +55,8 @@ describe('Predictions routes', () => {
 
     // Alice writes a prediction about Bob
     createPrediction(db, alice.id, bob.id, 'Bob will succeed');
+    // Bob writes about Charlie so Bob has targets — but pred1 is about Bob, so he can't rate it
+    createPrediction(db, bob.id, charlie.id, 'Charlie will succeed');
 
     // Bob (the target) should NOT see the prediction about him in to-rate
     const bobAgent = request.agent(app);
@@ -102,6 +108,8 @@ describe('Predictions routes', () => {
     const charlie = createUser(db, 'Charlie', 'token-charlie');
 
     createPrediction(db, alice.id, bob.id, 'Bob will succeed');
+    // Charlie must have written a prediction for Bob to see it in to-rate
+    createPrediction(db, charlie.id, bob.id, 'Bob will also succeed');
 
     const charlieAgent = request.agent(app);
     await loginAs(charlieAgent, 'token-charlie');

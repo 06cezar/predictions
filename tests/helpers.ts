@@ -48,10 +48,11 @@ const SCHEMA_SQL = `
     reveal_deadline TEXT,
     rating_threshold INTEGER NOT NULL DEFAULT 40,
     auto_advance_phase INTEGER NOT NULL DEFAULT 1,
-    admin_override INTEGER NOT NULL DEFAULT 0
+    admin_override INTEGER NOT NULL DEFAULT 0,
+    anonymous_predictions INTEGER NOT NULL DEFAULT 1
   );
-  INSERT OR IGNORE INTO settings (id, current_phase, rating_threshold, auto_advance_phase, admin_override)
-  VALUES (1, 'submission', 40, 1, 0);
+  INSERT OR IGNORE INTO settings (id, current_phase, rating_threshold, auto_advance_phase, admin_override, anonymous_predictions)
+  VALUES (1, 'submission', 40, 1, 0, 1);
 `;
 
 export function createTestDb() {

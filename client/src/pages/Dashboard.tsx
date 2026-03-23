@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+
 import { api, User, UserRow, Settings } from '../api';
 import { Countdown } from '../components/Countdown';
 import { PhaseBadge } from '../components/PhaseBadge';
@@ -15,13 +15,6 @@ export function Dashboard({ user, onLogout }: Props) {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [me, setMe] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await api.auth.logout();
-    onLogout();
-    navigate('/login');
-  };
 
   useEffect(() => {
     Promise.all([
@@ -105,20 +98,6 @@ export function Dashboard({ user, onLogout }: Props) {
         </div>
       )}
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-navy/95 backdrop-blur border-t border-white/10 flex">
-        <Link to="/" className="flex-1 py-4 text-center text-xs text-orange font-medium">Home</Link>
-        <Link to="/rate" className="flex-1 py-4 text-center text-xs text-white/50 font-medium">Rate</Link>
-        {phase !== 'submission' && (
-          <Link to="/reveal" className="flex-1 py-4 text-center text-xs text-white/50 font-medium">Reveal</Link>
-        )}
-        <Link to="/leaderboard" className="flex-1 py-4 text-center text-xs text-white/50 font-medium">Board</Link>
-        {user.isAdmin && (
-          <Link to="/admin" className="flex-1 py-4 text-center text-xs text-white/50 font-medium">Admin</Link>
-        )}
-        <button onClick={handleLogout} className="flex-1 py-4 text-center text-xs text-white/30 font-medium hover:text-orange transition-colors">
-          Log out
-        </button>
-      </nav>
     </div>
   );
 }

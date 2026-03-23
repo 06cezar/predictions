@@ -9,6 +9,7 @@ import { Rate } from './pages/Rate';
 import { Reveal } from './pages/Reveal';
 import { Leaderboard } from './pages/Leaderboard';
 import { Admin } from './pages/Admin';
+import { Navbar } from './components/Navbar';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -49,6 +50,7 @@ function App() {
           <Route path="*" element={<Navigate to="/login" />} />
         )}
       </Routes>
+      {user && <Navbar user={user} onLogout={() => setUser(null)} />}
     </BrowserRouter>
   );
 }

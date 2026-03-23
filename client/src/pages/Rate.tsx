@@ -5,12 +5,28 @@ import { PredictionCard } from '../components/PredictionCard';
 
 export function Rate() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [myPredictionsCount, setMyPredictionsCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [phase, setPhase] = useState<string>('submission');
 
   useEffect(() => {
-    api.predictions.toRate()
-      .then(setPredictions)
-      .finally(() => setLoading(false));
+    Promise.all([
+      api.predictions.toRate(),
+      api.settings.get(),
+      api.predictions.mine(),
+    ]).then(([preds, s, mine]) => {
+      setPredictions(preds);
+      setPhase(s.currentPhase);
+      setMyPredictionsCount(mine.length);
+    }).finally(() => setLoading(false));
+  }, []);
+
+  // Poll phase every 10s so UI updates if admin changes phase while user is on this page
+  useEffect(() => {
+    const interval = setInterval(() => {
+      api.settings.get().then(s => setPhase(s.currentPhase)).catch(() => {});
+    }, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const rated = predictions.filter(p => p.myRating !== null).length;
@@ -36,7 +52,17 @@ export function Rate() {
         </div>
       </div>
 
-      {predictions.length > 0 && (
+      {phase !== 'submission' && (
+        <div className="card mb-4 flex gap-3 items-center border border-orange/20">
+          <span className="text-2xl">🔒</span>
+          <div>
+            <p className="font-medium text-sm text-white/90">Rating is closed</p>
+            <p className="text-xs text-white/40 mt-0.5">Predictions can only be rated during the submission phase.</p>
+          </div>
+        </div>
+      )}
+
+      {predictions.length > 0 && phase === 'submission' && (
         <div className="rounded-2xl bg-violet/10 border border-violet/20 px-4 py-3 mb-6 flex gap-3 items-start">
           <span className="text-lg mt-0.5">🎯</span>
           <p className="text-sm text-white/70 leading-relaxed">
@@ -49,9 +75,20 @@ export function Rate() {
         <div className="text-center py-12 text-white/50">Loading...</div>
       ) : predictions.length === 0 ? (
         <div className="card text-center py-12">
-          <p className="font-display text-3xl mb-3">🌟</p>
-          <p className="text-white font-medium mb-2">All caught up!</p>
-          <p className="text-white/50 text-sm">No predictions to rate right now.</p>
+          {myPredictionsCount === 0 ? (
+            <>
+              <p className="font-display text-3xl mb-3">✍️</p>
+              <p className="text-white font-medium mb-2">Write your predictions first</p>
+              <p className="text-white/50 text-sm">You can only rate predictions about people you've already written a prediction for.</p>
+              <Link to="/" className="btn-secondary mt-4 inline-block text-sm px-4 py-2">Go write predictions →</Link>
+            </>
+          ) : (
+            <>
+              <p className="font-display text-3xl mb-3">🌟</p>
+              <p className="text-white font-medium mb-2">All caught up!</p>
+              <p className="text-white/50 text-sm">No predictions to rate right now.</p>
+            </>
+          )}
         </div>
       ) : (
         <div className="space-y-4">

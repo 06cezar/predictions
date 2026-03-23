@@ -1,12 +1,17 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { users, predictions, outcomes, ratings, predictionHistory } from '../schema';
+import { users, predictions, outcomes, ratings, predictionHistory, settings } from '../schema';
 import { eq } from 'drizzle-orm';
 import { requireAuth } from '../auth';
 
 const router = Router();
 
 router.get('/', requireAuth, (req, res) => {
+  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
+  const threshold = s.ratingThreshold;
+  const tier1 = Math.floor(threshold * 0.25); // e.g. 10 for threshold=40
+  const tier2 = Math.floor(threshold * 0.5);  // e.g. 20 for threshold=40
+
   const allUsers = db.select().from(users).all();
 
   const board = allUsers.map(u => {
@@ -25,16 +30,14 @@ router.get('/', requireAuth, (req, res) => {
           .where(eq(ratings.predictionId, p.id)).all();
         let bonus: number;
         if (ratingRows.length > 0) {
-          const avg = ratingRows.reduce((s, r) => s + r.score, 0) / ratingRows.length;
-          // Bonus tiers: lower rating = bolder prediction = more points
-          if (avg < 10)       bonus = 4.0;
-          else if (avg < 25)  bonus = 3.0;
-          else if (avg < 50)  bonus = 2.0;
-          else                bonus = 1.0;
+          const avg = ratingRows.reduce((r, row) => r + row.score, 0) / ratingRows.length;
+          if (avg < tier1)        bonus = 4.0;
+          else if (avg < tier2)   bonus = 3.0;
+          else if (avg < threshold) bonus = 2.0;
+          else                    bonus = 1.0;
         } else {
           bonus = 1.0;
         }
-        // Penalty: -0.5 per edit, minimum 0.5
         const penalty = editCount * 0.5;
         totalWeighted += Math.max(0.5, bonus - penalty);
       }
@@ -48,9 +51,9 @@ router.get('/', requireAuth, (req, res) => {
     };
   });
 
-  board.sort((a, b) => b.score - a.score || b.weightedScore - a.weightedScore);
+  board.sort((a, b) => b.weightedScore - a.weightedScore || b.score - a.score);
 
-  res.json(board.map((u, i) => ({ ...u, rank: i + 1 })));
+  res.json(board.map((u, i) => ({ ...u, rank: i + 1, threshold, tier1, tier2 })));
 });
 
 export default router;

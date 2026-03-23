@@ -11,6 +11,9 @@ router.post('/', requireAuth, (req, res) => {
   if (s.currentPhase === 'submission') {
     return res.status(403).json({ error: 'Outcomes not available during submission phase' });
   }
+  if (s.currentPhase === 'done') {
+    return res.status(403).json({ error: 'Outcomes are locked - game is over' });
+  }
 
   const me = getCurrentUser(req)!;
   const { prediction_id, happened } = req.body;

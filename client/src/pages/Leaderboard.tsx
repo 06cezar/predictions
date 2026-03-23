@@ -22,12 +22,17 @@ function exportCSV(entries: LeaderboardEntry[]) {
 
 export function Leaderboard() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [tiers, setTiers] = useState({ threshold: 40, tier1: 10, tier2: 20 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.leaderboard.get()
-      .then(setEntries)
-      .finally(() => setLoading(false));
+    api.leaderboard.get().then(data => {
+      setEntries(data);
+      if (data.length > 0) {
+        const { threshold, tier1, tier2 } = data[0] as any;
+        if (threshold) setTiers({ threshold, tier1, tier2 });
+      }
+    }).finally(() => setLoading(false));
   }, []);
 
   return (
@@ -43,6 +48,19 @@ export function Leaderboard() {
             ↓ Export
           </button>
         )}
+      </div>
+
+      <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 mb-6 space-y-1.5">
+        <p className="text-sm font-medium text-white/80">🏆 How scoring works</p>
+        <ul className="text-xs text-white/50 space-y-1">
+          <li>· Predictions that <span className="text-white/70 font-medium">didn't come true score 0</span> - bonuses and penalties only apply to correct predictions.</li>
+          <li>· <span className="text-white/70 font-medium">Score</span> - raw count of predictions that came true.</li>
+          <li>· <span className="text-white/70 font-medium">Weighted score</span> - the actual ranking. The lower the avg rating on a correct prediction, the more points:</li>
+          <li className="pl-3">
+            under {tiers.tier1}% → <span className="text-amber font-medium">4 pts</span> · {tiers.tier1}-{tiers.tier2}% → <span className="text-amber font-medium">3 pts</span> · {tiers.tier2}-{tiers.threshold}% → <span className="text-amber font-medium">2 pts</span> · {tiers.threshold}%+ → <span className="text-amber font-medium">1 pt</span>
+          </li>
+          <li>· Each edit costs <span className="text-orange font-medium">-0.5 pts</span>, minimum 0.5 pts - only counts if the prediction came true.</li>
+        </ul>
       </div>
 
       {loading ? (

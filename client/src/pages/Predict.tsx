@@ -25,7 +25,7 @@ export function Predict() {
     Promise.all([
       api.users.list(),
       api.predictions.mine(),
-      api.admin.settings().catch(() => null),
+      api.settings.get(),
     ]).then(([users, mine, s]) => {
       const target = users.find(u => u.id === parseInt(userId!));
       if (!target) { navigate('/'); return; }
@@ -68,13 +68,24 @@ export function Predict() {
   if (loading) return <div className="min-h-screen flex items-center justify-center"><p className="text-white/50">Loading...</p></div>;
 
   return (
-    <div className="min-h-screen p-4 max-w-2xl mx-auto">
+    <div className="min-h-screen p-4 pb-24 max-w-2xl mx-auto">
       <div className="flex items-center gap-4 py-6 mb-6">
         <Link to="/" className="btn-ghost text-sm px-3">← Back</Link>
         <h1 className="font-display text-2xl font-bold">
           Predict {targetUser?.name}
         </h1>
       </div>
+
+      {!isSubmissionClosed && (
+        <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-4 space-y-1.5">
+          <p className="text-sm font-medium text-white/80">💡 Tips for a good prediction</p>
+          <ul className="text-xs text-white/50 space-y-1 list-none">
+            <li>· Aim for something <span className="text-white/70">non-obvious</span> - if everyone knows it'll happen, you score fewer points.</li>
+            <li>· Others will vote the probability it comes true. Predictions rated <span className="text-amber font-medium">under {threshold}%</span> score more if they're right.</li>
+            <li>· You can edit anytime, but <span className="text-orange font-medium">each edit costs -0.5 pts on the leaderboard</span> - only if your prediction comes true.</li>
+          </ul>
+        </div>
+      )}
 
       {isSubmissionClosed && (
         <div className="bg-orange/20 border border-orange/30 rounded-xl px-4 py-3 mb-4 text-orange text-sm">

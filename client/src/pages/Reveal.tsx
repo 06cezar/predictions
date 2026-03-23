@@ -7,11 +7,16 @@ export function Reveal() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [phase, setPhase] = useState<string>('reveal');
 
   useEffect(() => {
-    api.predictions.aboutMe()
-      .then(setPredictions)
-      .catch(err => setError(err.message))
+    Promise.all([
+      api.predictions.aboutMe(),
+      api.settings.get(),
+    ]).then(([preds, s]) => {
+      setPredictions(preds);
+      setPhase(s.currentPhase);
+    }).catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
@@ -28,10 +33,29 @@ export function Reveal() {
       <div className="flex items-center gap-4 py-6 mb-6">
         <Link to="/" className="btn-ghost text-sm px-3">← Back</Link>
         <div>
-          <h1 className="font-display text-2xl font-bold">Your Predictions</h1>
-          <p className="text-white/40 text-sm">What others predicted for you</p>
+          <h1 className="font-display text-2xl font-bold">Predictions About You</h1>
+          <p className="text-white/40 text-sm">What others thought would happen</p>
         </div>
       </div>
+
+      {phase === 'done' && (
+        <div className="card mb-4 flex gap-3 items-center border border-orange/20">
+          <span className="text-2xl">🏁</span>
+          <div>
+            <p className="font-medium text-sm text-white/90">Game over - outcomes are locked</p>
+            <p className="text-xs text-white/40 mt-0.5">You can no longer mark predictions as happened or not.</p>
+          </div>
+        </div>
+      )}
+
+      {phase === 'reveal' && predictions.length > 0 && (
+        <div className="rounded-2xl bg-violet/10 border border-violet/20 px-4 py-3 mb-6 flex gap-3 items-start">
+          <span className="text-lg mt-0.5">👁️</span>
+          <p className="text-sm text-white/70 leading-relaxed">
+            These are the predictions others made about you. <span className="text-white font-medium">Mark each one</span> as happened or not - this affects the final leaderboard scores.
+          </p>
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-12 text-white/50">Loading...</div>
@@ -53,7 +77,7 @@ export function Reveal() {
               key={p.id}
               prediction={p}
               showOutcome
-              onOutcome={handleOutcome}
+              onOutcome={phase === 'done' ? undefined : handleOutcome}
             />
           ))}
         </div>

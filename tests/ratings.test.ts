@@ -7,6 +7,7 @@ import {
   createRating,
   createTestApp,
   loginAs,
+  setPhase,
 } from './helpers';
 
 describe('Ratings routes', () => {
@@ -45,6 +46,8 @@ describe('Ratings routes', () => {
     const charlie = createUser(db, 'Charlie', 'token-charlie');
 
     const pred = createPrediction(db, alice.id, bob.id, 'Bob will succeed');
+    // Charlie must have written a prediction for Bob to see it in to-rate
+    createPrediction(db, charlie.id, bob.id, 'Bob will also succeed');
     createRating(db, pred.id, charlie.id, 50); // Existing rating
 
     const charlieAgent = request.agent(app);
@@ -171,6 +174,34 @@ describe('Ratings routes', () => {
       score: 50,
     });
 
+    expect(res.status).toBe(403);
+  });
+
+  it('Cannot rate during reveal phase → 403', async () => {
+    const alice = createUser(db, 'Alice', 'token-alice');
+    const bob = createUser(db, 'Bob', 'token-bob');
+    const charlie = createUser(db, 'Charlie', 'token-charlie');
+    const pred = createPrediction(db, alice.id, bob.id, 'Bob will succeed');
+    setPhase(db, 'reveal');
+
+    const charlieAgent = request.agent(app);
+    await loginAs(charlieAgent, 'token-charlie');
+
+    const res = await charlieAgent.post('/api/ratings').send({ prediction_id: pred.id, score: 50 });
+    expect(res.status).toBe(403);
+  });
+
+  it('Cannot rate during done phase → 403', async () => {
+    const alice = createUser(db, 'Alice', 'token-alice');
+    const bob = createUser(db, 'Bob', 'token-bob');
+    const charlie = createUser(db, 'Charlie', 'token-charlie');
+    const pred = createPrediction(db, alice.id, bob.id, 'Bob will succeed');
+    setPhase(db, 'done');
+
+    const charlieAgent = request.agent(app);
+    await loginAs(charlieAgent, 'token-charlie');
+
+    const res = await charlieAgent.post('/api/ratings').send({ prediction_id: pred.id, score: 50 });
     expect(res.status).toBe(403);
   });
 
