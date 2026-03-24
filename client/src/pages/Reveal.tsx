@@ -8,6 +8,8 @@ export function Reveal() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [phase, setPhase] = useState<string>('reveal');
+  const [revealDeadline, setRevealDeadline] = useState<string | null>(null);
+  const [deadlinePassed, setDeadlinePassed] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -16,9 +18,21 @@ export function Reveal() {
     ]).then(([preds, s]) => {
       setPredictions(preds);
       setPhase(s.currentPhase);
+      setRevealDeadline(s.revealDeadline ?? null);
+      if (s.revealDeadline && new Date() >= new Date(s.revealDeadline)) {
+        setDeadlinePassed(true);
+      }
     }).catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!revealDeadline || deadlinePassed) return;
+    const ms = new Date(revealDeadline).getTime() - Date.now();
+    if (ms <= 0) { setDeadlinePassed(true); return; }
+    const t = setTimeout(() => setDeadlinePassed(true), ms);
+    return () => clearTimeout(t);
+  }, [revealDeadline, deadlinePassed]);
 
   const handleOutcome = async (id: number, happened: boolean | null) => {
     try {
@@ -38,17 +52,17 @@ export function Reveal() {
         </div>
       </div>
 
-      {phase === 'done' && (
+      {(phase === 'done' || deadlinePassed) && (
         <div className="card mb-4 flex gap-3 items-center border border-orange/20">
           <span className="text-2xl">🏁</span>
           <div>
-            <p className="font-medium text-sm text-white/90">Game over - outcomes are locked</p>
+            <p className="font-medium text-sm text-white/90">{phase === 'done' ? 'Game over - outcomes are locked' : 'Time\'s up - outcomes are locked'}</p>
             <p className="text-xs text-white/40 mt-0.5">You can no longer mark predictions as happened or not.</p>
           </div>
         </div>
       )}
 
-      {phase === 'reveal' && predictions.length > 0 && (
+      {phase === 'reveal' && !deadlinePassed && predictions.length > 0 && (
         <div className="rounded-2xl bg-violet/10 border border-violet/20 px-4 py-3 mb-6 flex gap-3 items-start">
           <span className="text-lg mt-0.5">👁️</span>
           <p className="text-sm text-white/70 leading-relaxed">
@@ -77,7 +91,7 @@ export function Reveal() {
               key={p.id}
               prediction={p}
               showOutcome
-              onOutcome={phase === 'done' ? undefined : handleOutcome}
+              onOutcome={phase === 'done' || deadlinePassed ? undefined : handleOutcome}
             />
           ))}
         </div>

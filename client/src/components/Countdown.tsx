@@ -17,7 +17,8 @@ function formatTime(ms: number) {
   let display = '';
   if (days > 0) display = `${days}d ${hours}h ${minutes}m`;
   else if (hours > 0) display = `${hours}h ${minutes}m ${seconds}s`;
-  else display = `${minutes}m ${seconds}s`;
+  else if (minutes > 0) display = `${minutes}m ${seconds}s`;
+  else display = `${seconds}s`;
 
   let warning: 'day' | 'hours' | null = null;
   if (ms < 2 * 60 * 60 * 1000) warning = 'hours';

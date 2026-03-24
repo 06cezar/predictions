@@ -196,7 +196,7 @@ export function Leaderboard() {
                       {lastMinute.authorName && <>by <span className="text-white/70">{lastMinute.authorName}</span> </>}
                       about <span className="text-white/70">{lastMinute.targetName}</span>
                     </span>
-                    <span className="text-orange font-medium">{new Date(lastMinute.updatedAt).toLocaleString()}</span>
+                    <span className="text-orange font-medium">{new Date(lastMinute.updatedAt).toLocaleString(undefined, { hour12: false })}</span>
                   </div>
                 </div>
               )}

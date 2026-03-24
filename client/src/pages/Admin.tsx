@@ -4,6 +4,13 @@ import { api, Settings } from '../api';
 
 type Tab = 'users' | 'predictions' | 'settings';
 
+const toLocalInput = (iso: string | null | undefined): string => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 export function Admin() {
   const [tab, setTab] = useState<Tab>('users');
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
@@ -418,7 +425,7 @@ export function Admin() {
                 <div className="border-t border-white/10 pt-3 space-y-2">
                   {p.history.map((h: any) => (
                     <div key={h.id} className="text-xs text-white/40 bg-white/5 rounded-lg p-3">
-                      <p className="text-white/60 mb-1">{new Date(h.editedAt).toLocaleString()}</p>
+                      <p className="text-white/60 mb-1">{new Date(h.editedAt.replace(' ', 'T') + 'Z').toLocaleString(undefined, { hour12: false })}</p>
                       <p>{h.oldText}</p>
                     </div>
                   ))}
@@ -473,7 +480,7 @@ export function Admin() {
               <label className="block text-sm text-white/60 mb-2">Submission Deadline</label>
               <input
                 type="datetime-local"
-                value={settings.submissionDeadline?.slice(0, 16) || ''}
+                value={toLocalInput(settings.submissionDeadline)}
                 onChange={e => handleSettingChange('submissionDeadline', e.target.value ? new Date(e.target.value).toISOString() : null)}
                 className="input"
               />
@@ -482,7 +489,7 @@ export function Admin() {
               <label className="block text-sm text-white/60 mb-2">Reveal Deadline</label>
               <input
                 type="datetime-local"
-                value={settings.revealDeadline?.slice(0, 16) || ''}
+                value={toLocalInput(settings.revealDeadline)}
                 onChange={e => handleSettingChange('revealDeadline', e.target.value ? new Date(e.target.value).toISOString() : null)}
                 className="input"
               />

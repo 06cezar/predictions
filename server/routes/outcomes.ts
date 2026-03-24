@@ -14,6 +14,9 @@ router.post('/', requireAuth, (req, res) => {
   if (s.currentPhase === 'done') {
     return res.status(403).json({ error: 'Outcomes are locked - game is over' });
   }
+  if (s.revealDeadline && new Date() >= new Date(s.revealDeadline)) {
+    return res.status(403).json({ error: 'Reveal phase has ended - outcomes are locked' });
+  }
 
   const me = getCurrentUser(req)!;
   const { prediction_id, happened } = req.body;
