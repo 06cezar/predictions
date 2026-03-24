@@ -688,7 +688,7 @@ export function Admin() {
                 { key: 'first', emoji: '🌅', label: 'First to Submit' },
               ].map(({ key, emoji, label }) => {
                 const val = previewHof[key];
-                if (!val) return (
+                if (!val || (Array.isArray(val) && val.length === 0)) return (
                   <div key={key} className="card flex items-center gap-3 opacity-40">
                     <span className="text-xl">{emoji}</span>
                     <div>
@@ -697,7 +697,7 @@ export function Admin() {
                     </div>
                   </div>
                 );
-                const names = Array.isArray(val) ? val.map((v: any) => v.name || `${v.user1?.name} & ${v.user2?.name}`).join(', ') : val.name || val.text || val.userName || (val.user1 && `${val.user1.name} & ${val.user2?.name}`);
+                const names = Array.isArray(val) ? val.map((v: any) => v.name || (v.userA && v.userB ? `${v.userA} & ${v.userB}` : v.names?.join(', ') || '')).join(', ') : val.names?.join(', ') || val.name || val.text || '';
                 const detail = Array.isArray(val) ? null : val.avgRating != null ? `${val.avgRating}% avg` : val.count != null ? `${val.count}x` : val.editCount != null ? `${val.editCount} edits` : null;
                 return (
                   <div key={key} className="card flex items-center gap-3">
