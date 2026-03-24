@@ -24,7 +24,7 @@ type HofCard = { text: string; authorName: string | null; targetName: string; av
 
 export function Leaderboard() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [tiers, setTiers] = useState({ threshold: 40, tier1: 10, tier2: 20 });
+  const [tiers, setTiers] = useState({ threshold: 40, tier1: 10, tier2: 20, tier3: 30 });
   const [loading, setLoading] = useState(true);
   const [locked, setLocked] = useState(false);
   const [courageous, setCourageous] = useState<HofCard>(undefined);
@@ -52,8 +52,8 @@ export function Leaderboard() {
     api.leaderboard.get().then(data => {
       setEntries(data);
       if (data.length > 0) {
-        const { threshold, tier1, tier2 } = data[0] as any;
-        if (threshold) setTiers({ threshold, tier1, tier2 });
+        const { threshold, tier1, tier2, tier3 } = data[0] as any;
+        if (threshold) setTiers({ threshold, tier1, tier2, tier3 });
       }
       api.leaderboard.mostCourageous().then(setCourageous).catch(() => {});
       api.leaderboard.biggestMiss().then(setBiggestMiss).catch(() => {});
@@ -107,7 +107,7 @@ export function Leaderboard() {
           <li>· <span className="text-white/70 font-medium">Score</span> - raw count of predictions that came true.</li>
           <li>· <span className="text-white/70 font-medium">Weighted score</span> - the actual ranking. The lower the avg rating on a correct prediction, the more points:</li>
           <li className="pl-3">
-            under {tiers.tier1}% → <span className="text-amber font-medium">4 pts</span> · {tiers.tier1}-{tiers.tier2}% → <span className="text-amber font-medium">3 pts</span> · {tiers.tier2}-{tiers.threshold}% → <span className="text-amber font-medium">2 pts</span> · {tiers.threshold}%+ → <span className="text-amber font-medium">1 pt</span>
+            under {tiers.tier1}% → <span className="text-amber font-medium">5 pts</span> · {tiers.tier1}-{tiers.tier2}% → <span className="text-amber font-medium">4 pts</span> · {tiers.tier2}-{tiers.tier3}% → <span className="text-amber font-medium">3 pts</span> · {tiers.tier3}-{tiers.threshold}% → <span className="text-amber font-medium">2 pts</span> · {tiers.threshold}%+ → <span className="text-amber font-medium">1 pt</span>
           </li>
           <li>· Each edit costs <span className="text-orange font-medium">-0.5 pts</span>, minimum 0.5 pts - only counts if the prediction came true.</li>
         </ul>

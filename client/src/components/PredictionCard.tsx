@@ -45,11 +45,11 @@ export function PredictionCard({ prediction, showRating = false, showOutcome = f
       )}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
+          {prediction.authorName && (
+            <p className="text-xs text-amber/70 uppercase tracking-wider mb-1">✍️ {prediction.authorName}</p>
+          )}
           {prediction.targetName && (
             <p className="text-xs text-white/40 uppercase tracking-wider mb-2">About {prediction.targetName}</p>
-          )}
-          {prediction.authorName && (
-            <p className="text-xs text-amber/70 uppercase tracking-wider mb-2">✍️ {prediction.authorName}</p>
           )}
           <p className="text-white/90 leading-relaxed">{prediction.currentText}</p>
         </div>

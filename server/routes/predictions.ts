@@ -136,6 +136,7 @@ router.get('/to-rate', requireAuth, (req, res) => {
     myTargetIds.has(p.targetId)
   );
 
+  const s = getSettings();
   const result = rateable.map(p => {
     const history = db.select().from(predictionHistory)
       .where(eq(predictionHistory.predictionId, p.id)).all();
@@ -148,6 +149,13 @@ router.get('/to-rate', requireAuth, (req, res) => {
       .where(and(eq(ratings.predictionId, p.id), eq(ratings.userId, me.id)))
       .get();
 
+    let authorName: string | undefined;
+    if (!s.anonymousPredictions) {
+      const author = db.select({ name: users.name }).from(users)
+        .where(eq(users.id, p.authorId)).get();
+      authorName = author?.name;
+    }
+
     return {
       id: p.id,
       targetName: target?.name,
@@ -156,6 +164,7 @@ router.get('/to-rate', requireAuth, (req, res) => {
       editCount: history.length,
       avgRating,
       myRating: myRating?.score ?? null,
+      authorName,
     };
   });
 

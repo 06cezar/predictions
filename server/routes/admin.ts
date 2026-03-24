@@ -3,6 +3,7 @@ import { db } from '../db';
 import { users, predictions, predictionHistory, ratings, settings, outcomes } from '../schema';
 import { eq } from 'drizzle-orm';
 import { requireAdmin } from '../auth';
+import { calcScores } from './leaderboard';
 import { nanoid } from 'nanoid';
 
 const router = Router();
@@ -239,6 +240,50 @@ router.post('/phase/reverse', requireAdmin, (req, res) => {
   db.update(settings).set({ currentPhase: prevPhase }).where(eq(settings.id, 1)).run();
 
   res.json({ success: true, newPhase: prevPhase });
+});
+
+router.get('/export/predictions.csv', requireAdmin, (req, res) => {
+  const allPredictions = db.select().from(predictions).all();
+  const allUsers = db.select().from(users).all();
+  const allOutcomes = db.select().from(outcomes).all();
+  const allRatings = db.select().from(ratings).all();
+  const allHistory = db.select().from(predictionHistory).all();
+
+  const userMap = Object.fromEntries(allUsers.map(u => [u.id, u.name]));
+
+  const rows = allPredictions.map(p => {
+    const outcome = allOutcomes.find(o => o.predictionId === p.id);
+    const pRatings = allRatings.filter(r => r.predictionId === p.id);
+    const avgRating = pRatings.length > 0
+      ? Math.round(pRatings.reduce((s, r) => s + r.score, 0) / pRatings.length)
+      : null;
+    const editCount = allHistory.filter(h => h.predictionId === p.id).length;
+
+    return [
+      p.id,
+      userMap[p.authorId] ?? '',
+      userMap[p.targetId] ?? '',
+      `"${(p.currentText ?? '').replace(/"/g, '""')}"`,
+      avgRating ?? '',
+      pRatings.length,
+      editCount,
+      outcome ? (outcome.happened ? 'true' : 'false') : '',
+    ].join(',');
+  });
+
+  const csv = ['ID,Author,Target,Text,Avg Rating,Rating Count,Edit Count,Outcome', ...rows].join('\n');
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="predictions.csv"');
+  res.send(csv);
+});
+
+router.get('/export/scores.csv', requireAdmin, (req, res) => {
+  const scores = calcScores();
+  const rows = scores.map(u => [u.rank, u.name, u.score, u.weightedScore].join(','));
+  const csv = ['Rank,Name,True Predictions,Weighted Score', ...rows].join('\n');
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="scores.csv"');
+  res.send(csv);
 });
 
 router.post('/reset', requireAdmin, (req, res) => {
