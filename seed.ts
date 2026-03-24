@@ -14,11 +14,18 @@ function makeToken(adj: string, noun: string, num: number) {
 async function seed() {
   console.log('🌱 Seeding Predictions database...\n');
 
-  // Clear existing data
+  const forceReseed = process.argv.includes('--force');
   const existingUsers = db.select().from(users).all();
   if (existingUsers.length > 0) {
-    console.log('Database already has data. Skipping seed.');
-    process.exit(0);
+    if (!forceReseed) {
+      console.log('Database already has data. Skipping seed.');
+      process.exit(0);
+    }
+
+    db.delete(ratings).run();
+    db.delete(predictions).run();
+    db.delete(users).run();
+    console.log('Force reseed enabled. Existing users, predictions, and ratings cleared.');
   }
 
   // Create users

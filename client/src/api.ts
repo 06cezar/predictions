@@ -99,6 +99,7 @@ export const api = {
   },
   leaderboard: {
     get: () => request<LeaderboardEntry[]>('/api/leaderboard'),
+    preview: () => request<LeaderboardEntry[]>('/api/leaderboard/preview'),
     mostCourageous: () => request<{ text: string; authorName: string; targetName: string; avg: number } | null>('/api/leaderboard/most-courageous'),
     biggestMiss: () => request<{ text: string; authorName: string; targetName: string; avg: number } | null>('/api/leaderboard/biggest-miss'),
     mostControversial: () => request<{ text: string; authorName: string; targetName: string; avg: number; stdDev: number; individualRatings: number[] } | null>('/api/leaderboard/most-controversial'),

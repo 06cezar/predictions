@@ -95,6 +95,10 @@ export function Leaderboard() {
         )}
       </div>
 
+      {loading ? (
+        <div className="text-center py-12 text-white/50">Loading...</div>
+      ) : (<>
+
       <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 mb-6 space-y-1.5">
         <p className="text-sm font-medium text-white/80">🏆 How scoring works</p>
         <p className="text-xs text-white/40">Points go to the person who <span className="text-white/60">wrote</span> the prediction, not the one it's about.</p>
@@ -176,11 +180,11 @@ export function Leaderboard() {
                     <span className="text-[#a99eff] font-medium">avg {controversial.avg}% - spread ±{controversial.stdDev}%</span>
                   </div>
                   <button onClick={() => setShowRatings(v => !v)} className="text-xs text-white/30 hover:text-white/60 transition-colors">
-                    {showRatings ? '▲ Hide ratings' : `▼ Show individual ratings (${controversial.individualRatings.length})`}
+                    {showRatings ? '▲ Hide ratings' : `▼ Show individual ratings (${controversial.individualRatings?.length ?? 0})`}
                   </button>
                   {showRatings && (
                     <div className="flex flex-wrap gap-1.5 pt-1">
-                      {controversial.individualRatings.map((r, i) => (
+                      {(controversial.individualRatings ?? []).map((r, i) => (
                         <span key={i} className="px-2 py-0.5 rounded-lg bg-white/10 text-xs text-white/70 font-medium">{r}%</span>
                       ))}
                     </div>
@@ -284,9 +288,7 @@ export function Leaderboard() {
         <div className="flex-1 h-px bg-white/10" />
       </div>
 
-      {loading ? (
-        <div className="text-center py-12 text-white/50">Loading...</div>
-      ) : entries.length === 0 ? (
+      {entries.length === 0 ? (
         <div className="card text-center py-12">
           <p className="font-display text-3xl mb-3">🏆</p>
           <p className="text-white/50">No scores yet - mark some outcomes first!</p>
@@ -338,6 +340,9 @@ export function Leaderboard() {
             );
           })}
         </div>
+      )}
+
+      </>
       )}
     </div>
   );

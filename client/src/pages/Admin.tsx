@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api, Settings } from '../api';
 
-type Tab = 'users' | 'predictions' | 'settings';
+type Tab = 'users' | 'predictions' | 'settings' | 'preview';
 
 const toLocalInput = (iso: string | null | undefined): string => {
   if (!iso) return '';
@@ -33,6 +33,8 @@ export function Admin() {
   const [progressMode, setProgressMode] = useState<'submission' | 'rating' | 'outcomes'>('submission');
   const [customToken, setCustomToken] = useState('');
   const [tokenMode, setTokenMode] = useState<'auto' | 'custom'>('auto');
+  const [previewBoard, setPreviewBoard] = useState<any[] | null>(null);
+  const [previewHof, setPreviewHof] = useState<Record<string, any> | null>(null);
 
   useEffect(() => {
     api.users.me().then(me => setMeId(me.id)).catch(() => {});
@@ -170,7 +172,7 @@ export function Admin() {
       </div>
 
       <div className="flex gap-2 mb-6">
-        {(['users', 'predictions', 'settings'] as Tab[]).map(t => (
+        {(['users', 'predictions', 'settings', 'preview'] as Tab[]).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -576,6 +578,124 @@ export function Admin() {
               {resetConfirm ? '⚠️ Click again to confirm reset' : '🗑️ Reset Game'}
             </button>
           </div>
+        </div>
+      )}
+      {tab === 'preview' && (
+        <div className="space-y-4">
+          {/* Score Preview */}
+          <div className="card space-y-3">
+            <h3 className="font-medium">Score Preview</h3>
+            <p className="text-xs text-white/40">Current scores based on outcomes marked so far. Does not affect the real leaderboard.</p>
+            <button
+              onClick={async () => {
+                try {
+                  const board = await api.leaderboard.preview() as any[];
+                  setPreviewBoard(board);
+                } catch (err: any) { alert(err.message); }
+              }}
+              className="btn-primary w-full"
+            >
+              🔄 Calculate Scores
+            </button>
+          </div>
+
+          {previewBoard && (
+            <div className="space-y-2">
+              {previewBoard.length === 0 ? (
+                <div className="card text-center py-8 text-white/40">No scores yet - no outcomes marked.</div>
+              ) : previewBoard.map((u: any) => (
+                <div key={u.id} className="card flex items-center gap-4">
+                  <div className={`font-display text-2xl font-bold w-8 text-center ${u.rank === 1 ? 'text-amber' : u.rank === 2 ? 'text-white/70' : u.rank === 3 ? 'text-orange/70' : 'text-white/30'}`}>
+                    {u.rank === 1 ? '🥇' : u.rank === 2 ? '🥈' : u.rank === 3 ? '🥉' : `#${u.rank}`}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">{u.name}</p>
+                    <p className="text-xs text-white/40">{u.score} true prediction{u.score !== 1 ? 's' : ''}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-display font-bold text-orange text-xl">{u.weightedScore}</p>
+                    <p className="text-xs text-white/30">pts</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Hall of Fame Preview */}
+          <div className="card space-y-3">
+            <h3 className="font-medium">Hall of Fame Preview</h3>
+            <p className="text-xs text-white/40">Preview all Hall of Fame cards based on current outcomes. Only available in reveal/done phase.</p>
+            <button
+              onClick={async () => {
+                try {
+                  const [courageous, miss, controversial, revised, bestFriends, star, joker, lastMinute, first] = await Promise.allSettled([
+                    api.leaderboard.mostCourageous(),
+                    api.leaderboard.biggestMiss(),
+                    api.leaderboard.mostControversial(),
+                    api.leaderboard.mostRevised(),
+                    api.leaderboard.bestFriends(),
+                    api.leaderboard.mrDoesItAll(),
+                    api.leaderboard.mostUnpredictable(),
+                    api.leaderboard.lastMinute(),
+                    api.leaderboard.firstToSubmit(),
+                  ]);
+                  setPreviewHof({
+                    courageous: courageous.status === 'fulfilled' ? courageous.value : null,
+                    miss: miss.status === 'fulfilled' ? miss.value : null,
+                    controversial: controversial.status === 'fulfilled' ? controversial.value : null,
+                    revised: revised.status === 'fulfilled' ? revised.value : null,
+                    bestFriends: bestFriends.status === 'fulfilled' ? bestFriends.value : null,
+                    star: star.status === 'fulfilled' ? star.value : null,
+                    joker: joker.status === 'fulfilled' ? joker.value : null,
+                    lastMinute: lastMinute.status === 'fulfilled' ? lastMinute.value : null,
+                    first: first.status === 'fulfilled' ? first.value : null,
+                  });
+                } catch (err: any) { alert(err.message); }
+              }}
+              className="btn-primary w-full"
+            >
+              🏆 Preview Hall of Fame
+            </button>
+          </div>
+
+          {previewHof && (
+            <div className="space-y-2">
+              {[
+                { key: 'courageous', emoji: '🦁', label: 'Most Courageous' },
+                { key: 'miss', emoji: '💨', label: 'Biggest Miss' },
+                { key: 'controversial', emoji: '🔥', label: 'Most Controversial' },
+                { key: 'revised', emoji: '🔄', label: "Can't Make Up Their Mind" },
+                { key: 'bestFriends', emoji: '🤝', label: 'Best Friends' },
+                { key: 'star', emoji: '⭐', label: 'Star of the Show' },
+                { key: 'joker', emoji: '🃏', label: 'The Joker' },
+                { key: 'lastMinute', emoji: '⚡', label: 'Last Minute' },
+                { key: 'first', emoji: '🌅', label: 'First to Submit' },
+              ].map(({ key, emoji, label }) => {
+                const val = previewHof[key];
+                if (!val) return (
+                  <div key={key} className="card flex items-center gap-3 opacity-40">
+                    <span className="text-xl">{emoji}</span>
+                    <div>
+                      <p className="font-medium text-sm">{label}</p>
+                      <p className="text-xs text-white/40">No data yet</p>
+                    </div>
+                  </div>
+                );
+                const names = Array.isArray(val) ? val.map((v: any) => v.name || `${v.user1?.name} & ${v.user2?.name}`).join(', ') : val.name || val.text || val.userName || (val.user1 && `${val.user1.name} & ${val.user2?.name}`);
+                const detail = Array.isArray(val) ? null : val.avgRating != null ? `${val.avgRating}% avg` : val.count != null ? `${val.count}x` : val.editCount != null ? `${val.editCount} edits` : null;
+                return (
+                  <div key={key} className="card flex items-center gap-3">
+                    <span className="text-xl">{emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm">{label}</p>
+                      <p className="text-xs text-white/60 truncate">{names}</p>
+                    </div>
+                    {detail && <span className="text-xs text-amber flex-shrink-0">{detail}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
