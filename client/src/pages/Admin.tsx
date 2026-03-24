@@ -583,19 +583,14 @@ export function Admin() {
             <h3 className="font-medium">Export Data</h3>
             <p className="text-xs text-white/40">Download game data as CSV files.</p>
             <div className="flex gap-2">
-              <a
-                href="/api/admin/export/predictions.csv"
-                download
-                className="btn-secondary flex-1 text-center text-sm py-2"
-              >
-                📋 Predictions CSV
+              <a href="/api/admin/export/predictions.csv" download className="btn-secondary flex-1 text-center text-sm py-2">
+                📋 Predictions
               </a>
-              <a
-                href="/api/admin/export/scores.csv"
-                download
-                className="btn-secondary flex-1 text-center text-sm py-2"
-              >
-                🏆 Scores CSV
+              <a href="/api/admin/export/scores.csv" download className="btn-secondary flex-1 text-center text-sm py-2">
+                🏆 Scores
+              </a>
+              <a href="/api/admin/export/hof.csv" download className="btn-secondary flex-1 text-center text-sm py-2">
+                ✨ Hall of Fame
               </a>
             </div>
           </div>

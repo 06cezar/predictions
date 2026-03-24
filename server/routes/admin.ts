@@ -242,6 +242,117 @@ router.post('/phase/reverse', requireAdmin, (req, res) => {
   res.json({ success: true, newPhase: prevPhase });
 });
 
+function csvCell(v: any) { return `"${String(v ?? '').replace(/"/g, '""')}"`; }
+
+router.get('/export/hof.csv', requireAdmin, (req, res) => {
+  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
+  const anon = s.anonymousPredictions;
+  const allUsers = db.select().from(users).all();
+  const allPreds = db.select().from(predictions).all();
+  const allOutcomes = db.select().from(outcomes).all();
+  const allRatings = db.select().from(ratings).all();
+  const allHistory = db.select().from(predictionHistory).all();
+
+  const userName = (id: number) => allUsers.find(u => u.id === id)?.name ?? '';
+  const avgRating = (predId: number) => {
+    const rs = allRatings.filter(r => r.predictionId === predId);
+    return rs.length > 0 ? rs.reduce((s, r) => s + r.score, 0) / rs.length : null;
+  };
+
+  const rows: string[][] = [];
+
+  // Most Courageous
+  const truePreds = allPreds.filter(p => allOutcomes.find(o => o.predictionId === p.id)?.happened === true);
+  const withAvg = truePreds.map(p => ({ p, avg: avgRating(p.id) })).filter(x => x.avg !== null) as { p: typeof allPreds[0]; avg: number }[];
+  if (withAvg.length > 0) {
+    withAvg.sort((a, b) => a.avg - b.avg);
+    const best = withAvg[0];
+    rows.push(['Most Courageous', anon ? '?' : userName(best.p.authorId), `About ${userName(best.p.targetId)} - avg ${Math.round(best.avg)}% - ${best.p.currentText}`]);
+  }
+
+  // Biggest Miss
+  const falsePreds = allPreds.filter(p => allOutcomes.find(o => o.predictionId === p.id)?.happened === false);
+  const falseWithAvg = falsePreds.map(p => ({ p, avg: avgRating(p.id) })).filter(x => x.avg !== null) as { p: typeof allPreds[0]; avg: number }[];
+  if (falseWithAvg.length > 0) {
+    falseWithAvg.sort((a, b) => b.avg - a.avg);
+    const best = falseWithAvg[0];
+    rows.push(['Biggest Miss', anon ? '?' : userName(best.p.authorId), `About ${userName(best.p.targetId)} - avg ${Math.round(best.avg)}% - ${best.p.currentText}`]);
+  }
+
+  // Can't Make Up Their Mind
+  let mostRevised: { p: typeof allPreds[0]; editCount: number } | null = null;
+  for (const p of allPreds) {
+    const editCount = allHistory.filter(h => h.predictionId === p.id).length;
+    if (editCount === 0) continue;
+    if (!mostRevised || editCount > mostRevised.editCount || (editCount === mostRevised.editCount && p.id > mostRevised.p.id))
+      mostRevised = { p, editCount };
+  }
+  if (mostRevised) {
+    rows.push(["Can't Make Up Their Mind", anon ? '?' : userName(mostRevised.p.authorId), `About ${userName(mostRevised.p.targetId)} - ${mostRevised.editCount} edits - ${mostRevised.p.currentText}`]);
+  }
+
+  // Star of the Show
+  const starBoard = allUsers.map(u => {
+    const count = allPreds.filter(p => p.targetId === u.id && allOutcomes.find(o => o.predictionId === p.id)?.happened === true).length;
+    return { name: u.name, count };
+  }).filter(u => u.count > 0).sort((a, b) => b.count - a.count);
+  if (starBoard.length > 0) {
+    const top = starBoard[0].count;
+    const winners = starBoard.filter(u => u.count === top);
+    rows.push(['Star of the Show', winners.map(w => w.name).join(', '), `${top} true predictions`]);
+  }
+
+  // The Joker
+  const jokerBoard = allUsers.map(u => {
+    const count = allPreds.filter(p => p.targetId === u.id && allOutcomes.find(o => o.predictionId === p.id)?.happened === true).length;
+    return { name: u.name, count };
+  }).sort((a, b) => a.count - b.count);
+  if (jokerBoard.length > 0 && !(jokerBoard[0].count === 0 && jokerBoard.every(u => u.count === 0))) {
+    const top = jokerBoard[0].count;
+    const winners = jokerBoard.filter(u => u.count === top);
+    rows.push(['The Joker', winners.map(w => w.name).join(', '), `${top} true predictions`]);
+  }
+
+  // Best Friends
+  const friendPairs: { userA: string; userB: string }[] = [];
+  for (let i = 0; i < allUsers.length; i++) {
+    for (let j = i + 1; j < allUsers.length; j++) {
+      const a = allUsers[i]; const b = allUsers[j];
+      let count = 0;
+      for (const [aId, bId] of [[a.id, b.id], [b.id, a.id]]) {
+        const p = allPreds.find(p => p.authorId === aId && p.targetId === bId);
+        if (p && allOutcomes.find(o => o.predictionId === p.id)?.happened === true) count++;
+      }
+      if (count === 2) friendPairs.push({ userA: a.name, userB: b.name });
+    }
+  }
+  if (friendPairs.length > 0) rows.push(['Best Friends', friendPairs.map(p => `${p.userA} & ${p.userB}`).join(', '), '']);
+
+  // Last Minute
+  if (allPreds.length > 0) {
+    const latest = [...allPreds].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))[0];
+    rows.push(['Last Minute', anon ? '?' : userName(latest.authorId), `About ${userName(latest.targetId)} - ${latest.updatedAt} - ${latest.currentText}`]);
+  }
+
+  // First to Submit
+  const firstBoard = allUsers.map(u => {
+    const preds = allPreds.filter(p => p.authorId === u.id);
+    if (preds.length === 0) return null;
+    const lastPredAt = preds.map(p => p.updatedAt ?? '').sort().reverse()[0];
+    return { name: u.name, lastPredAt };
+  }).filter(Boolean) as { name: string; lastPredAt: string }[];
+  if (firstBoard.length > 0) {
+    firstBoard.sort((a, b) => a.lastPredAt.localeCompare(b.lastPredAt));
+    const winners = firstBoard.filter(u => u.lastPredAt === firstBoard[0].lastPredAt);
+    rows.push(['First to Submit', winners.map(w => w.name).join(', '), firstBoard[0].lastPredAt]);
+  }
+
+  const csv = ['Category,Winner,Detail', ...rows.map(r => r.map(csvCell).join(','))].join('\n');
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="hall-of-fame.csv"');
+  res.send(csv);
+});
+
 router.get('/export/predictions.csv', requireAdmin, (req, res) => {
   const allPredictions = db.select().from(predictions).all();
   const allUsers = db.select().from(users).all();
