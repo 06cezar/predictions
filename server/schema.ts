@@ -40,7 +40,9 @@ export const outcomes = sqliteTable('outcomes', {
   happened: integer('happened', { mode: 'boolean' }),
   markedBy: integer('marked_by').notNull().references(() => users.id),
   markedAt: text('marked_at').notNull().default(sql`(datetime('now'))`),
-});
+}, (table) => ({
+  uniqueOutcome: uniqueIndex('unique_outcome').on(table.predictionId),
+}));
 
 export const settings = sqliteTable('settings', {
   id: integer('id').primaryKey(),

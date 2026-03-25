@@ -84,7 +84,9 @@ CREATE TABLE outcomes (
     prediction_id  NUMBER        NOT NULL REFERENCES predictions(id),
     happened       NUMBER(1),    -- NULL = nedecis, 1 = s-a adeverit, 0 = nu s-a adeverit
     marked_by      NUMBER        NOT NULL REFERENCES users(id),   -- adminul care a marcat
-    marked_at      VARCHAR2(30)  DEFAULT (datetime('now')) NOT NULL
+    marked_at      VARCHAR2(30)  DEFAULT (datetime('now')) NOT NULL,
+
+    CONSTRAINT unique_outcome UNIQUE (prediction_id)
 );
 ```
 
