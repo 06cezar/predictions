@@ -110,7 +110,7 @@ export function Predict() {
         <textarea
           value={text}
           onChange={e => setText(e.target.value)}
-          placeholder={`What do you predict for ${targetUser?.name}'s future?`}
+          placeholder={`What do you see happening for ${targetUser?.name} after the May 1st outing?`}
           disabled={!!isSubmissionClosed}
           rows={6}
           className="input resize-none text-base leading-relaxed"

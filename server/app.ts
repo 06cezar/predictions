@@ -1,5 +1,6 @@
 import express from 'express';
 import session from 'express-session';
+import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
 import predictionRoutes from './routes/predictions';
@@ -15,6 +16,22 @@ export function createApp() {
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  // Rate limiting
+  app.use('/api/auth', rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 20,
+    message: { error: 'Too many login attempts, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+  }));
+  app.use('/api', rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 200,
+    message: { error: 'Too many requests, please slow down.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+  }));
 
   // Use SQLite session store in production, MemoryStore in tests
   const sessionOptions: session.SessionOptions = {

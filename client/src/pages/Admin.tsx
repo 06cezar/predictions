@@ -287,7 +287,7 @@ export function Admin() {
                   type="text"
                   value={customToken}
                   onChange={e => setCustomToken(e.target.value)}
-                  placeholder="e.g. brave-lion-42"
+                  placeholder="e.g. penny-sud"
                   className="input flex-1 text-sm font-mono"
                 />
               )}

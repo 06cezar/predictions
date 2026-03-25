@@ -44,7 +44,7 @@ export function Login({ onLogin }: Props) {
               type="text"
               value={token}
               onChange={e => setToken(e.target.value)}
-              placeholder="e.g. lion-sunset-42"
+              placeholder="e.g. stanescu-lata"
               className="input text-center text-lg tracking-wide"
               autoFocus
               autoComplete="off"
