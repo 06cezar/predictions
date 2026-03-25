@@ -64,7 +64,13 @@ export function Leaderboard() {
       api.leaderboard.bestFriends().then(setBestFriends).catch(() => {});
       api.leaderboard.mrDoesItAll().then(setMrDoesItAll).catch(() => {});
       api.leaderboard.mostUnpredictable().then(setMostUnpredictable).catch(() => {});
-    }).catch(() => setLocked(true)).finally(() => setLoading(false));
+    }).catch(() => {
+      setLocked(true);
+      api.settings.get().then(s => {
+        const t = s.ratingThreshold;
+        setTiers({ threshold: t, tier1: Math.floor(t * 0.25), tier2: Math.floor(t * 0.5), tier3: Math.floor(t * 0.75) });
+      }).catch(() => {});
+    }).finally(() => setLoading(false));
   }, []);
 
   if (locked) return (
@@ -77,6 +83,19 @@ export function Leaderboard() {
         <p className="text-4xl">🔒</p>
         <p className="font-medium text-white/80">Results are not out yet</p>
         <p className="text-sm text-white/40">The leaderboard will be revealed when the game is done.</p>
+      </div>
+      <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 mt-6 space-y-1.5">
+        <p className="text-sm font-medium text-white/80">🏆 How scoring works</p>
+        <p className="text-xs text-white/40">Points go to the person who <span className="text-white/60">wrote</span> the prediction, not the one it's about.</p>
+        <ul className="text-xs text-white/50 space-y-1">
+          <li>· Predictions that <span className="text-white/70 font-medium">didn't come true score 0</span> - bonuses and penalties only apply to correct predictions.</li>
+          <li>· <span className="text-white/70 font-medium">Score</span> - raw count of predictions that came true.</li>
+          <li>· <span className="text-white/70 font-medium">Weighted score</span> - the actual ranking. The lower the avg rating on a correct prediction, the more points:</li>
+          <li className="pl-3">
+            under {tiers.tier1}% → <span className="text-amber font-medium">5 pts</span> · {tiers.tier1}-{tiers.tier2}% → <span className="text-amber font-medium">4 pts</span> · {tiers.tier2}-{tiers.tier3}% → <span className="text-amber font-medium">3 pts</span> · {tiers.tier3}-{tiers.threshold}% → <span className="text-amber font-medium">2 pts</span> · {tiers.threshold}%+ → <span className="text-amber font-medium">1 pt</span>
+          </li>
+          <li>· Each edit costs <span className="text-orange font-medium">-0.5 pts</span>, minimum 0.5 pts - only counts if the prediction came true.</li>
+        </ul>
       </div>
     </div>
   );
