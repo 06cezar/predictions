@@ -3,7 +3,8 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from './schema';
 import path from 'path';
 
-const sqlite = new Database(path.join(process.cwd(), 'predictions.db'));
+const dbDir = process.env.NODE_ENV === 'production' ? '/data' : process.cwd();
+const sqlite = new Database(path.join(dbDir, 'predictions.db'));
 sqlite.pragma('journal_mode = WAL');
 sqlite.pragma('foreign_keys = ON');
 

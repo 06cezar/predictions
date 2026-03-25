@@ -1,0 +1,10 @@
+node_modules/
+client/node_modules/
+dist/
+client/dist/
+*.db
+*.db-shm
+*.db-wal
+*.db.backup-*
+*.log
+.env

@@ -42,7 +42,8 @@ export function createApp() {
   };
   if (process.env.NODE_ENV !== 'test') {
     const SQLiteStore = require('connect-sqlite3')(session);
-    sessionOptions.store = new SQLiteStore({ db: 'sessions.db', dir: process.cwd() });
+    const dbDir = process.env.NODE_ENV === 'production' ? '/data' : process.cwd();
+    sessionOptions.store = new SQLiteStore({ db: 'sessions.db', dir: dbDir });
   }
   app.use(session(sessionOptions));
 
