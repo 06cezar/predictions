@@ -44,6 +44,17 @@ export const outcomes = sqliteTable('outcomes', {
   uniqueOutcome: uniqueIndex('unique_outcome').on(table.predictionId),
 }));
 
+export const notifications = sqliteTable('notifications', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull().references(() => users.id),
+  type: text('type').notNull(), // 'prediction_about_you' | 'outcome_marked'
+  authorId: integer('author_id').references(() => users.id),
+  meta: text('meta'), // JSON string for extra data
+  read: integer('read', { mode: 'boolean' }).notNull().default(false),
+  dismissed: integer('dismissed', { mode: 'boolean' }).notNull().default(false),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+});
+
 export const settings = sqliteTable('settings', {
   id: integer('id').primaryKey(),
   currentPhase: text('current_phase', { enum: ['submission', 'reveal', 'done'] }).notNull().default('submission'),

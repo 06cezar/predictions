@@ -10,21 +10,27 @@ interface Props {
   onLogout: () => void;
 }
 
+type Notification = { id: number; type: string; message: string; read: boolean; createdAt: string };
+
 export function Dashboard({ user, onLogout }: Props) {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [me, setMe] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notifs, setNotifs] = useState<Notification[]>([]);
 
   useEffect(() => {
     Promise.all([
       api.users.list(),
       api.settings.get(),
       api.users.me(),
-    ]).then(([userList, s, meData]) => {
+      api.notifications.get(),
+    ]).then(([userList, s, meData, n]) => {
       setUsers(userList);
       setSettings(s);
       setMe(meData);
+      setNotifs(n.items);
+      if (n.unread > 0) api.notifications.readAll().catch(() => {});
     }).finally(() => setLoading(false));
   }, []);
 
@@ -62,6 +68,25 @@ export function Dashboard({ user, onLogout }: Props) {
           <Countdown deadline={deadline} label={phase === 'submission' ? 'Submission' : 'Reveal'} />
         </div>
       ) : null}
+
+      {notifs.length > 0 && (
+        <div className="mb-6 animate-fade-up space-y-2" style={{ animationDelay: '0.08s' }}>
+          <p className="text-xs text-white/40 uppercase tracking-wider font-medium">🔔 Notifications</p>
+          {notifs.map(n => (
+            <div key={n.id} className={`rounded-xl px-4 py-3 border text-sm flex items-center gap-2 ${n.read ? 'bg-white/3 border-white/8 text-white/40' : 'bg-orange/10 border-orange/20 text-white/80'}`}>
+              <span>{n.type === 'outcome_marked' ? '📋' : '🎯'}</span>
+              <span className="flex-1">{n.message}</span>
+              <button
+                onClick={() => {
+                  api.notifications.dismiss(n.id).catch(() => {});
+                  setNotifs(prev => prev.filter(x => x.id !== n.id));
+                }}
+                className="text-white/30 hover:text-white/70 transition-colors text-base leading-none flex-shrink-0"
+              >×</button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {me?.stats && (
         <div className="grid grid-cols-2 gap-3 mb-6 animate-fade-up" style={{ animationDelay: '0.1s' }}>

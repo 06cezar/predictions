@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { predictions, predictionHistory, ratings, settings, users, outcomes } from '../schema';
+import { predictions, predictionHistory, ratings, settings, users, outcomes, notifications } from '../schema';
 import { eq, and, ne, sql } from 'drizzle-orm';
 import { requireAuth, getCurrentUser } from '../auth';
 
@@ -84,6 +84,12 @@ router.post('/', requireAuth, (req, res) => {
     currentText: text.trim(),
   }).returning().get();
 
+  db.insert(notifications).values({
+    userId: parseInt(target_id),
+    type: 'prediction_about_you',
+    authorId: me.id,
+  }).run();
+
   res.json(result);
 });
 
@@ -116,6 +122,16 @@ router.put('/:id', requireAuth, (req, res) => {
     .set({ currentText: text.trim(), updatedAt: new Date().toISOString() })
     .where(eq(predictions.id, predId))
     .returning().get();
+
+  // Replace existing prediction_about_you notification for target
+  db.delete(notifications)
+    .where(and(eq(notifications.userId, pred.targetId), eq(notifications.type, 'prediction_about_you'), eq(notifications.authorId, me.id)))
+    .run();
+  db.insert(notifications).values({
+    userId: pred.targetId,
+    type: 'prediction_about_you',
+    authorId: me.id,
+  }).run();
 
   res.json(updated);
 });

@@ -25,6 +25,18 @@ export function setDb(newDb: typeof _db) {
 export function initDb() {
   // Run column migrations FIRST (before INSERT OR IGNORE that may reference new columns)
   try { sqlite.exec(`ALTER TABLE settings ADD COLUMN anonymous_predictions INTEGER NOT NULL DEFAULT 1`); } catch {}
+  try { sqlite.exec(`CREATE UNIQUE INDEX IF NOT EXISTS unique_outcome ON outcomes(prediction_id)`); } catch {}
+  try { sqlite.exec(`CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    type TEXT NOT NULL,
+    author_id INTEGER REFERENCES users(id),
+    meta TEXT,
+    read INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`); } catch {}
+  try { sqlite.exec(`ALTER TABLE notifications ADD COLUMN meta TEXT`); } catch {}
+  try { sqlite.exec(`ALTER TABLE notifications ADD COLUMN dismissed INTEGER NOT NULL DEFAULT 0`); } catch {}
 
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS users (

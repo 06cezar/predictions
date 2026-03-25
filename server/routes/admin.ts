@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { users, predictions, predictionHistory, ratings, settings, outcomes } from '../schema';
-import { eq } from 'drizzle-orm';
+import { users, predictions, predictionHistory, ratings, settings, outcomes, notifications } from '../schema';
+import { eq, and } from 'drizzle-orm';
 import { requireAdmin } from '../auth';
 import { calcScores } from './leaderboard';
+import { notifyAllUsersPhaseChange } from '../notifications-helper';
 import { nanoid } from 'nanoid';
 
 const router = Router();
@@ -107,10 +108,26 @@ router.get('/predictions', requireAdmin, (req, res) => {
 
 router.delete('/predictions/:id', requireAdmin, (req, res) => {
   const id = parseInt(req.params.id);
+  const pred = db.select().from(predictions).where(eq(predictions.id, id)).get();
   db.delete(outcomes).where(eq(outcomes.predictionId, id)).run();
   db.delete(ratings).where(eq(ratings.predictionId, id)).run();
   db.delete(predictionHistory).where(eq(predictionHistory.predictionId, id)).run();
   db.delete(predictions).where(eq(predictions.id, id)).run();
+  if (pred) {
+    // Remove prediction_about_you notification for target
+    db.delete(notifications)
+      .where(and(eq(notifications.userId, pred.targetId), eq(notifications.type, 'prediction_about_you'), eq(notifications.authorId, pred.authorId)))
+      .run();
+    // Remove outcome_marked notification for author (match by predictionId in meta)
+    const outcomeNotifs = db.select({ id: notifications.id, meta: notifications.meta })
+      .from(notifications)
+      .where(and(eq(notifications.userId, pred.authorId), eq(notifications.type, 'outcome_marked')))
+      .all()
+      .filter(n => { try { return JSON.parse(n.meta ?? '{}').predictionId === id; } catch { return false; } });
+    for (const n of outcomeNotifs) {
+      db.delete(notifications).where(eq(notifications.id, n.id)).run();
+    }
+  }
   res.json({ success: true });
 });
 
@@ -207,6 +224,7 @@ router.post('/phase/set', requireAdmin, (req, res) => {
     return res.status(400).json({ error: 'Invalid phase' });
   }
   db.update(settings).set({ currentPhase: phase }).where(eq(settings.id, 1)).run();
+  notifyAllUsersPhaseChange(phase);
   res.json({ success: true, newPhase: phase });
 });
 
@@ -222,7 +240,7 @@ router.post('/phase/advance', requireAdmin, (req, res) => {
 
   const nextPhase = phases[currentIndex + 1];
   db.update(settings).set({ currentPhase: nextPhase }).where(eq(settings.id, 1)).run();
-
+  notifyAllUsersPhaseChange(nextPhase);
   res.json({ success: true, newPhase: nextPhase });
 });
 
@@ -238,7 +256,7 @@ router.post('/phase/reverse', requireAdmin, (req, res) => {
 
   const prevPhase = phases[currentIndex - 1];
   db.update(settings).set({ currentPhase: prevPhase }).where(eq(settings.id, 1)).run();
-
+  notifyAllUsersPhaseChange(prevPhase);
   res.json({ success: true, newPhase: prevPhase });
 });
 

@@ -110,6 +110,11 @@ export const api = {
     lastMinute: () => request<{ text: string; authorName: string | null; targetName: string; updatedAt: string } | null>('/api/leaderboard/last-minute'),
     firstToSubmit: () => request<{ names: string[]; tied: boolean } | null>('/api/leaderboard/first-to-submit'),
   },
+  notifications: {
+    get: () => request<{ unread: number; items: { id: number; type: string; message: string; read: boolean; createdAt: string }[] }>('/api/notifications'),
+    readAll: () => request('/api/notifications/read-all', { method: 'POST' }),
+    dismiss: (id: number) => request(`/api/notifications/dismiss/${id}`, { method: 'POST' }),
+  },
   admin: {
     users: () => request<any[]>('/api/admin/users'),
     createUser: (name: string, token?: string) => request('/api/admin/users', {

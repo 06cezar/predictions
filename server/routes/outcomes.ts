@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { outcomes, predictions, settings } from '../schema';
+import { outcomes, predictions, settings, notifications, users } from '../schema';
 import { eq, and } from 'drizzle-orm';
 import { requireAuth, getCurrentUser } from '../auth';
 
@@ -39,6 +39,25 @@ router.post('/', requireAuth, (req, res) => {
       predictionId: parseInt(prediction_id),
       happened: happenedVal as boolean | null,
       markedBy: me.id,
+    }).run();
+  }
+
+  // Delete existing outcome_marked notification for this prediction, then insert new one
+  const existingNotifs = db.select({ id: notifications.id, meta: notifications.meta })
+    .from(notifications)
+    .where(and(eq(notifications.userId, pred.authorId), eq(notifications.type, 'outcome_marked')))
+    .all()
+    .filter(n => { try { return JSON.parse(n.meta ?? '{}').predictionId === pred.id; } catch { return false; } });
+  for (const n of existingNotifs) {
+    db.delete(notifications).where(eq(notifications.id, n.id)).run();
+  }
+  if (happenedVal !== null) {
+    const target = db.select({ name: users.name }).from(users).where(eq(users.id, me.id)).get();
+    db.insert(notifications).values({
+      userId: pred.authorId,
+      type: 'outcome_marked',
+      authorId: me.id,
+      meta: JSON.stringify({ targetName: target?.name ?? 'Someone', happened: happenedVal, predictionId: pred.id }),
     }).run();
   }
 
