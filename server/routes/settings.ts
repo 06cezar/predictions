@@ -17,6 +17,7 @@ router.get('/', requireAuth, (req, res) => {
     revealDeadline: s.revealDeadline,
     ratingThreshold: s.ratingThreshold,
     anonymousPredictions: s.anonymousPredictions,
+    bonusActive: s.bonusActive,
   });
 });
 

@@ -55,13 +55,31 @@ export const notifications = sqliteTable('notifications', {
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 });
 
+export const bonusCategories = sqliteTable('bonus_categories', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  points: integer('points').notNull().default(5),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+});
+
+export const bonusVotes = sqliteTable('bonus_votes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  categoryId: integer('category_id').notNull().references(() => bonusCategories.id),
+  voterId: integer('voter_id').notNull().references(() => users.id),
+  nomineeId: integer('nominee_id').notNull().references(() => users.id),
+  rank: integer('rank').notNull(), // 1, 2, 3
+}, (table) => ({
+  uniqueVoteSlot: uniqueIndex('unique_vote_slot').on(table.categoryId, table.voterId, table.rank),
+}));
+
 export const settings = sqliteTable('settings', {
   id: integer('id').primaryKey(),
   currentPhase: text('current_phase', { enum: ['submission', 'reveal', 'done'] }).notNull().default('submission'),
   submissionDeadline: text('submission_deadline'),
   revealDeadline: text('reveal_deadline'),
-  ratingThreshold: integer('rating_threshold').notNull().default(40),
+  ratingThreshold: integer('rating_threshold').notNull().default(50),
   autoAdvancePhase: integer('auto_advance_phase', { mode: 'boolean' }).notNull().default(true),
   adminOverride: integer('admin_override', { mode: 'boolean' }).notNull().default(false),
   anonymousPredictions: integer('anonymous_predictions', { mode: 'boolean' }).notNull().default(true),
+  bonusActive: integer('bonus_active', { mode: 'boolean' }).notNull().default(false),
 });

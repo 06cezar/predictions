@@ -11,10 +11,11 @@ export function Navbar({ user, onLogout }: Props) {
   const location = useLocation();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<string>('submission');
+  const [bonusActive, setBonusActive] = useState(false);
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
-    api.settings.get().then(s => setPhase(s.currentPhase)).catch(() => {});
+    api.settings.get().then(s => { setPhase(s.currentPhase); setBonusActive(s.bonusActive); }).catch(() => {});
   }, [location.pathname]);
 
   useEffect(() => {
@@ -34,6 +35,7 @@ export function Navbar({ user, onLogout }: Props) {
     { to: '/', label: 'Home', icon: '🏠' },
     { to: '/rate', label: 'Rate', icon: '🎯' },
     ...(phase !== 'submission' ? [{ to: '/reveal', label: 'Reveal', icon: '👁️' }] : []),
+    ...(bonusActive ? [{ to: '/bonus', label: 'Bonus', icon: '🎖️' }] : []),
     { to: '/leaderboard', label: 'Board', icon: '🏆' },
     ...(user.isAdmin ? [{ to: '/admin', label: 'Admin', icon: '⚙️' }] : []),
   ];

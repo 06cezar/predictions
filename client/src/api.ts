@@ -40,6 +40,7 @@ export interface Settings {
   autoAdvancePhase: boolean;
   adminOverride: boolean;
   anonymousPredictions: boolean;
+  bonusActive: boolean;
 }
 
 export interface LeaderboardEntry {
@@ -74,7 +75,7 @@ export const api = {
     list: () => request<UserRow[]>('/api/users'),
   },
   settings: {
-    get: () => request<Pick<Settings, 'currentPhase' | 'submissionDeadline' | 'revealDeadline' | 'ratingThreshold' | 'anonymousPredictions'>>('/api/settings'),
+    get: () => request<Pick<Settings, 'currentPhase' | 'submissionDeadline' | 'revealDeadline' | 'ratingThreshold' | 'anonymousPredictions' | 'bonusActive'>>('/api/settings'),
   },
   predictions: {
     mine: () => request<Prediction[]>('/api/predictions/mine'),
@@ -115,6 +116,29 @@ export const api = {
     readAll: () => request('/api/notifications/read-all', { method: 'POST' }),
     dismiss: (id: number) => request(`/api/notifications/dismiss/${id}`, { method: 'POST' }),
   },
+  bonus: {
+    get: () => request<{
+      categories: Array<{
+        id: number;
+        name: string;
+        points: number;
+        myVotes: Array<{ rank: number; nomineeId: number }>;
+        tally?: Record<string, number>;
+        winners?: number[];
+      }>;
+      users: Array<{ id: number; name: string }>;
+      phase: string;
+      bonusActive: boolean;
+    }>('/api/bonus'),
+    vote: (categoryId: number, votes: Array<{ rank: number; nomineeId: number }>) =>
+      request('/api/bonus/vote', { method: 'POST', body: JSON.stringify({ categoryId, votes }) }),
+    createCategory: (name: string, points: number) =>
+      request('/api/bonus/categories', { method: 'POST', body: JSON.stringify({ name, points }) }),
+    updateCategory: (id: number, data: { name?: string; points?: number }) =>
+      request(`/api/bonus/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteCategory: (id: number) =>
+      request(`/api/bonus/categories/${id}`, { method: 'DELETE' }),
+  },
   admin: {
     users: () => request<any[]>('/api/admin/users'),
     createUser: (name: string, token?: string) => request('/api/admin/users', {
@@ -135,5 +159,6 @@ export const api = {
     reversePhase: () => request('/api/admin/phase/reverse', { method: 'POST' }),
     setPhase: (phase: string) => request('/api/admin/phase/set', { method: 'POST', body: JSON.stringify({ phase }) }),
     resetGame: () => request('/api/admin/reset', { method: 'POST' }),
+    toggleBonusActive: () => request<{ bonusActive: boolean }>('/api/admin/bonus-active/toggle', { method: 'POST' }),
   },
 };

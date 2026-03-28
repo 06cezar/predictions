@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { users, predictions, outcomes, ratings, predictionHistory, settings } from '../schema';
+import { users, predictions, outcomes, ratings, predictionHistory, settings, bonusCategories, bonusVotes } from '../schema';
 import { eq } from 'drizzle-orm';
 import { requireAuth, requireAdmin, getCurrentUser } from '../auth';
 
@@ -13,6 +13,28 @@ export function calcScores() {
   const tier2 = Math.floor(threshold * 0.5);
   const tier3 = Math.floor(threshold * 0.75);
   const allUsers = db.select().from(users).all();
+
+  // Calculate bonus points per user (from bonus voting)
+  const bonusPointsMap: Record<number, number> = {};
+  const allBonusCats = db.select().from(bonusCategories).all();
+  for (const cat of allBonusCats) {
+    const votes = db.select().from(bonusVotes).where(eq(bonusVotes.categoryId, cat.id)).all();
+    const tally: Record<number, number> = {};
+    for (const vote of votes) {
+      const pts = 4 - vote.rank;
+      tally[vote.nomineeId] = (tally[vote.nomineeId] ?? 0) + pts;
+    }
+    const maxPts = Object.values(tally).length > 0 ? Math.max(...Object.values(tally)) : 0;
+    if (maxPts > 0) {
+      const winnerIds = Object.entries(tally)
+        .filter(([, p]) => p === maxPts)
+        .map(([id]) => parseInt(id));
+      const pointsEach = cat.points / winnerIds.length;
+      for (const wid of winnerIds) {
+        bonusPointsMap[wid] = (bonusPointsMap[wid] ?? 0) + pointsEach;
+      }
+    }
+  }
 
   const board = allUsers.map(u => {
     const myPreds = db.select().from(predictions).where(eq(predictions.authorId, u.id)).all();
@@ -40,7 +62,9 @@ export function calcScores() {
         totalWeighted += Math.max(0.5, bonus - editCount * 0.5);
       }
     }
-    return { id: u.id, name: u.name, score: happened, weightedScore: Math.round(totalWeighted * 10) / 10 };
+    const bonusW = Math.round((bonusPointsMap[u.id] ?? 0) * 10) / 10;
+    const finalW = Math.round((totalWeighted + bonusW) * 10) / 10;
+    return { id: u.id, name: u.name, score: happened, weightedScore: finalW, bonusPoints: bonusW };
   });
 
   board.sort((a, b) => b.weightedScore - a.weightedScore || b.score - a.score);

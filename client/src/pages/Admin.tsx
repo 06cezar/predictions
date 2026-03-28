@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api, Settings } from '../api';
 
-type Tab = 'users' | 'predictions' | 'settings' | 'preview';
+type Tab = 'users' | 'predictions' | 'settings' | 'bonus' | 'preview';
 
 const toLocalInput = (iso: string | null | undefined): string => {
   if (!iso) return '';
@@ -24,6 +24,7 @@ export function Admin() {
   const [reverseConfirm, setReverseConfirm] = useState(false);
   const [phaseConfirm, setPhaseConfirm] = useState<string | null>(null);
   const [resetConfirm, setResetConfirm] = useState(false);
+  const [bonusDoneWarning, setBonusDoneWarning] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [expandedPred, setExpandedPred] = useState<number | null>(null);
   const [meId, setMeId] = useState<number | null>(null);
@@ -35,6 +36,13 @@ export function Admin() {
   const [tokenMode, setTokenMode] = useState<'auto' | 'custom'>('auto');
   const [previewBoard, setPreviewBoard] = useState<any[] | null>(null);
   const [previewHof, setPreviewHof] = useState<Record<string, any> | null>(null);
+  const [bonusCats, setBonusCats] = useState<any[]>([]);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatPoints, setNewCatPoints] = useState(5);
+  const [editingCat, setEditingCat] = useState<number | null>(null);
+  const [editCatName, setEditCatName] = useState('');
+  const [editCatPoints, setEditCatPoints] = useState(5);
+  const [bonusUsers, setBonusUsers] = useState<any[]>([]);
 
   useEffect(() => {
     api.users.me().then(me => setMeId(me.id)).catch(() => {});
@@ -49,6 +57,10 @@ export function Admin() {
       if (s.status === 'fulfilled') setSettings(s.value as Settings);
       if (st.status === 'fulfilled') setStats(st.value);
     }).finally(() => setLoading(false));
+    api.bonus.get().then(b => {
+      setBonusCats(b.categories);
+      setBonusUsers(b.users);
+    }).catch(() => {});
   }, []);
 
   const handleCreateUser = async () => {
@@ -155,6 +167,32 @@ export function Admin() {
     setTimeout(() => setCopiedToken(null), 2000);
   };
 
+  const handleCreateCat = async () => {
+    if (!newCatName.trim()) return;
+    try {
+      const cat = await api.bonus.createCategory(newCatName.trim(), newCatPoints) as any;
+      setBonusCats(prev => [...prev, { ...cat, myVotes: [], tally: undefined, winners: [] }]);
+      setNewCatName('');
+      setNewCatPoints(5);
+    } catch (err: any) { alert(err.message); }
+  };
+
+  const handleUpdateCat = async (id: number) => {
+    try {
+      await api.bonus.updateCategory(id, { name: editCatName.trim(), points: editCatPoints });
+      setBonusCats(prev => prev.map(c => c.id === id ? { ...c, name: editCatName.trim(), points: editCatPoints } : c));
+      setEditingCat(null);
+    } catch (err: any) { alert(err.message); }
+  };
+
+  const handleDeleteCat = async (id: number) => {
+    if (!confirm('Delete this category and all votes for it?')) return;
+    try {
+      await api.bonus.deleteCategory(id);
+      setBonusCats(prev => prev.filter(c => c.id !== id));
+    } catch (err: any) { alert(err.message); }
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><p className="text-white/50">Loading...</p></div>;
 
   return (
@@ -172,7 +210,7 @@ export function Admin() {
       </div>
 
       <div className="flex gap-2 mb-6">
-        {(['users', 'predictions', 'settings', 'preview'] as Tab[]).map(t => (
+        {(['users', 'predictions', 'settings', 'bonus', 'preview'] as Tab[]).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -453,7 +491,16 @@ export function Admin() {
                 return (
                   <button
                     key={id}
-                    onClick={() => !isActive && handleSetPhase(id)}
+                    onClick={() => {
+                      if (isActive) return;
+                      if (id === 'done' && !settings.bonusActive && !bonusDoneWarning) {
+                        setBonusDoneWarning(true);
+                        setPhaseConfirm(null);
+                      } else {
+                        setBonusDoneWarning(false);
+                        handleSetPhase(id);
+                      }
+                    }}
                     onBlur={() => setPhaseConfirm(null)}
                     disabled={isActive}
                     className={`relative flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all font-medium text-sm
@@ -473,6 +520,32 @@ export function Admin() {
                 );
               })}
             </div>
+            {bonusDoneWarning && (
+              <div className="bg-amber/10 border border-amber/30 rounded-xl px-4 py-3 space-y-2">
+                <p className="text-sm text-amber font-medium">🎖️ Skip Bonus Round?</p>
+                <p className="text-xs text-white/50">Bonus round is not active. Do you want to go to Done without it?</p>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={async () => {
+                      setBonusDoneWarning(false);
+                      try {
+                        const result = await api.admin.setPhase('done') as any;
+                        applyPhase(result.newPhase);
+                      } catch (err: any) { alert(err.message); }
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-orange/20 text-orange hover:bg-orange/30 transition-colors"
+                  >
+                    Skip bonus → Done
+                  </button>
+                  <button
+                    onClick={() => setBonusDoneWarning(false)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
             <p className="text-xs text-white/30 text-center">Click a phase to switch · click again to confirm</p>
           </div>
 
@@ -594,6 +667,132 @@ export function Admin() {
               </a>
             </div>
           </div>
+        </div>
+      )}
+      {tab === 'bonus' && (
+        <div className="space-y-5">
+          {/* Add category form */}
+          <div className="card space-y-3">
+            <h3 className="font-medium">Add Category</h3>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newCatName}
+                onChange={e => setNewCatName(e.target.value)}
+                placeholder="e.g. Best Wingman"
+                className="input flex-1"
+                onKeyDown={e => e.key === 'Enter' && handleCreateCat()}
+              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={newCatPoints}
+                  onChange={e => setNewCatPoints(parseInt(e.target.value) || 1)}
+                  min={1}
+                  max={100}
+                  className="input w-20 text-center"
+                />
+                <span className="text-xs text-white/40">pts</span>
+              </div>
+              <button onClick={handleCreateCat} className="btn-primary">Add</button>
+            </div>
+          </div>
+
+          {/* Bonus active toggle */}
+          {settings && (
+            <div className="card space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">🎖️ Bonus Round</h3>
+                  <p className="text-xs text-white/40 mt-0.5">
+                    {settings.bonusActive ? 'Active - users can vote now' : 'Inactive - activate to open voting'}
+                  </p>
+                </div>
+                <button
+                  onClick={async () => {
+                    try {
+                      const result = await api.admin.toggleBonusActive();
+                      setSettings(prev => prev ? { ...prev, bonusActive: result.bonusActive } : prev);
+                    } catch (err: any) { alert(err.message); }
+                  }}
+                  className={`w-12 h-6 rounded-full transition-colors ${settings.bonusActive ? 'bg-amber' : 'bg-white/20'}`}
+                >
+                  <div className={`w-5 h-5 bg-white rounded-full transition-transform mx-0.5 ${settings.bonusActive ? 'translate-x-6' : ''}`} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Categories list */}
+          {bonusCats.length === 0 ? (
+            <div className="card text-center py-8 text-white/30">No categories yet. Add one above.</div>
+          ) : (
+            <div className="space-y-3">
+              {bonusCats.map(cat => {
+                // Compute tally for results preview
+                const tallyEntries = cat.tally
+                  ? Object.entries(cat.tally as Record<string, number>)
+                      .map(([id, pts]) => ({ id: parseInt(id), pts, name: bonusUsers.find((u: any) => u.id === parseInt(id))?.name ?? '?' }))
+                      .sort((a, b) => b.pts - a.pts)
+                  : [];
+                const winnerCount = cat.winners?.length ?? 0;
+                const pointsEach = winnerCount > 0 ? Math.round((cat.points / winnerCount) * 10) / 10 : cat.points;
+
+                return (
+                  <div key={cat.id} className="card space-y-3">
+                    {editingCat === cat.id ? (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={editCatName}
+                          onChange={e => setEditCatName(e.target.value)}
+                          className="input flex-1 text-sm"
+                        />
+                        <input
+                          type="number"
+                          value={editCatPoints}
+                          onChange={e => setEditCatPoints(parseInt(e.target.value) || 1)}
+                          min={1}
+                          className="input w-20 text-center text-sm"
+                        />
+                        <span className="text-xs text-white/40 self-center">pts</span>
+                        <button onClick={() => handleUpdateCat(cat.id)} className="btn-primary text-sm px-3">Save</button>
+                        <button onClick={() => setEditingCat(null)} className="btn-ghost text-sm px-3">Cancel</button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <p className="font-medium">{cat.name}</p>
+                          <p className="text-xs text-white/40">{cat.points} bonus point{cat.points !== 1 ? 's' : ''} for winner</p>
+                        </div>
+                        <button
+                          onClick={() => { setEditingCat(cat.id); setEditCatName(cat.name); setEditCatPoints(cat.points); }}
+                          className="text-sm text-white/40 hover:text-white px-3 py-2"
+                        >Edit</button>
+                        <button
+                          onClick={() => handleDeleteCat(cat.id)}
+                          className="text-orange/60 hover:text-orange text-sm px-3 py-2"
+                        >Delete</button>
+                      </div>
+                    )}
+                    {tallyEntries.length > 0 && (
+                      <div className="border-t border-white/10 pt-2 space-y-1">
+                        <p className="text-xs text-white/30 uppercase tracking-wider">Live tally</p>
+                        {tallyEntries.slice(0, 3).map((entry, i) => (
+                          <div key={entry.id} className={`flex items-center gap-2 text-xs ${cat.winners?.includes(entry.id) ? 'text-amber' : 'text-white/50'}`}>
+                            <span className="w-4">{i + 1}.</span>
+                            <span className="flex-1">{entry.name}</span>
+                            <span>{entry.pts} pts</span>
+                            {cat.winners?.includes(entry.id) && winnerCount > 0 && <span className="text-amber">→ +{pointsEach} bonus</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
       {tab === 'preview' && (

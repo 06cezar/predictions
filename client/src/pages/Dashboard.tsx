@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 import { api, User, UserRow, Settings } from '../api';
 import { Countdown } from '../components/Countdown';
@@ -41,6 +42,7 @@ export function Dashboard({ user, onLogout }: Props) {
   );
 
   const phase = settings?.currentPhase || 'submission';
+  const bonusActive = settings?.bonusActive ?? false;
   const deadline = phase === 'submission'
     ? settings?.submissionDeadline
     : phase === 'reveal'
@@ -54,8 +56,16 @@ export function Dashboard({ user, onLogout }: Props) {
           <h1 className="font-display text-3xl font-bold">Predictions</h1>
           <p className="text-white/40 text-sm mt-1">Welcome back, {user.name}</p>
         </div>
-        <PhaseBadge phase={phase} />
+        <PhaseBadge phase={phase} bonusActive={bonusActive} />
       </div>
+
+      {bonusActive && (
+        <Link to="/bonus" className="card mb-4 text-center py-4 animate-fade-up border border-amber/20 hover:border-amber/40 transition-colors block" style={{ animationDelay: '0.04s' }}>
+          <p className="text-2xl mb-1">🎖️</p>
+          <p className="font-medium text-white/80">Bonus Round is live!</p>
+          <p className="text-xs text-white/40 mt-1">Vote for your top 3 in each category →</p>
+        </Link>
+      )}
 
       {phase === 'done' ? (
         <div className="card mb-6 text-center py-5 animate-fade-up border border-orange/20" style={{ animationDelay: '0.05s' }}>

@@ -7,7 +7,8 @@ import { requireAuth, getCurrentUser } from '../auth';
 const router = Router();
 
 router.get('/me', requireAuth, (req, res) => {
-  const user = getCurrentUser(req)!;
+  const user = getCurrentUser(req);
+  if (!user) return res.status(401).json({ error: 'Not authenticated' });
   const allUsers = db.select({ id: users.id }).from(users).where(eq(users.isAdmin, false)).all();
   const totalTargets = allUsers.filter(u => u.id !== user.id).length;
 

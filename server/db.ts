@@ -38,6 +38,21 @@ export function initDb() {
   )`); } catch {}
   try { sqlite.exec(`ALTER TABLE notifications ADD COLUMN meta TEXT`); } catch {}
   try { sqlite.exec(`ALTER TABLE notifications ADD COLUMN dismissed INTEGER NOT NULL DEFAULT 0`); } catch {}
+  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN bonus_active INTEGER NOT NULL DEFAULT 0`); } catch {}
+  try { sqlite.exec(`CREATE TABLE IF NOT EXISTS bonus_categories (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  points INTEGER NOT NULL DEFAULT 5,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`); } catch {}
+  try { sqlite.exec(`CREATE TABLE IF NOT EXISTS bonus_votes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  category_id INTEGER NOT NULL REFERENCES bonus_categories(id),
+  voter_id INTEGER NOT NULL REFERENCES users(id),
+  nominee_id INTEGER NOT NULL REFERENCES users(id),
+  rank INTEGER NOT NULL,
+  UNIQUE(category_id, voter_id, rank)
+)`); } catch {}
 
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -86,6 +101,6 @@ export function initDb() {
       anonymous_predictions INTEGER NOT NULL DEFAULT 1
     );
     INSERT OR IGNORE INTO settings (id, current_phase, rating_threshold, auto_advance_phase, admin_override)
-    VALUES (1, 'submission', 40, 1, 0);
+    VALUES (1, 'submission', 50, 1, 0);
   `);
 }

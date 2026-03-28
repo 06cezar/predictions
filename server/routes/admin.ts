@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { users, predictions, predictionHistory, ratings, settings, outcomes, notifications } from '../schema';
+import { users, predictions, predictionHistory, ratings, settings, outcomes, notifications, bonusCategories, bonusVotes } from '../schema';
 import { eq, and } from 'drizzle-orm';
 import { requireAdmin } from '../auth';
 import { calcScores } from './leaderboard';
@@ -66,6 +66,12 @@ router.delete('/users/:id', requireAdmin, (req, res) => {
   // Delete any remaining ratings/outcomes by this user (for predictions they didn't author/target)
   db.delete(ratings).where(eq(ratings.userId, id)).run();
   db.delete(outcomes).where(eq(outcomes.markedBy, id)).run();
+  // Delete notifications for or by this user
+  db.delete(notifications).where(eq(notifications.userId, id)).run();
+  db.delete(notifications).where(eq(notifications.authorId, id)).run();
+  // Delete bonus votes by or for this user
+  db.delete(bonusVotes).where(eq(bonusVotes.voterId, id)).run();
+  db.delete(bonusVotes).where(eq(bonusVotes.nomineeId, id)).run();
   db.delete(users).where(eq(users.id, id)).run();
   res.json({ success: true });
 });
@@ -200,7 +206,7 @@ router.get('/settings', requireAdmin, (req, res) => {
 });
 
 router.put('/settings', requireAdmin, (req, res) => {
-  const { currentPhase, submissionDeadline, revealDeadline, ratingThreshold, autoAdvancePhase, adminOverride, anonymousPredictions } = req.body;
+  const { currentPhase, submissionDeadline, revealDeadline, ratingThreshold, autoAdvancePhase, adminOverride, anonymousPredictions, bonusActive } = req.body;
 
   const updates: Record<string, any> = {};
   if (currentPhase !== undefined) updates.currentPhase = currentPhase;
@@ -210,6 +216,7 @@ router.put('/settings', requireAdmin, (req, res) => {
   if (autoAdvancePhase !== undefined) updates.autoAdvancePhase = autoAdvancePhase;
   if (adminOverride !== undefined) updates.adminOverride = adminOverride;
   if (anonymousPredictions !== undefined) updates.anonymousPredictions = anonymousPredictions;
+  if (bonusActive !== undefined) updates.bonusActive = bonusActive;
 
   db.update(settings).set(updates).where(eq(settings.id, 1)).run();
 
@@ -223,7 +230,7 @@ router.post('/phase/set', requireAdmin, (req, res) => {
   if (!phases.includes(phase)) {
     return res.status(400).json({ error: 'Invalid phase' });
   }
-  db.update(settings).set({ currentPhase: phase }).where(eq(settings.id, 1)).run();
+  db.update(settings).set({ currentPhase: phase as any }).where(eq(settings.id, 1)).run();
   notifyAllUsersPhaseChange(phase);
   res.json({ success: true, newPhase: phase });
 });
@@ -232,7 +239,7 @@ router.post('/phase/advance', requireAdmin, (req, res) => {
   const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
 
   const phases: Array<'submission' | 'reveal' | 'done'> = ['submission', 'reveal', 'done'];
-  const currentIndex = phases.indexOf(s.currentPhase);
+  const currentIndex = phases.indexOf(s.currentPhase as any);
 
   if (currentIndex >= phases.length - 1) {
     return res.status(400).json({ error: 'Already in final phase' });
@@ -248,7 +255,7 @@ router.post('/phase/reverse', requireAdmin, (req, res) => {
   const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
 
   const phases: Array<'submission' | 'reveal' | 'done'> = ['submission', 'reveal', 'done'];
-  const currentIndex = phases.indexOf(s.currentPhase);
+  const currentIndex = phases.indexOf(s.currentPhase as any);
 
   if (currentIndex <= 0) {
     return res.status(400).json({ error: 'Already in first phase' });
@@ -258,6 +265,13 @@ router.post('/phase/reverse', requireAdmin, (req, res) => {
   db.update(settings).set({ currentPhase: prevPhase }).where(eq(settings.id, 1)).run();
   notifyAllUsersPhaseChange(prevPhase);
   res.json({ success: true, newPhase: prevPhase });
+});
+
+router.post('/bonus-active/toggle', requireAdmin, (req, res) => {
+  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
+  const newVal = !s.bonusActive;
+  db.update(settings).set({ bonusActive: newVal }).where(eq(settings.id, 1)).run();
+  res.json({ success: true, bonusActive: newVal });
 });
 
 function csvCell(v: any) { return `"${String(v ?? '').replace(/"/g, '""')}"`; }
@@ -416,11 +430,13 @@ router.get('/export/scores.csv', requireAdmin, (req, res) => {
 });
 
 router.post('/reset', requireAdmin, (req, res) => {
+  db.delete(bonusVotes).run();
+  db.delete(bonusCategories).run();
   db.delete(outcomes).run();
   db.delete(ratings).run();
   db.delete(predictionHistory).run();
   db.delete(predictions).run();
-  db.update(settings).set({ currentPhase: 'submission', submissionDeadline: null, revealDeadline: null }).where(eq(settings.id, 1)).run();
+  db.update(settings).set({ currentPhase: 'submission', submissionDeadline: null, revealDeadline: null, bonusActive: false }).where(eq(settings.id, 1)).run();
   res.json({ success: true });
 });
 

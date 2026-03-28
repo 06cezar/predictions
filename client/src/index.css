@@ -51,6 +51,13 @@
     border-color: rgba(232, 68, 10, 0.6);
     box-shadow: 0 0 0 1px rgba(232, 68, 10, 0.3);
   }
+  select.input {
+    @apply bg-navy border border-white/20 text-white;
+    color-scheme: dark;
+  }
+  select.input option {
+    @apply bg-navy text-white;
+  }
   .badge {
     @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold;
   }

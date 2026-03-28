@@ -9,6 +9,7 @@ import { Rate } from './pages/Rate';
 import { Reveal } from './pages/Reveal';
 import { Leaderboard } from './pages/Leaderboard';
 import { Admin } from './pages/Admin';
+import { Bonus } from './pages/Bonus';
 import { Navbar } from './components/Navbar';
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
             <Route path="/rate" element={<Rate />} />
             <Route path="/reveal" element={<Reveal />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/bonus" element={<Bonus user={user} />} />
             {user.isAdmin && <Route path="/admin" element={<Admin />} />}
             <Route path="*" element={<Navigate to="/" />} />
           </>
