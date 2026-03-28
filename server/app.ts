@@ -18,6 +18,9 @@ export function createApp() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  // Trust proxy (Fly.io) so rate limiting uses real client IP
+  app.set('trust proxy', 1);
+
   // Rate limiting
   app.use('/api/auth', rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
