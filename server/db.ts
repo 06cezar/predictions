@@ -100,7 +100,17 @@ export function initDb() {
       admin_override INTEGER NOT NULL DEFAULT 0,
       anonymous_predictions INTEGER NOT NULL DEFAULT 1
     );
-    INSERT OR IGNORE INTO settings (id, current_phase, rating_threshold, auto_advance_phase, admin_override)
-    VALUES (1, 'submission', 50, 1, 0);
+    INSERT OR IGNORE INTO settings (id, current_phase, rating_threshold, auto_advance_phase, admin_override, anonymous_predictions, bonus_active)
+    VALUES (1, 'submission', 50, 1, 0, 1, 0);
   `);
+
+  // Seed admin user from env vars if table is empty
+  if (process.env.ADMIN_TOKEN) {
+    const count = (sqlite.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number }).c;
+    if (count === 0) {
+      const name = process.env.ADMIN_NAME || 'Admin';
+      sqlite.prepare('INSERT INTO users (name, token, is_admin) VALUES (?, ?, 1)').run(name, process.env.ADMIN_TOKEN);
+      console.log(`[db] Seeded admin user: ${name}`);
+    }
+  }
 }
