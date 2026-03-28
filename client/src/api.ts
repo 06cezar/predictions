@@ -75,7 +75,7 @@ export const api = {
     list: () => request<UserRow[]>('/api/users'),
   },
   settings: {
-    get: () => request<Pick<Settings, 'currentPhase' | 'submissionDeadline' | 'revealDeadline' | 'ratingThreshold' | 'anonymousPredictions' | 'bonusActive'>>('/api/settings'),
+    get: () => request<Pick<Settings, 'currentPhase' | 'submissionDeadline' | 'revealDeadline' | 'ratingThreshold' | 'anonymousPredictions' | 'bonusActive' | 'adminOverride'>>('/api/settings'),
   },
   predictions: {
     mine: () => request<Prediction[]>('/api/predictions/mine'),

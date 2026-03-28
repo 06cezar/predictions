@@ -18,6 +18,7 @@ router.get('/', requireAuth, (req, res) => {
     ratingThreshold: s.ratingThreshold,
     anonymousPredictions: s.anonymousPredictions,
     bonusActive: s.bonusActive,
+    adminOverride: s.adminOverride,
   });
 });
 

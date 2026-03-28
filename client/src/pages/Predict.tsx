@@ -15,7 +15,7 @@ export function Predict() {
   const [targetUser, setTargetUser] = useState<UserInfo | null>(null);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [text, setText] = useState('');
-  const [settings, setSettings] = useState<Pick<Settings, 'currentPhase' | 'submissionDeadline' | 'revealDeadline' | 'ratingThreshold' | 'anonymousPredictions' | 'bonusActive'> | null>(null);
+  const [settings, setSettings] = useState<Pick<Settings, 'currentPhase' | 'submissionDeadline' | 'revealDeadline' | 'ratingThreshold' | 'anonymousPredictions' | 'bonusActive' | 'adminOverride'> | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');

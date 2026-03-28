@@ -15,7 +15,7 @@ type Notification = { id: number; type: string; message: string; read: boolean; 
 
 export function Dashboard({ user, onLogout }: Props) {
   const [users, setUsers] = useState<UserRow[]>([]);
-  const [settings, setSettings] = useState<Pick<Settings, 'currentPhase' | 'submissionDeadline' | 'revealDeadline' | 'ratingThreshold' | 'anonymousPredictions' | 'bonusActive'> | null>(null);
+  const [settings, setSettings] = useState<Pick<Settings, 'currentPhase' | 'submissionDeadline' | 'revealDeadline' | 'ratingThreshold' | 'anonymousPredictions' | 'bonusActive' | 'adminOverride'> | null>(null);
   const [me, setMe] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [notifs, setNotifs] = useState<Notification[]>([]);
