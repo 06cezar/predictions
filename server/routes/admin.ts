@@ -167,9 +167,14 @@ router.get('/stats', requireAdmin, (req, res) => {
   });
   const completedUsers = userProgress.filter(u => u.complete).length;
 
-  // Rating progress: each user should rate all predictions NOT about them
+  // Rating progress: match the same logic as /to-rate endpoint
   const ratingProgress = allUsers.map(u => {
-    const rateable = allPredictions.filter(p => p.targetId !== u.id).length;
+    const myTargetIds = new Set(allPredictions.filter(p => p.authorId === u.id).map(p => p.targetId));
+    const rateable = allPredictions.filter(p =>
+      p.authorId !== u.id &&
+      p.targetId !== u.id &&
+      myTargetIds.has(p.targetId)
+    ).length;
     const given = allRatings.filter(r => r.userId === u.id).length;
     return { id: u.id, name: u.name, written: given, expected: rateable, complete: rateable > 0 && given >= rateable };
   });

@@ -103,13 +103,69 @@ CREATE TABLE settings (
                                         -- valori posibile: 'submission' | 'reveal' | 'done'
     submission_deadline   VARCHAR2(30),  -- ISO 8601 UTC; NULL = fără deadline
     reveal_deadline       VARCHAR2(30),  -- ISO 8601 UTC; NULL = fără deadline
-    rating_threshold      NUMBER        DEFAULT 40 NOT NULL,
+    rating_threshold      NUMBER        DEFAULT 50 NOT NULL,
                                         -- pragul (%) care separă tier-urile de scoring
     auto_advance_phase    NUMBER(1)     DEFAULT 1 NOT NULL,  -- 1 = avansare automată la deadline
     admin_override        NUMBER(1)     DEFAULT 0 NOT NULL,  -- 1 = adminul vede leaderboard indiferent de fază
-    anonymous_predictions NUMBER(1)     DEFAULT 1 NOT NULL   -- 1 = numele autorului e ascuns în Rate/Leaderboard
+    anonymous_predictions NUMBER(1)     DEFAULT 1 NOT NULL,  -- 1 = numele autorului e ascuns în Rate/Leaderboard
+    bonus_active          NUMBER(1)     DEFAULT 0 NOT NULL   -- 1 = runda bonus e activă (independent de fază)
 );
 ```
+
+---
+
+### NOTIFICATIONS
+
+Notificări pentru utilizatori (predicții noi despre ei, outcome-uri marcate, etc.).
+
+```sql
+CREATE TABLE notifications (
+    id          NUMBER          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id     NUMBER          NOT NULL REFERENCES users(id),
+    type        VARCHAR2(50)    NOT NULL,       -- 'prediction_about_you' | 'outcome_marked'
+    author_id   NUMBER          REFERENCES users(id),
+    meta        VARCHAR2(4000),                 -- JSON string cu date extra
+    read        NUMBER(1)       DEFAULT 0 NOT NULL,
+    dismissed   NUMBER(1)       DEFAULT 0 NOT NULL,
+    created_at  VARCHAR2(30)    DEFAULT (datetime('now')) NOT NULL
+);
+```
+
+---
+
+### BONUS_CATEGORIES
+
+Categoriile pentru runda bonus (e.g. "Best Predictor", "Most Creative").
+
+```sql
+CREATE TABLE bonus_categories (
+    id          NUMBER          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name        VARCHAR2(255)   NOT NULL,
+    points      NUMBER          DEFAULT 5 NOT NULL,   -- puncte acordate câștigătorului categoriei
+    created_at  VARCHAR2(30)    DEFAULT (datetime('now')) NOT NULL
+);
+```
+
+---
+
+### BONUS_VOTES
+
+Voturile din runda bonus — fiecare user alege top 3 nominalizări per categorie.
+
+```sql
+CREATE TABLE bonus_votes (
+    id           NUMBER   GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    category_id  NUMBER   NOT NULL REFERENCES bonus_categories(id),
+    voter_id     NUMBER   NOT NULL REFERENCES users(id),
+    nominee_id   NUMBER   NOT NULL REFERENCES users(id),
+    rank         NUMBER   NOT NULL,   -- 1, 2 sau 3
+
+    CONSTRAINT unique_vote_slot UNIQUE (category_id, voter_id, rank)
+);
+```
+
+> Fiecare utilizator poate vota o dată per slot (categorie + rank).
+> Rank 1 = cel mai votat, Rank 3 = al treilea.
 
 ---
 
@@ -127,6 +183,11 @@ USERS ────────────────────────�
                         └──────────────► OUTCOMES
                                              │
                                          (marked_by) ───────┘
+
+USERS ──► NOTIFICATIONS   (user_id, author_id)
+
+USERS ──► BONUS_VOTES ◄── BONUS_CATEGORIES
+           (voter_id, nominee_id)    (category_id)
 ```
 
 ---
@@ -157,3 +218,13 @@ USERS ────────────────────────�
 | `done`       | Leaderboard-ul devine public; Hall of Fame vizibil            |
 
 Avansarea între faze se face manual (admin) sau automat la expirarea deadline-ului (`auto_advance_phase = 1`).
+
+---
+
+## Runda Bonus
+
+`bonus_active` este un **boolean independent** de fază — runda bonus poate rula **în paralel** cu orice fază (ex: reveal + bonus simultan).
+
+- Când `bonus_active = 1`, utilizatorii pot vota top 3 nominalizări per categorie bonus.
+- Votarea bonus se blochează doar când `bonus_active = 0` sau faza este `done`.
+- Categoriile și punctele sunt configurabile de admin.
