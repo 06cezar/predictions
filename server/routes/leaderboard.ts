@@ -331,11 +331,12 @@ router.get('/most-unpredictable', requireAuth, (req, res) => {
 
   if (board.length === 0) return res.json([]);
 
+  // Only show The Joker if at least one outcome has been marked
+  const anyOutcome = db.select().from(outcomes).all().some(o => o.happened !== null);
+  if (!anyOutcome) return res.json([]);
+
   // Fewest true predictions → tiebreak: highest avg rating (everyone expected things to happen but they didn't)
   board.sort((a, b) => a.count - b.count || b.avgRating - a.avgRating);
-
-  // Edge case: if everyone has count=0 and avgRating=0, don't show The Joker at all
-  if (board[0].count === 0 && board[0].avgRating === 0 && board.every(u => u.count === 0)) return res.json([]);
 
   const topCount = board[0].count;
   const topAvg = board[0].avgRating;
