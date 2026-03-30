@@ -16,6 +16,7 @@ export const predictions = sqliteTable('predictions', {
   currentText: text('current_text').notNull(),
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
   updatedAt: text('updated_at').notNull().default(sql`(datetime('now'))`),
+  forgivenEdits: integer('forgiven_edits').notNull().default(0),
 });
 
 export const predictionHistory = sqliteTable('prediction_history', {

@@ -29,6 +29,7 @@ describe('Leaderboard route', () => {
   it('GET /api/leaderboard returns ranked list', async () => {
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
+    setPhase(db, 'done');
 
     const agent = request.agent(app);
     await loginAs(agent, 'token-alice');
@@ -50,7 +51,7 @@ describe('Leaderboard route', () => {
     const bob = createUser(db, 'Bob', 'token-bob');
     const charlie = createUser(db, 'Charlie', 'token-charlie');
 
-    setPhase(db, 'reveal');
+    setPhase(db, 'done');
 
     // Alice writes predictions about Bob and Charlie
     const pred1 = createPrediction(db, alice.id, bob.id, 'Bob will succeed');
@@ -87,7 +88,7 @@ describe('Leaderboard route', () => {
     const bob = createUser(db, 'Bob', 'token-bob');
     const charlie = createUser(db, 'Charlie', 'token-charlie');
 
-    setPhase(db, 'reveal');
+    setPhase(db, 'done');
 
     // Alice writes prediction about Bob, Charlie rates it 80, it happened → Alice gets credit
     const pred1 = createPrediction(db, alice.id, bob.id, 'Bob will succeed');
@@ -103,7 +104,7 @@ describe('Leaderboard route', () => {
     // Alice (author) gets the score, not Bob (target)
     const aliceEntry = res.body.find((e: any) => e.name === 'Alice');
     expect(aliceEntry.score).toBe(1);
-    // avg=80 >= threshold(40) → bonus=1.0, no edits → weightedScore=1.0
+    // avg=80 >= threshold(50) → bonus=1.0, no edits → weightedScore=1.0
     expect(aliceEntry.weightedScore).toBe(1.0);
   });
 
@@ -112,7 +113,7 @@ describe('Leaderboard route', () => {
     const bob = createUser(db, 'Bob', 'token-bob');
     const charlie = createUser(db, 'Charlie', 'token-charlie');
 
-    setPhase(db, 'reveal');
+    setPhase(db, 'done');
 
     // Two predictions about Bob, both happened
     const pred1 = createPrediction(db, alice.id, bob.id, 'Bob will succeed');

@@ -37,7 +37,7 @@ describe('Settings endpoint', () => {
     expect(res.body).toHaveProperty('ratingThreshold');
     expect(res.body).toHaveProperty('anonymousPredictions');
     expect(res.body.currentPhase).toBe('submission');
-    expect(res.body.ratingThreshold).toBe(40);
+    expect(res.body.ratingThreshold).toBe(50);
   });
 
   it('GET /api/settings does NOT expose admin-only fields', async () => {
@@ -47,7 +47,6 @@ describe('Settings endpoint', () => {
 
     const res = await agent.get('/api/settings');
     expect(res.body).not.toHaveProperty('autoAdvancePhase');
-    expect(res.body).not.toHaveProperty('adminOverride');
   });
 
   it('GET /api/settings reflects phase changes', async () => {

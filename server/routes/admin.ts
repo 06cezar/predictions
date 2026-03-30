@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../db';
 import { users, predictions, predictionHistory, ratings, settings, outcomes, notifications, bonusCategories, bonusVotes } from '../schema';
 import { eq, and } from 'drizzle-orm';
-import { requireAdmin } from '../auth';
+import { requireAdmin, getCurrentUser } from '../auth';
 import { calcScores } from './leaderboard';
 import { notifyAllUsersPhaseChange } from '../notifications-helper';
 import { nanoid } from 'nanoid';
@@ -78,14 +78,13 @@ router.delete('/users/:id', requireAdmin, (req, res) => {
 
 router.get('/predictions', requireAdmin, (req, res) => {
   const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
+  const me = getCurrentUser(req)!;
   const all = db.select().from(predictions).all();
 
   const result = all.map(p => {
     const history = db.select().from(predictionHistory)
       .where(eq(predictionHistory.predictionId, p.id)).all();
-    const author = s.anonymousPredictions
-      ? null
-      : db.select({ id: users.id, name: users.name }).from(users).where(eq(users.id, p.authorId)).get();
+    const author = db.select({ id: users.id, name: users.name }).from(users).where(eq(users.id, p.authorId)).get();
     const target = db.select({ id: users.id, name: users.name }).from(users)
       .where(eq(users.id, p.targetId)).get();
     const ratingRows = db.select({ score: ratings.score }).from(ratings)
@@ -95,6 +94,8 @@ router.get('/predictions', requireAdmin, (req, res) => {
       ? Math.round(ratingRows.reduce((s, r) => s + r.score, 0) / ratingRows.length)
       : null;
 
+    const isAboutMe = p.targetId === me.id;
+
     return {
       id: p.id,
       author,
@@ -103,9 +104,11 @@ router.get('/predictions', requireAdmin, (req, res) => {
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
       editCount: history.length,
+      forgivenEdits: p.forgivenEdits ?? 0,
       history,
       avgRating,
       ratingCount: ratingRows.length,
+      isAboutMe,
     };
   });
 
@@ -279,6 +282,36 @@ router.post('/bonus-active/toggle', requireAdmin, (req, res) => {
   res.json({ success: true, bonusActive: newVal });
 });
 
+router.post('/predictions/:id/forgive-edit', requireAdmin, (req, res) => {
+  const id = parseInt(req.params.id);
+  const pred = db.select().from(predictions).where(eq(predictions.id, id)).get();
+  if (!pred) return res.status(404).json({ error: 'Prediction not found' });
+
+  const editCount = db.select().from(predictionHistory).where(eq(predictionHistory.predictionId, id)).all().length;
+  if ((pred.forgivenEdits ?? 0) >= editCount) {
+    return res.status(400).json({ error: 'All edits already forgiven' });
+  }
+
+  const newForgiven = (pred.forgivenEdits ?? 0) + 1;
+  db.update(predictions).set({ forgivenEdits: newForgiven }).where(eq(predictions.id, id)).run();
+  res.json({ success: true, forgivenEdits: newForgiven, editCount });
+});
+
+router.post('/predictions/:id/unforgive-edit', requireAdmin, (req, res) => {
+  const id = parseInt(req.params.id);
+  const pred = db.select().from(predictions).where(eq(predictions.id, id)).get();
+  if (!pred) return res.status(404).json({ error: 'Prediction not found' });
+
+  if ((pred.forgivenEdits ?? 0) <= 0) {
+    return res.status(400).json({ error: 'No forgiven edits to undo' });
+  }
+
+  const editCount = db.select().from(predictionHistory).where(eq(predictionHistory.predictionId, id)).all().length;
+  const newForgiven = (pred.forgivenEdits ?? 0) - 1;
+  db.update(predictions).set({ forgivenEdits: newForgiven }).where(eq(predictions.id, id)).run();
+  res.json({ success: true, forgivenEdits: newForgiven, editCount });
+});
+
 function csvCell(v: any) { return `"${String(v ?? '').replace(/"/g, '""')}"`; }
 
 router.get('/export/hof.csv', requireAdmin, (req, res) => {
@@ -437,6 +470,7 @@ router.get('/export/scores.csv', requireAdmin, (req, res) => {
 router.post('/reset', requireAdmin, (req, res) => {
   db.delete(bonusVotes).run();
   db.delete(bonusCategories).run();
+  db.delete(notifications).run();
   db.delete(outcomes).run();
   db.delete(ratings).run();
   db.delete(predictionHistory).run();

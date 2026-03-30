@@ -46,6 +46,7 @@ export function calcScores() {
         happened++;
         const editCount = db.select().from(predictionHistory)
           .where(eq(predictionHistory.predictionId, p.id)).all().length;
+        const penalizedEdits = Math.max(0, editCount - (p.forgivenEdits ?? 0));
         const ratingRows = db.select({ score: ratings.score }).from(ratings)
           .where(eq(ratings.predictionId, p.id)).all();
         let bonus: number;
@@ -59,7 +60,7 @@ export function calcScores() {
         } else {
           bonus = 1.0;
         }
-        totalWeighted += Math.max(0.5, bonus - editCount * 0.5);
+        totalWeighted += Math.max(0.5, bonus - penalizedEdits * 0.5);
       }
     }
     const bonusW = Math.round((bonusPointsMap[u.id] ?? 0) * 10) / 10;

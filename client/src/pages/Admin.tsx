@@ -29,6 +29,7 @@ export function Admin() {
   const [expandedPred, setExpandedPred] = useState<number | null>(null);
   const [meId, setMeId] = useState<number | null>(null);
   const [showAboutMe, setShowAboutMe] = useState(false);
+  const [revealedPreds, setRevealedPreds] = useState<Set<number>>(new Set());
   const [editingUser, setEditingUser] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [progressMode, setProgressMode] = useState<'submission' | 'rating' | 'outcomes'>('submission');
@@ -434,9 +435,21 @@ export function Admin() {
                     <span>✍️ {p.author?.name}</span>
                     <span>→</span>
                     <span>👤 {p.target?.name}</span>
-                    {p.editCount > 0 && <span className="text-violet/80">Edited ×{p.editCount}</span>}
+                    {p.editCount > 0 && <span className="text-violet/80">Edited ×{p.editCount}{p.forgivenEdits > 0 && ` (${p.forgivenEdits} forgiven)`}</span>}
                   </div>
-                  <p className="text-white/90 text-sm leading-relaxed">{p.currentText}</p>
+                  {!revealedPreds.has(p.id) ? (
+                    <div className="flex items-center gap-2">
+                      <p className="text-white/30 text-sm">••••••••••••••••</p>
+                      <button
+                        onClick={() => setRevealedPreds(prev => new Set([...prev, p.id]))}
+                        className="text-xs text-amber/60 hover:text-amber px-2 py-0.5 rounded hover:bg-amber/10 transition-colors"
+                      >
+                        Reveal
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-white/90 text-sm leading-relaxed">{p.currentText}</p>
+                  )}
                 </div>
                 <div className="flex flex-col items-end gap-2 flex-shrink-0">
                   <div className="text-right">
@@ -454,19 +467,47 @@ export function Admin() {
                 </div>
               </div>
               {p.editCount > 0 && (
-                <button
-                  onClick={() => setExpandedPred(expandedPred === p.id ? null : p.id)}
-                  className="text-xs text-white/40 hover:text-white/70"
-                >
-                  {expandedPred === p.id ? 'Hide history' : 'Show edit history'}
-                </button>
+                <div className="flex gap-3 items-center">
+                  <button
+                    onClick={() => setExpandedPred(expandedPred === p.id ? null : p.id)}
+                    className="text-xs text-white/40 hover:text-white/70"
+                  >
+                    {expandedPred === p.id ? 'Hide history' : 'Show edit history'}
+                  </button>
+                  {p.editCount > (p.forgivenEdits ?? 0) && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const result = await api.admin.forgiveEdit(p.id);
+                          setAdminPredictions(prev => prev.map((pr: any) => pr.id === p.id ? { ...pr, forgivenEdits: result.forgivenEdits } : pr));
+                        } catch (err: any) { alert(err.message); }
+                      }}
+                      className="text-xs text-green-400/60 hover:text-green-400 hover:bg-green-500/10 px-2 py-0.5 rounded transition-colors"
+                    >
+                      Forgive 1 edit
+                    </button>
+                  )}
+                  {(p.forgivenEdits ?? 0) > 0 && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const result = await api.admin.unforgiveEdit(p.id);
+                          setAdminPredictions(prev => prev.map((pr: any) => pr.id === p.id ? { ...pr, forgivenEdits: result.forgivenEdits } : pr));
+                        } catch (err: any) { alert(err.message); }
+                      }}
+                      className="text-xs text-red-400/60 hover:text-red-400 hover:bg-red-500/10 px-2 py-0.5 rounded transition-colors"
+                    >
+                      Unforgive 1 edit
+                    </button>
+                  )}
+                </div>
               )}
               {expandedPred === p.id && p.history && (
                 <div className="border-t border-white/10 pt-3 space-y-2">
                   {p.history.map((h: any) => (
                     <div key={h.id} className="text-xs text-white/40 bg-white/5 rounded-lg p-3">
                       <p className="text-white/60 mb-1">{new Date(h.editedAt.replace(' ', 'T') + 'Z').toLocaleString(undefined, { hour12: false })}</p>
-                      <p>{h.oldText}</p>
+                      <p>{!revealedPreds.has(p.id) ? '••••••••••••••••' : h.oldText}</p>
                     </div>
                   ))}
                 </div>

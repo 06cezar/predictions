@@ -39,6 +39,7 @@ export function initDb() {
   try { sqlite.exec(`ALTER TABLE notifications ADD COLUMN meta TEXT`); } catch {}
   try { sqlite.exec(`ALTER TABLE notifications ADD COLUMN dismissed INTEGER NOT NULL DEFAULT 0`); } catch {}
   try { sqlite.exec(`ALTER TABLE settings ADD COLUMN bonus_active INTEGER NOT NULL DEFAULT 0`); } catch {}
+  try { sqlite.exec(`ALTER TABLE predictions ADD COLUMN forgiven_edits INTEGER NOT NULL DEFAULT 0`); } catch {}
   try { sqlite.exec(`CREATE TABLE IF NOT EXISTS bonus_categories (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,

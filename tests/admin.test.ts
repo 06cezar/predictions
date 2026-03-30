@@ -7,6 +7,8 @@ import {
   createTestApp,
   loginAs,
 } from './helpers';
+import { eq } from 'drizzle-orm';
+import * as schema from '../server/schema';
 
 describe('Admin routes', () => {
   let app: ReturnType<typeof createTestApp>;
@@ -133,6 +135,7 @@ describe('Admin routes', () => {
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
     createPrediction(db, alice.id, bob.id, 'Bob will succeed');
+    db.update(schema.settings).set({ anonymousPredictions: false }).where(eq(schema.settings.id, 1)).run();
 
     const agent = request.agent(app);
     await loginAs(agent, 'token-admin');
@@ -149,6 +152,98 @@ describe('Admin routes', () => {
     expect(pred.currentText).toBe('Bob will succeed');
     expect(pred).toHaveProperty('editCount');
     expect(pred).toHaveProperty('history');
+  });
+
+  // ── Forgive edits ──────────────────────────────────────────────────────────
+
+  it('POST /api/admin/predictions/:id/forgive-edit increments forgivenEdits', async () => {
+    createUser(db, 'Admin', 'token-admin', true);
+    const alice = createUser(db, 'Alice', 'token-alice');
+    const bob = createUser(db, 'Bob', 'token-bob');
+    const pred = createPrediction(db, alice.id, bob.id, 'Edited pred');
+    db.insert(schema.predictionHistory).values({ predictionId: pred.id, oldText: 'Original' }).run();
+
+    const agent = request.agent(app);
+    await loginAs(agent, 'token-admin');
+
+    const res = await agent.post(`/api/admin/predictions/${pred.id}/forgive-edit`);
+    expect(res.status).toBe(200);
+    expect(res.body.forgivenEdits).toBe(1);
+  });
+
+  it('POST /api/admin/predictions/:id/forgive-edit cannot exceed edit count', async () => {
+    createUser(db, 'Admin', 'token-admin', true);
+    const alice = createUser(db, 'Alice', 'token-alice');
+    const bob = createUser(db, 'Bob', 'token-bob');
+    const pred = createPrediction(db, alice.id, bob.id, 'One edit');
+    db.insert(schema.predictionHistory).values({ predictionId: pred.id, oldText: 'Original' }).run();
+
+    const agent = request.agent(app);
+    await loginAs(agent, 'token-admin');
+
+    // First forgive succeeds
+    await agent.post(`/api/admin/predictions/${pred.id}/forgive-edit`);
+    // Second should fail (only 1 edit)
+    const res = await agent.post(`/api/admin/predictions/${pred.id}/forgive-edit`);
+    expect(res.status).toBe(400);
+  });
+
+  it('POST /api/admin/predictions/:id/forgive-edit non-admin → 403', async () => {
+    createUser(db, 'Regular', 'token-regular');
+    const alice = createUser(db, 'Alice', 'token-alice');
+    const bob = createUser(db, 'Bob', 'token-bob');
+    const pred = createPrediction(db, alice.id, bob.id, 'Test');
+
+    const agent = request.agent(app);
+    await loginAs(agent, 'token-regular');
+
+    const res = await agent.post(`/api/admin/predictions/${pred.id}/forgive-edit`);
+    expect(res.status).toBe(403);
+  });
+
+  it('POST /api/admin/predictions/:id/unforgive-edit decrements forgivenEdits', async () => {
+    createUser(db, 'Admin', 'token-admin', true);
+    const alice = createUser(db, 'Alice', 'token-alice');
+    const bob = createUser(db, 'Bob', 'token-bob');
+    const pred = createPrediction(db, alice.id, bob.id, 'Unforgive test');
+    db.insert(schema.predictionHistory).values({ predictionId: pred.id, oldText: 'Original' }).run();
+
+    const agent = request.agent(app);
+    await loginAs(agent, 'token-admin');
+
+    // Forgive first
+    await agent.post(`/api/admin/predictions/${pred.id}/forgive-edit`);
+    // Unforgive
+    const res = await agent.post(`/api/admin/predictions/${pred.id}/unforgive-edit`);
+    expect(res.status).toBe(200);
+    expect(res.body.forgivenEdits).toBe(0);
+  });
+
+  it('POST /api/admin/predictions/:id/unforgive-edit cannot go below 0', async () => {
+    createUser(db, 'Admin', 'token-admin', true);
+    const alice = createUser(db, 'Alice', 'token-alice');
+    const bob = createUser(db, 'Bob', 'token-bob');
+    const pred = createPrediction(db, alice.id, bob.id, 'No forgives');
+    db.insert(schema.predictionHistory).values({ predictionId: pred.id, oldText: 'Original' }).run();
+
+    const agent = request.agent(app);
+    await loginAs(agent, 'token-admin');
+
+    const res = await agent.post(`/api/admin/predictions/${pred.id}/unforgive-edit`);
+    expect(res.status).toBe(400);
+  });
+
+  it('POST /api/admin/predictions/:id/unforgive-edit non-admin → 403', async () => {
+    createUser(db, 'Regular', 'token-regular');
+    const alice = createUser(db, 'Alice', 'token-alice');
+    const bob = createUser(db, 'Bob', 'token-bob');
+    const pred = createPrediction(db, alice.id, bob.id, 'Test');
+
+    const agent = request.agent(app);
+    await loginAs(agent, 'token-regular');
+
+    const res = await agent.post(`/api/admin/predictions/${pred.id}/unforgive-edit`);
+    expect(res.status).toBe(403);
   });
 
   // ── Settings ───────────────────────────────────────────────────────────────
