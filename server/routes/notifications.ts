@@ -38,6 +38,10 @@ router.get('/', requireAuth, (req, res) => {
         else message = 'The game phase has changed.';
       }
 
+      if (n.type === 'token_conflict') {
+        message = meta?.message ?? 'A token was regenerated due to a conflict.';
+      }
+
       if (n.type === 'outcome_marked') {
         let targetName = meta?.targetName ?? 'Someone';
         const happened = meta?.happened;

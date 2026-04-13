@@ -84,7 +84,7 @@ export function Dashboard({ user, onLogout }: Props) {
           <p className="text-xs text-white/40 uppercase tracking-wider font-medium">🔔 Notifications</p>
           {notifs.map(n => (
             <div key={n.id} className={`rounded-xl px-4 py-3 border text-sm flex items-center gap-2 ${n.read ? 'bg-white/3 border-white/8 text-white/40' : 'bg-orange/10 border-orange/20 text-white/80'}`}>
-              <span>{n.type === 'outcome_marked' ? '📋' : '🎯'}</span>
+              <span>{n.type === 'outcome_marked' ? '📋' : n.type === 'token_conflict' ? '⚠️' : '🎯'}</span>
               <span className="flex-1">{n.message}</span>
               <button
                 onClick={() => {

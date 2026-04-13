@@ -350,10 +350,8 @@ export function Leaderboard() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-display text-2xl font-bold text-amber">{entry.score}</p>
-                  {entry.weightedScore > 0 && (
-                    <p className="text-xs text-white/40">{entry.weightedScore} weighted</p>
-                  )}
+                  <p className="font-display text-2xl font-bold text-amber">{entry.weightedScore}</p>
+                  <p className="text-xs text-white/40">{entry.score} correct</p>
                 </div>
               </div>
             );

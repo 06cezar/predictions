@@ -73,6 +73,21 @@ export const bonusVotes = sqliteTable('bonus_votes', {
   uniqueVoteSlot: uniqueIndex('unique_vote_slot').on(table.categoryId, table.voterId, table.rank),
 }));
 
+export const blockedTokens = sqliteTable('blocked_tokens', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  token: text('token').notNull().unique(),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+});
+
+export const inviteLinks = sqliteTable('invite_links', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  code: text('code').notNull().unique(),
+  createdBy: integer('created_by').notNull().references(() => users.id),
+  usedBy: integer('used_by').references(() => users.id),
+  usedAt: text('used_at'),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+});
+
 export const settings = sqliteTable('settings', {
   id: integer('id').primaryKey(),
   currentPhase: text('current_phase', { enum: ['submission', 'reveal', 'done'] }).notNull().default('submission'),

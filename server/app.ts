@@ -11,6 +11,7 @@ import adminRoutes from './routes/admin';
 import settingsRoutes from './routes/settings';
 import notificationRoutes from './routes/notifications';
 import bonusRoutes from './routes/bonus';
+import inviteRoutes from './routes/invite';
 
 export function createApp() {
   const app = express();
@@ -61,6 +62,7 @@ export function createApp() {
   app.use('/api/settings', settingsRoutes);
   app.use('/api/notifications', notificationRoutes);
   app.use('/api/bonus', bonusRoutes);
+  app.use('/api/invite', inviteRoutes);
 
   return app;
 }

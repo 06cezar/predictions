@@ -66,6 +66,19 @@ const SCHEMA_SQL = `
     rank INTEGER NOT NULL,
     UNIQUE(category_id, voter_id, rank)
   );
+  CREATE TABLE IF NOT EXISTS blocked_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    token TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS invite_links (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE,
+    created_by INTEGER NOT NULL REFERENCES users(id),
+    used_by INTEGER REFERENCES users(id),
+    used_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
   CREATE TABLE IF NOT EXISTS settings (
     id INTEGER PRIMARY KEY,
     current_phase TEXT NOT NULL DEFAULT 'submission',

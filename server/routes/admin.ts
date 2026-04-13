@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { users, predictions, predictionHistory, ratings, settings, outcomes, notifications, bonusCategories, bonusVotes } from '../schema';
+import { users, predictions, predictionHistory, ratings, settings, outcomes, notifications, bonusCategories, bonusVotes, blockedTokens } from '../schema';
 import { eq, and } from 'drizzle-orm';
 import { requireAdmin, getCurrentUser } from '../auth';
 import { calcScores } from './leaderboard';
 import { notifyAllUsersPhaseChange } from '../notifications-helper';
 import { nanoid } from 'nanoid';
+import path from 'path';
 
 const router = Router();
 
@@ -19,6 +20,25 @@ function generateToken() {
   return `${adj}-${noun}-${num}`;
 }
 
+function isTokenAvailable(token: string): boolean {
+  const takenByUser = db.select().from(users).where(eq(users.token, token)).get();
+  if (takenByUser) return false;
+  const blocked = db.select().from(blockedTokens).where(eq(blockedTokens.token, token)).get();
+  if (blocked) return false;
+  return true;
+}
+
+function generateUniqueToken(): string {
+  let token: string;
+  let attempts = 0;
+  do {
+    token = generateToken();
+    if (isTokenAvailable(token)) return token;
+    attempts++;
+  } while (attempts < 100);
+  return `user-${nanoid(8)}`;
+}
+
 router.get('/users', requireAdmin, (req, res) => {
   const allUsers = db.select().from(users).all();
   res.json(allUsers);
@@ -28,9 +48,8 @@ router.post('/users', requireAdmin, (req, res) => {
   const { name, token: customToken } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: 'name required' });
 
-  const token = customToken?.trim() || generateToken();
-  const existing = db.select().from(users).where(eq(users.token, token)).get();
-  if (existing) return res.status(400).json({ error: 'Token already in use' });
+  const token = customToken?.trim() ? customToken.trim() : generateUniqueToken();
+  if (!isTokenAvailable(token)) return res.status(400).json({ error: 'Token already in use' });
 
   const user = db.insert(users).values({ name: name.trim(), token }).returning().get();
   res.json(user);
@@ -41,7 +60,7 @@ router.put('/users/:id', requireAdmin, (req, res) => {
   const { name, regenerateToken } = req.body;
   const updates: Record<string, any> = {};
   if (name?.trim()) updates.name = name.trim();
-  if (regenerateToken) updates.token = generateToken();
+  if (regenerateToken) updates.token = generateUniqueToken();
   if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'Nothing to update' });
   db.update(users).set(updates).where(eq(users.id, id)).run();
   const updated = db.select().from(users).where(eq(users.id, id)).get();
@@ -465,6 +484,13 @@ router.get('/export/scores.csv', requireAdmin, (req, res) => {
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', 'attachment; filename="scores.csv"');
   res.send(csv);
+});
+
+router.get('/export/db', requireAdmin, (req, res) => {
+  const dbPath = process.env.NODE_ENV === 'production'
+    ? '/data/predictions.db'
+    : path.join(process.cwd(), 'predictions.db');
+  res.download(dbPath, 'predictions.db');
 });
 
 router.post('/reset', requireAdmin, (req, res) => {

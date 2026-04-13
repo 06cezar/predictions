@@ -28,9 +28,10 @@ CREATE TABLE predictions (
     id            NUMBER          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     author_id     NUMBER          NOT NULL REFERENCES users(id),   -- cel care a scris predicția
     target_id     NUMBER          NOT NULL REFERENCES users(id),   -- persoana despre care e predicția
-    current_text  VARCHAR2(4000)  NOT NULL,                        -- textul curent (după eventuale editări)
-    created_at    VARCHAR2(30)    DEFAULT (datetime('now')) NOT NULL,
-    updated_at    VARCHAR2(30)    DEFAULT (datetime('now')) NOT NULL
+    current_text   VARCHAR2(4000)  NOT NULL,                        -- textul curent (după eventuale editări)
+    created_at     VARCHAR2(30)    DEFAULT (datetime('now')) NOT NULL,
+    updated_at     VARCHAR2(30)    DEFAULT (datetime('now')) NOT NULL,
+    forgiven_edits NUMBER          DEFAULT 0 NOT NULL               -- nr de editări iertate de admin (nu penalizate)
 );
 ```
 
@@ -122,7 +123,7 @@ Notificări pentru utilizatori (predicții noi despre ei, outcome-uri marcate, e
 CREATE TABLE notifications (
     id          NUMBER          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id     NUMBER          NOT NULL REFERENCES users(id),
-    type        VARCHAR2(50)    NOT NULL,       -- 'prediction_about_you' | 'outcome_marked'
+    type        VARCHAR2(50)    NOT NULL,       -- 'prediction_about_you' | 'outcome_marked' | 'phase_changed' | 'token_conflict'
     author_id   NUMBER          REFERENCES users(id),
     meta        VARCHAR2(4000),                 -- JSON string cu date extra
     read        NUMBER(1)       DEFAULT 0 NOT NULL,
@@ -130,6 +131,47 @@ CREATE TABLE notifications (
     created_at  VARCHAR2(30)    DEFAULT (datetime('now')) NOT NULL
 );
 ```
+
+---
+
+### INVITE_LINKS
+
+Link-uri de invitație one-use generate de admin pentru a permite utilizatorilor noi să se înregistreze.
+
+```sql
+CREATE TABLE invite_links (
+    id          NUMBER          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code        VARCHAR2(255)   NOT NULL UNIQUE,              -- cod random (nanoid 12 chars), parte din URL
+    created_by  NUMBER          NOT NULL REFERENCES users(id), -- adminul care a generat link-ul
+    used_by     NUMBER          REFERENCES users(id),          -- userul care s-a înregistrat (NULL dacă nefolosit)
+    used_at     VARCHAR2(30),                                  -- momentul înregistrării
+    created_at  VARCHAR2(30)    DEFAULT (datetime('now')) NOT NULL
+);
+```
+
+> Un link devine invalid după ce un utilizator s-a înregistrat prin el (`used_by IS NOT NULL`).
+> La conflict de token (noul user alege un token deja luat): tokenul userului vechi se regenerează automat,
+> tokenul eliberat se inserează în `blocked_tokens`, adminul primește o notificare de tip `token_conflict`,
+> iar noul user trebuie să aleagă alt token. Link-ul rămâne activ pentru retry.
+
+---
+
+### BLOCKED_TOKENS
+
+Tokene blocate permanent — nu pot fi folosite la înregistrare sau auto-generate.
+Se populează automat când apare un conflict de token la join prin invite link.
+
+```sql
+CREATE TABLE blocked_tokens (
+    id          NUMBER          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    token       VARCHAR2(255)   NOT NULL UNIQUE,
+    created_at  VARCHAR2(30)    DEFAULT (datetime('now')) NOT NULL
+);
+```
+
+> Un token ajunge în acest tabel când un user nou încearcă să-l folosească la join și aparține deja altcuiva.
+> Tokenul userului vechi se regenerează, iar tokenul eliberat se blochează imediat pentru a preveni refolosirea lui.
+> `generateUniqueToken()` și `POST /admin/users` verifică ambele `users` și `blocked_tokens` la generare/validare.
 
 ---
 
@@ -188,6 +230,10 @@ USERS ──► NOTIFICATIONS   (user_id, author_id)
 
 USERS ──► BONUS_VOTES ◄── BONUS_CATEGORIES
            (voter_id, nominee_id)    (category_id)
+
+USERS ──► INVITE_LINKS   (created_by, used_by)
+
+BLOCKED_TOKENS   (tokene eliberate după conflict — fără relații FK)
 ```
 
 ---
@@ -203,7 +249,7 @@ USERS ──► BONUS_VOTES ◄── BONUS_CATEGORIES
 | `avg ≥ threshold`                   | **1 pt** |
 | Predicție **falsă** (`happened = 0`) | **0 pt** |
 
-- **Penalizare editări:** `-0.5 pt` per editare (doar pentru predicții adevărate), minim `0.5 pt`.
+- **Penalizare editări:** `-0.5 pt` per editare (doar pentru predicții adevărate), minim `0.5 pt`. Adminul poate ierta editări individual (`forgiven_edits`); formula reală: `max(0.5, bonus - (editCount - forgivenEdits) × 0.5)`.
 - **Weighted score** = suma bonusurilor − penalizări → criteriu principal de clasament.
 - **Score** = număr de predicții adevărate → criteriu secundar.
 
@@ -228,3 +274,21 @@ Avansarea între faze se face manual (admin) sau automat la expirarea deadline-u
 - Când `bonus_active = 1`, utilizatorii pot vota top 3 nominalizări per categorie bonus.
 - Votarea bonus se blochează doar când `bonus_active = 0` sau faza este `done`.
 - Categoriile și punctele sunt configurabile de admin.
+
+---
+
+## Export date (Admin)
+
+Adminul poate descărca datele din panoul de admin (**Settings > Export Data**):
+
+| Buton | Endpoint | Conținut |
+|---|---|---|
+| 📋 Predictions | `GET /api/admin/export/predictions.csv` | Toate predicțiile cu autor, target, text, rating, outcome |
+| 🏆 Scores | `GET /api/admin/export/scores.csv` | Clasamentul final cu score și weighted score |
+| ✨ Hall of Fame | `GET /api/admin/export/hof.csv` | Câștigătorii categoriilor speciale |
+| 🗄️ Full Database | `GET /api/admin/export/db` | Fișierul `predictions.db` complet (SQLite) |
+
+> Toate endpoint-urile sunt protejate cu `requireAdmin` — returnează 401 pentru utilizatori neautentificați sau non-admin.
+>
+> Fișierul `.db` conține toate tabelele și toate tokenele utilizatorilor în clar — a se trata cu atenție.
+> În producție (Fly.io) fișierul este servit direct de pe volumul persistent `/data/predictions.db`.

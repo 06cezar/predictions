@@ -10,6 +10,7 @@ import { Reveal } from './pages/Reveal';
 import { Leaderboard } from './pages/Leaderboard';
 import { Admin } from './pages/Admin';
 import { Bonus } from './pages/Bonus';
+import { Join } from './pages/Join';
 import { Navbar } from './components/Navbar';
 
 function App() {
@@ -36,6 +37,9 @@ function App() {
       <Routes>
         <Route path="/login" element={
           user ? <Navigate to="/" /> : <Login onLogin={setUser} />
+        } />
+        <Route path="/join/:code" element={
+          user ? <Navigate to="/" /> : <Join onLogin={setUser} />
         } />
         {user ? (
           <>

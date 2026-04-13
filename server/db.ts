@@ -40,6 +40,19 @@ export function initDb() {
   try { sqlite.exec(`ALTER TABLE notifications ADD COLUMN dismissed INTEGER NOT NULL DEFAULT 0`); } catch {}
   try { sqlite.exec(`ALTER TABLE settings ADD COLUMN bonus_active INTEGER NOT NULL DEFAULT 0`); } catch {}
   try { sqlite.exec(`ALTER TABLE predictions ADD COLUMN forgiven_edits INTEGER NOT NULL DEFAULT 0`); } catch {}
+  try { sqlite.exec(`CREATE TABLE IF NOT EXISTS blocked_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    token TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`); } catch {}
+  try { sqlite.exec(`CREATE TABLE IF NOT EXISTS invite_links (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE,
+    created_by INTEGER NOT NULL REFERENCES users(id),
+    used_by INTEGER REFERENCES users(id),
+    used_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`); } catch {}
   try { sqlite.exec(`CREATE TABLE IF NOT EXISTS bonus_categories (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,

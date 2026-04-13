@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api, Settings } from '../api';
 
-type Tab = 'users' | 'predictions' | 'settings' | 'bonus' | 'preview';
+type Tab = 'users' | 'predictions' | 'settings' | 'bonus' | 'preview' | 'invites';
 
 const toLocalInput = (iso: string | null | undefined): string => {
   if (!iso) return '';
@@ -44,6 +44,8 @@ export function Admin() {
   const [editCatName, setEditCatName] = useState('');
   const [editCatPoints, setEditCatPoints] = useState(5);
   const [bonusUsers, setBonusUsers] = useState<any[]>([]);
+  const [inviteLinks, setInviteLinks] = useState<any[]>([]);
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   useEffect(() => {
     api.users.me().then(me => setMeId(me.id)).catch(() => {});
@@ -62,6 +64,7 @@ export function Admin() {
       setBonusCats(b.categories);
       setBonusUsers(b.users);
     }).catch(() => {});
+    api.invite.list().then(setInviteLinks).catch(() => {});
   }, []);
 
   const handleCreateUser = async () => {
@@ -168,6 +171,28 @@ export function Admin() {
     setTimeout(() => setCopiedToken(null), 2000);
   };
 
+  const handleCreateInvite = async () => {
+    try {
+      const link = await api.invite.create() as any;
+      setInviteLinks(prev => [link, ...prev]);
+    } catch (err: any) { alert(err.message); }
+  };
+
+  const handleRevokeInvite = async (id: number) => {
+    if (!confirm('Revoke this invite link?')) return;
+    try {
+      await api.invite.revoke(id);
+      setInviteLinks(prev => prev.filter(l => l.id !== id));
+    } catch (err: any) { alert(err.message); }
+  };
+
+  const copyInviteLink = (code: string) => {
+    const url = `${window.location.origin}/join/${code}`;
+    navigator.clipboard.writeText(url);
+    setCopiedLink(code);
+    setTimeout(() => setCopiedLink(null), 2000);
+  };
+
   const handleCreateCat = async () => {
     if (!newCatName.trim()) return;
     try {
@@ -211,7 +236,7 @@ export function Admin() {
       </div>
 
       <div className="flex gap-2 mb-6">
-        {(['users', 'predictions', 'settings', 'bonus', 'preview'] as Tab[]).map(t => (
+        {(['users', 'predictions', 'settings', 'bonus', 'preview', 'invites'] as Tab[]).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -707,6 +732,9 @@ export function Admin() {
                 ✨ Hall of Fame
               </a>
             </div>
+            <a href="/api/admin/export/db" download className="btn-secondary w-full text-center text-sm py-2 block">
+              🗄️ Full Database (.db)
+            </a>
           </div>
         </div>
       )}
@@ -947,6 +975,72 @@ export function Admin() {
                       <p className="text-xs text-white/60 truncate">{names}</p>
                     </div>
                     {detail && <span className="text-xs text-amber flex-shrink-0">{detail}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+      {tab === 'invites' && (
+        <div className="space-y-4">
+          <div className="card space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium">Invite Links</h3>
+                <p className="text-xs text-white/40 mt-0.5">One-use links for new users to join</p>
+              </div>
+              <button onClick={handleCreateInvite} className="btn-primary text-sm">
+                + Generate Link
+              </button>
+            </div>
+          </div>
+
+          {inviteLinks.length === 0 ? (
+            <div className="card text-center py-8 text-white/30">No invite links yet. Generate one above.</div>
+          ) : (
+            <div className="space-y-2">
+              {inviteLinks.map(link => {
+                const url = `${window.location.origin}/join/${link.code}`;
+                const isUsed = !!link.usedBy;
+                return (
+                  <div key={link.id} className={`card space-y-2 ${isUsed ? 'opacity-60' : ''}`}>
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          {isUsed ? (
+                            <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">✓ Used</span>
+                          ) : (
+                            <span className="text-xs bg-amber/20 text-amber px-2 py-0.5 rounded-full">Active</span>
+                          )}
+                          <span className="text-xs text-white/30">
+                            {new Date(link.createdAt.replace(' ', 'T') + 'Z').toLocaleString(undefined, { hour12: false, dateStyle: 'short', timeStyle: 'short' })}
+                          </span>
+                        </div>
+                        <p className="text-sm font-mono text-white/60 truncate">{url}</p>
+                        {isUsed && link.usedByName && (
+                          <p className="text-xs text-white/40 mt-1">Registered: <span className="text-white/60">{link.usedByName}</span></p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1 flex-shrink-0">
+                        {!isUsed && (
+                          <>
+                            <button
+                              onClick={() => copyInviteLink(link.code)}
+                              className="btn-ghost text-xs px-3 py-1"
+                            >
+                              {copiedLink === link.code ? '✓ Copied' : 'Copy Link'}
+                            </button>
+                            <button
+                              onClick={() => handleRevokeInvite(link.id)}
+                              className="text-orange/60 hover:text-orange text-xs px-3 py-1 rounded-lg hover:bg-orange/10 transition-colors"
+                            >
+                              Revoke
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 );
               })}

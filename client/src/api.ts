@@ -139,6 +139,15 @@ export const api = {
     deleteCategory: (id: number) =>
       request(`/api/bonus/categories/${id}`, { method: 'DELETE' }),
   },
+  invite: {
+    list: () => request<Array<{ id: number; code: string; createdBy: number; createdByName: string; usedBy: number | null; usedByName: string | null; usedAt: string | null; createdAt: string }>>('/api/invite'),
+    create: () => request<{ id: number; code: string; createdAt: string }>('/api/invite', { method: 'POST' }),
+    revoke: (id: number) => request(`/api/invite/${id}`, { method: 'DELETE' }),
+    getLink: (code: string) => request<{ valid: boolean; code: string }>(`/api/invite/join/${code}`),
+    join: (code: string, name: string, token?: string) => request<{ success: boolean; token: string; name: string }>(`/api/invite/join/${code}`, {
+      method: 'POST', body: JSON.stringify({ name, token }),
+    }),
+  },
   admin: {
     users: () => request<any[]>('/api/admin/users'),
     createUser: (name: string, token?: string) => request('/api/admin/users', {
