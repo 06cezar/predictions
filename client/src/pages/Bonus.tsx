@@ -142,8 +142,10 @@ export function Bonus({ user }: Props) {
                 <div>
                   <h2 className="font-display font-bold text-lg">{cat.name}</h2>
                   <p className="text-xs text-white/40 mt-0.5">
-                    Winner gets <span className="text-amber font-semibold">{cat.points}</span> bonus point{cat.points !== 1 ? 's' : ''}
-                    {winnerCount > 1 && isDone ? ` (split: ${pointsEach} each)` : ''}
+                    {cat.points < 0
+                      ? <>Winner loses <span className="text-orange font-semibold">{Math.abs(cat.points)}</span> bonus point{Math.abs(cat.points) !== 1 ? 's' : ''}{winnerCount > 1 && isDone ? ` (split: ${Math.abs(pointsEach)} each)` : ''}</>
+                      : <>Winner gets <span className="text-amber font-semibold">{cat.points}</span> bonus point{cat.points !== 1 ? 's' : ''}{winnerCount > 1 && isDone ? ` (split: ${pointsEach} each)` : ''}</>
+                    }
                   </p>
                 </div>
                 {alreadyVoted && isVoting && !hasChanged && (
@@ -199,10 +201,10 @@ export function Bonus({ user }: Props) {
                   {tallyEntries.map((entry, i) => {
                     const isWinner = cat.winners?.includes(entry.id);
                     return (
-                      <div key={entry.id} className={`flex items-center gap-3 rounded-xl px-3 py-2 ${isWinner ? 'bg-amber/10 border border-amber/20' : 'bg-white/3'}`}>
+                      <div key={entry.id} className={`flex items-center gap-3 rounded-xl px-3 py-2 ${isWinner ? (cat.points < 0 ? 'bg-orange/10 border border-orange/20' : 'bg-amber/10 border border-amber/20') : 'bg-white/3'}`}>
                         <span className="text-sm w-5 text-center text-white/30">{i + 1}</span>
-                        <span className={`flex-1 text-sm font-medium ${isWinner ? 'text-amber' : 'text-white/70'}`}>
-                          {entry.name} {isWinner && '🏆'}
+                        <span className={`flex-1 text-sm font-medium ${isWinner ? (cat.points < 0 ? 'text-orange' : 'text-amber') : 'text-white/70'}`}>
+                          {entry.name} {isWinner && (cat.points < 0 ? '💀' : '🏆')}
                         </span>
                         <span className="text-xs text-white/40">{entry.pts} vote pts</span>
                       </div>
@@ -210,7 +212,7 @@ export function Bonus({ user }: Props) {
                   })}
                   {cat.winners && cat.winners.length > 0 && (
                     <p className="text-xs text-white/40 text-center pt-1">
-                      {cat.winners.map(wid => users.find(u => u.id === wid)?.name).join(' & ')} wins {pointsEach} bonus point{pointsEach !== 1 ? 's' : ''}
+                      {cat.winners.map(wid => users.find(u => u.id === wid)?.name).join(' & ')} {cat.points < 0 ? `loses ${Math.abs(pointsEach)} bonus point${Math.abs(pointsEach) !== 1 ? 's' : ''}` : `wins ${pointsEach} bonus point${pointsEach !== 1 ? 's' : ''}`}
                     </p>
                   )}
                 </div>

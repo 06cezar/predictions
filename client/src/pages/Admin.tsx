@@ -756,8 +756,8 @@ export function Admin() {
                 <input
                   type="number"
                   value={newCatPoints}
-                  onChange={e => setNewCatPoints(parseInt(e.target.value) || 1)}
-                  min={1}
+                  onChange={e => setNewCatPoints(parseInt(e.target.value) || 0)}
+                  min={-100}
                   max={100}
                   className="input w-20 text-center"
                 />
@@ -820,8 +820,8 @@ export function Admin() {
                         <input
                           type="number"
                           value={editCatPoints}
-                          onChange={e => setEditCatPoints(parseInt(e.target.value) || 1)}
-                          min={1}
+                          onChange={e => setEditCatPoints(parseInt(e.target.value) || 0)}
+                          min={-100}
                           className="input w-20 text-center text-sm"
                         />
                         <span className="text-xs text-white/40 self-center">pts</span>
@@ -832,7 +832,7 @@ export function Admin() {
                       <div className="flex items-center gap-3">
                         <div className="flex-1">
                           <p className="font-medium">{cat.name}</p>
-                          <p className="text-xs text-white/40">{cat.points} bonus point{cat.points !== 1 ? 's' : ''} for winner</p>
+                          <p className="text-xs text-white/40">{cat.points < 0 ? `${Math.abs(cat.points)} point penalty for winner` : `${cat.points} bonus point${cat.points !== 1 ? 's' : ''} for winner`}</p>
                         </div>
                         <button
                           onClick={() => { setEditingCat(cat.id); setEditCatName(cat.name); setEditCatPoints(cat.points); }}
@@ -852,7 +852,7 @@ export function Admin() {
                             <span className="w-4">{i + 1}.</span>
                             <span className="flex-1">{entry.name}</span>
                             <span>{entry.pts} pts</span>
-                            {cat.winners?.includes(entry.id) && winnerCount > 0 && <span className="text-amber">→ +{pointsEach} bonus</span>}
+                            {cat.winners?.includes(entry.id) && winnerCount > 0 && <span className={cat.points < 0 ? 'text-orange' : 'text-amber'}>{cat.points < 0 ? `→ ${pointsEach}` : `→ +${pointsEach}`} bonus</span>}
                           </div>
                         ))}
                       </div>
