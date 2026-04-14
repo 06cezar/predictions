@@ -84,7 +84,7 @@ export function Join({ onLogin }: Props) {
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="e.g. Cutunescu"
+              placeholder="e.g. Padu"
               className="input"
               autoFocus
               autoComplete="off"
@@ -99,7 +99,7 @@ export function Join({ onLogin }: Props) {
               type="text"
               value={token}
               onChange={e => setToken(e.target.value)}
-              placeholder="e.g. stanescu-lata"
+              placeholder="e.g. penny-sud"
               className="input"
               autoComplete="off"
             />
