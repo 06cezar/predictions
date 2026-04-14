@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { users, predictions, predictionHistory, ratings, settings, outcomes, notifications, bonusCategories, bonusVotes, blockedTokens } from '../schema';
+import { users, predictions, predictionHistory, ratings, settings, outcomes, notifications, bonusCategories, bonusVotes, blockedTokens, inviteLinks } from '../schema';
 import { eq, and } from 'drizzle-orm';
 import { requireAdmin, getCurrentUser } from '../auth';
 import { calcScores } from './leaderboard';
@@ -91,6 +91,9 @@ router.delete('/users/:id', requireAdmin, (req, res) => {
   // Delete bonus votes by or for this user
   db.delete(bonusVotes).where(eq(bonusVotes.voterId, id)).run();
   db.delete(bonusVotes).where(eq(bonusVotes.nomineeId, id)).run();
+  // Nullify invite links FK references to this user
+  db.update(inviteLinks).set({ usedBy: null, usedAt: null }).where(eq(inviteLinks.usedBy, id)).run();
+  db.delete(inviteLinks).where(eq(inviteLinks.createdBy, id)).run();
   db.delete(users).where(eq(users.id, id)).run();
   res.json({ success: true });
 });
