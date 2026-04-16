@@ -683,7 +683,7 @@ export function Admin() {
                 <p className="font-medium text-sm">Anonymous Predictions</p>
                 <p className="text-xs text-white/40">
                   {settings.anonymousPredictions
-                    ? 'Author names are hidden at reveal'
+                    ? 'Hide who wrote each prediction across all phases'
                     : 'Author names are shown at reveal'}
                 </p>
               </div>
