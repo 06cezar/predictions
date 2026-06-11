@@ -23,6 +23,9 @@ router.post('/', requireAuth, (req, res) => {
   if (gameSettings.currentPhase !== 'submission') {
     return res.status(403).json({ error: 'Rating is only allowed during the submission phase' });
   }
+  if (!gameSettings.adminOverride && gameSettings.submissionDeadline && new Date() >= new Date(gameSettings.submissionDeadline)) {
+    return res.status(403).json({ error: 'Submission deadline has passed - rating is closed' });
+  }
 
   const pred = db.select().from(predictions).where(eq(predictions.id, parseInt(prediction_id))).get();
   if (!pred) return res.status(404).json({ error: 'Prediction not found' });

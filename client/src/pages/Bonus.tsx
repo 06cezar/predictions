@@ -141,12 +141,14 @@ export function Bonus({ user }: Props) {
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="font-display font-bold text-lg">{cat.name}</h2>
-                  <p className="text-xs text-white/40 mt-0.5">
-                    {cat.points < 0
-                      ? <>Winner loses <span className="text-orange font-semibold">{Math.abs(cat.points)}</span> bonus point{Math.abs(cat.points) !== 1 ? 's' : ''}{winnerCount > 1 && isDone ? ` (split: ${Math.abs(pointsEach)} each)` : ''}</>
-                      : <>Winner gets <span className="text-amber font-semibold">{cat.points}</span> bonus point{cat.points !== 1 ? 's' : ''}{winnerCount > 1 && isDone ? ` (split: ${pointsEach} each)` : ''}</>
-                    }
-                  </p>
+                  {isDone && (
+                    <p className="text-xs text-white/40 mt-0.5">
+                      {cat.points < 0
+                        ? <>Winner loses <span className="text-orange font-semibold">{Math.abs(cat.points)}</span> bonus point{Math.abs(cat.points) !== 1 ? 's' : ''}{winnerCount > 1 ? ` (split: ${Math.abs(pointsEach)} each)` : ''}</>
+                        : <>Winner gets <span className="text-amber font-semibold">{cat.points}</span> bonus point{cat.points !== 1 ? 's' : ''}{winnerCount > 1 ? ` (split: ${pointsEach} each)` : ''}</>
+                      }
+                    </p>
+                  )}
                 </div>
                 {alreadyVoted && isVoting && !hasChanged && (
                   <span className="text-xs text-green-400 bg-green-400/10 px-2 py-1 rounded-lg">✓ Voted</span>
