@@ -57,9 +57,10 @@ export function Countdown({ deadline, label }: Props) {
           ⏰ Last day! {label} closes soon.
         </div>
       )}
-      <div className="card">
+      <div className="card overflow-hidden">
+        <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-amber/10 blur-2xl pointer-events-none" />
         <p className="text-white/50 text-xs uppercase tracking-widest mb-1">{label} closes in</p>
-        <p className="font-display text-3xl font-bold text-amber">{display}</p>
+        <p className="font-display text-3xl font-bold text-amber text-glow tabular-nums">{display}</p>
       </div>
     </div>
   );

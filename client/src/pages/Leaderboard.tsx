@@ -336,21 +336,30 @@ export function Leaderboard() {
             const initials = entry.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
             const color = AVATAR_COLORS[entry.id % AVATAR_COLORS.length];
             return (
-              <div key={entry.id} className={`card flex items-center gap-4 animate-fade-up ${i === 0 ? 'border-amber/40 bg-amber/5' : ''}`} style={{ animationDelay: `${i * 0.07}s` }}>
-                <div className="w-8 text-center font-display font-bold text-lg text-white/40">
+              <div
+                key={entry.id}
+                className={`card flex items-center gap-4 animate-fade-up overflow-hidden ${
+                  i === 0 ? '!border-amber/40 shadow-[0_0_32px_-8px_rgba(255,179,71,0.35),inset_0_1px_0_rgba(255,255,255,0.07)]' : ''
+                }`}
+                style={{ animationDelay: `${i * 0.07}s` }}
+              >
+                {i === 0 && (
+                  <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-amber/15 blur-3xl pointer-events-none" />
+                )}
+                <div className={`w-8 text-center font-display font-bold ${i === 0 ? 'text-2xl' : 'text-lg'} text-white/40`}>
                   {MEDALS[i] || `#${entry.rank}`}
                 </div>
-                <div className={`${color} w-10 h-10 rounded-full flex items-center justify-center font-display font-bold text-sm text-white flex-shrink-0`}>
+                <div className={`${color} w-10 h-10 rounded-full flex items-center justify-center font-display font-bold text-sm text-white flex-shrink-0 ${i === 0 ? 'ring-2 ring-amber/60 ring-offset-2 ring-offset-[#15142A]' : ''}`}>
                   {initials}
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium">{entry.name}</p>
+                  <p className={`font-medium ${i === 0 ? 'font-display text-lg' : ''}`}>{entry.name}</p>
                   <p className="text-sm text-white/40">
                     {entry.score} prediction{entry.score !== 1 ? 's' : ''} happened
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="font-display text-2xl font-bold text-amber">{entry.weightedScore}</p>
+                <div className="text-right relative">
+                  <p className={`font-display text-2xl font-bold text-amber ${i === 0 ? 'text-glow text-3xl' : ''}`}>{entry.weightedScore}</p>
                   <p className="text-xs text-white/40">{entry.score} correct</p>
                 </div>
               </div>

@@ -53,8 +53,8 @@ export function Dashboard({ user, onLogout }: Props) {
     <div className="min-h-screen p-4 pb-24 max-w-2xl mx-auto">
       <div className="flex items-center justify-between py-6 mb-6 animate-fade-up">
         <div>
-          <h1 className="font-display text-3xl font-bold">Predictions</h1>
-          <p className="text-white/40 text-sm mt-1">Welcome back, {user.name}</p>
+          <h1 className="font-display text-3xl font-bold text-glow">Predictions</h1>
+          <p className="text-white/40 text-sm mt-1">Welcome back, <span className="text-amber/80 font-medium">{user.name}</span></p>
         </div>
         <PhaseBadge phase={phase} bonusActive={bonusActive} />
       </div>

@@ -70,11 +70,13 @@ export function Join({ onLogin }: Props) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-md space-y-8">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[480px] h-[480px] rounded-full bg-orange/10 blur-[120px] pointer-events-none" />
+      <div className="w-full max-w-md space-y-8 relative">
         <div className="text-center">
-          <h1 className="font-display text-5xl font-bold text-white mb-2">Predictions</h1>
-          <p className="text-white/50">You've been invited! Create your account below.</p>
+          <div className="text-6xl mb-4 animate-float select-none" style={{ filter: 'drop-shadow(0 8px 24px rgba(59,47,245,0.45))' }}>🔮</div>
+          <h1 className="font-display text-5xl font-bold text-white mb-2 text-glow">Predictions</h1>
+          <p className="text-white/50 italic font-display">You've been invited! Create your account below.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="card space-y-5">

@@ -41,28 +41,39 @@ export function Navbar({ user, onLogout }: Props) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-navy/95 backdrop-blur border-t border-white/10 flex items-center justify-around px-2 py-2">
+    <nav
+      className="fixed left-1/2 -translate-x-1/2 z-40 flex items-center gap-0.5 sm:gap-1 px-1.5 py-1.5 rounded-[1.4rem] border border-white/10 bg-navy/85 backdrop-blur-xl max-w-[calc(100vw-16px)]"
+      style={{
+        bottom: 'max(10px, env(safe-area-inset-bottom))',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 40px -8px rgba(0,0,0,0.6)',
+      }}
+    >
       {links.map(({ to, label, icon }) => {
         const active = location.pathname === to;
         const isHome = to === '/';
         return (
           <Link key={to} to={to}
-            className={`relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all text-xs font-medium ${
-              active ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'
+            className={`relative flex flex-col items-center gap-0.5 px-2.5 sm:px-3.5 py-1.5 rounded-2xl transition-all text-[10px] sm:text-xs font-medium ${
+              active ? 'bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]' : 'text-white/40 hover:text-white/75 hover:bg-white/5'
             }`}
           >
-            <span className="text-base">{icon}</span>
+            <span className={`text-base transition-transform ${active ? 'scale-110' : ''}`}>{icon}</span>
             {isHome && unread > 0 && (
-              <span className="absolute -top-0.5 right-1 min-w-[16px] h-4 px-1 rounded-full bg-orange text-white text-[10px] font-bold flex items-center justify-center leading-none">
+              <span className="absolute -top-0.5 right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-ember-gradient text-white text-[10px] font-bold flex items-center justify-center leading-none shadow-glow-orange">
                 {unread > 9 ? '9+' : unread}
               </span>
             )}
             <span>{label}</span>
+            <span
+              className={`absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-amber transition-all ${
+                active ? 'opacity-100' : 'opacity-0 scale-0'
+              }`}
+            />
           </Link>
         );
       })}
       <button onClick={handleLogout}
-        className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-xs font-medium text-white/30 hover:text-white/60 transition-all"
+        className="flex flex-col items-center gap-0.5 px-2.5 sm:px-3.5 py-1.5 rounded-2xl text-[10px] sm:text-xs font-medium text-white/30 hover:text-white/60 hover:bg-white/5 transition-all"
       >
         <span className="text-base">🚪</span>
         <span>Logout</span>

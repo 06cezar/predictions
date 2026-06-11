@@ -69,7 +69,8 @@ export function RatingSlider({ predictionId, initialScore, avgRating, onRate }: 
         step={1}
         value={score}
         onChange={e => setScore(parseInt(e.target.value))}
-        className="w-full accent-orange h-2"
+        className="w-full"
+        style={{ '--p': `${score}%` } as React.CSSProperties}
       />
 
       <div className="flex justify-between text-xs text-white/20 px-0.5">

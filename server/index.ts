@@ -3,7 +3,7 @@ import { initDb } from './db';
 import { startPhaseScheduler } from './phase-scheduler';
 import { createApp } from './app';
 
-const PORT = 3001;
+const PORT = parseInt(process.env.PORT || '3011');
 
 // Init DB
 initDb();

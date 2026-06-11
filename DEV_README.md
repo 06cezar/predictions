@@ -34,7 +34,7 @@ Pornește ambele servere în paralel:
 | Serviciu | URL |
 |---|---|
 | Frontend (Vite + React) | http://localhost:5173 |
-| Backend (Express + SQLite) | http://localhost:3001 |
+| Backend (Express + SQLite) | http://localhost:3011 |
 
 Requesturile `/api/*` din frontend sunt proxied automat spre backend — nu trebuie configurat nimic.
 
@@ -131,7 +131,8 @@ fly ssh console                 # SSH în container
 
 | Port | Serviciu | Unde |
 |---|---|---|
-| `3001` | Backend API | local + producție (Fly) |
+| `3011` | Backend API | doar local (3001 era ocupat de Docker) |
+| `3001` | Backend API | producție (Fly, setat prin env PORT) |
 | `5173` | Frontend dev | doar local |
 
-În producție, frontentul e servit static de backend pe același port `3001`.
+În producție, frontentul e servit static de backend pe portul `3001`.
