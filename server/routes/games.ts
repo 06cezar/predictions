@@ -2,16 +2,10 @@ import { Router } from 'express';
 import { db } from '../db';
 import { users } from '../schema';
 import { logIn } from '../auth';
-import { createGame, findGameByJoinCode } from '../services/games';
+import { cleanName, createGame, findGameByJoinCode } from '../services/games';
 import { claimToken } from '../services/tokens';
 
 const router = Router();
-
-const MAX_NAME_LENGTH = 40;
-
-function cleanName(value: unknown) {
-  return typeof value === 'string' ? value.trim().slice(0, MAX_NAME_LENGTH) : '';
-}
 
 // POST /api/games — public: create a game and become its admin
 router.post('/', (req, res) => {

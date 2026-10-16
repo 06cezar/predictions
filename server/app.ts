@@ -14,6 +14,7 @@ import notificationRoutes from './routes/notifications';
 import bonusRoutes from './routes/bonus';
 import inviteRoutes from './routes/invite';
 import gameRoutes from './routes/games';
+import demoRoutes from './routes/demo';
 
 export function createApp() {
   const app = express();
@@ -90,6 +91,7 @@ export function createApp() {
   app.use('/api/bonus', bonusRoutes);
   app.use('/api/invite', inviteRoutes);
   app.use('/api/games', gameRoutes);
+  app.use('/api/demo', demoRoutes);
 
   return app;
 }

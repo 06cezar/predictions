@@ -3,10 +3,10 @@ import { db } from '../db';
 import { users, predictions, predictionHistory, ratings, outcomes, notifications, bonusCategories, bonusVotes, inviteLinks } from '../schema';
 import { eq, and, inArray, getTableColumns } from 'drizzle-orm';
 import { requireAdmin } from '../auth';
-import { notifyAllUsersPhaseChange } from '../notifications-helper';
 import { Game, GameChanges, PHASES, Phase, getGame, updateGame, clearGameData, newJoinCode } from '../services/games';
 import { loadSnapshot, Prediction } from '../services/snapshot';
 import { calcScores } from '../services/scoring';
+import { changePhase } from '../services/phases';
 import { claimToken, generateUniqueToken } from '../services/tokens';
 import * as awards from '../services/awards';
 
@@ -236,8 +236,7 @@ router.post('/join-code/regenerate', (req, res) => {
 });
 
 function setPhase(game: Game, phase: Phase) {
-  updateGame(game.id, { currentPhase: phase });
-  notifyAllUsersPhaseChange(game.id, phase);
+  changePhase(game, phase);
   return { success: true, newPhase: phase };
 }
 

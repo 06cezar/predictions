@@ -11,6 +11,13 @@ export type Phase = typeof PHASES[number];
 export type Game = typeof games.$inferSelect;
 export type GameChanges = Partial<Omit<typeof games.$inferInsert, 'id' | 'createdAt'>>;
 
+const MAX_NAME_LENGTH = 40;
+
+/** Trim a game or player name from a request body; '' if missing. */
+export function cleanName(value: unknown) {
+  return typeof value === 'string' ? value.trim().slice(0, MAX_NAME_LENGTH) : '';
+}
+
 export function getGame(id: number): Game | undefined {
   return db.select().from(games).where(eq(games.id, id)).get();
 }

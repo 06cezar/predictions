@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAuth } from '../auth';
+import { demoExpiresAt } from '../services/demo';
 
 const router = Router();
 
@@ -9,6 +10,7 @@ router.get('/', requireAuth, (req, res) => {
   res.json({
     gameName: game.name,
     isDemo: game.isDemo,
+    demoExpiresAt: game.isDemo ? demoExpiresAt(game) : null,
     currentPhase: game.currentPhase,
     submissionDeadline: game.submissionDeadline,
     revealDeadline: game.revealDeadline,
