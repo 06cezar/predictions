@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from './schema';
 import path from 'path';
-import { applySchema } from './migrate';
+import { migrate } from './migrate';
 
 /** Where SQLite files live. Production mounts a Fly.io volume at /data. */
 export const DATA_DIR = process.env.DATA_DIR
@@ -33,7 +33,7 @@ export function setDb(newDb: Db) {
 }
 
 export function initDb() {
-  applySchema(sqlite);
+  migrate(sqlite);
 
   // Seed admin user from env vars if table is empty
   if (process.env.ADMIN_TOKEN) {

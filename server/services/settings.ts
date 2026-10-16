@@ -6,7 +6,7 @@ export const PHASES = ['submission', 'reveal', 'done'] as const;
 export type Phase = typeof PHASES[number];
 export type Settings = typeof settings.$inferSelect;
 
-/** The game has a single settings row (id = 1), created by applySchema(). */
+/** The game has a single settings row (id = 1), created by migrate(). */
 export function getSettings(): Settings {
   return db.select().from(settings).where(eq(settings.id, 1)).get()!;
 }

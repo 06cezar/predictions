@@ -2,14 +2,14 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from '../server/schema';
 import { setDb } from '../server/db';
-import { applySchema } from '../server/migrate';
+import { migrate } from '../server/migrate';
 import { createApp } from '../server/app';
 import request from 'supertest';
 
 export function createTestDb() {
   const sqlite = new Database(':memory:');
   sqlite.pragma('foreign_keys = ON');
-  applySchema(sqlite);
+  migrate(sqlite);
   const db = drizzle(sqlite, { schema });
   return { sqlite, db };
 }
