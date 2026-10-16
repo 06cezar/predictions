@@ -1,7 +1,7 @@
+import { eq } from 'drizzle-orm';
 import { db } from '../db';
 import { bonusCategories, bonusVotes } from '../schema';
-import { getSettings } from './settings';
-import { GameSnapshot, avgRating, loadSnapshot } from './snapshot';
+import { GameSnapshot, avgRating } from './snapshot';
 
 /**
  * Rating bands below the threshold. A prediction the group rated in the lowest
@@ -44,10 +44,15 @@ export function tallyVotes(votes: { nomineeId: number; rank: number }[]) {
 }
 
 /** Bonus points per user id: each category's points are split evenly between its winners. */
-export function calcBonusPoints(): Record<number, number> {
-  const allVotes = db.select().from(bonusVotes).all();
+export function calcBonusPoints(gameId: number): Record<number, number> {
+  const categories = db.select().from(bonusCategories).where(eq(bonusCategories.gameId, gameId)).all();
+  const allVotes = db.select({ categoryId: bonusVotes.categoryId, nomineeId: bonusVotes.nomineeId, rank: bonusVotes.rank })
+    .from(bonusVotes)
+    .innerJoin(bonusCategories, eq(bonusCategories.id, bonusVotes.categoryId))
+    .where(eq(bonusCategories.gameId, gameId))
+    .all();
   const points: Record<number, number> = {};
-  for (const cat of db.select().from(bonusCategories).all()) {
+  for (const cat of categories) {
     const { winners } = tallyVotes(allVotes.filter(v => v.categoryId === cat.id));
     for (const id of winners) {
       points[id] = (points[id] ?? 0) + cat.points / winners.length;
@@ -58,9 +63,9 @@ export function calcBonusPoints(): Record<number, number> {
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
-/** The ranked leaderboard: authors score for their predictions that came true. */
-export function calcScores(g: GameSnapshot = loadSnapshot(), threshold = getSettings().ratingThreshold) {
-  const bonusPoints = calcBonusPoints();
+/** The ranked leaderboard of one game: authors score for their predictions that came true. */
+export function calcScores(gameId: number, g: GameSnapshot, threshold: number) {
+  const bonusPoints = calcBonusPoints(gameId);
 
   const board = g.users.map(u => {
     let happened = 0;

@@ -1,22 +1,21 @@
 import { Router } from 'express';
 import { requireAuth } from '../auth';
-import { getSettings } from '../services/settings';
 
 const router = Router();
 
-// Public settings (phase + deadlines + threshold) — accessible to all authenticated users
+// The player's game: name, phase, deadlines and rules
 router.get('/', requireAuth, (req, res) => {
-  const s = getSettings();
-  if (!s) return res.status(500).json({ error: 'Settings not found' });
-
+  const game = res.locals.game;
   res.json({
-    currentPhase: s.currentPhase,
-    submissionDeadline: s.submissionDeadline,
-    revealDeadline: s.revealDeadline,
-    ratingThreshold: s.ratingThreshold,
-    anonymousPredictions: s.anonymousPredictions,
-    bonusActive: s.bonusActive,
-    adminOverride: s.adminOverride,
+    gameName: game.name,
+    isDemo: game.isDemo,
+    currentPhase: game.currentPhase,
+    submissionDeadline: game.submissionDeadline,
+    revealDeadline: game.revealDeadline,
+    ratingThreshold: game.ratingThreshold,
+    anonymousPredictions: game.anonymousPredictions,
+    bonusActive: game.bonusActive,
+    adminOverride: game.adminOverride,
   });
 });
 

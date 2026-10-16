@@ -2,16 +2,15 @@ import { Router } from 'express';
 import { db } from '../db';
 import { predictions, predictionHistory, ratings, users, outcomes, notifications } from '../schema';
 import { eq, and } from 'drizzle-orm';
-import { requireAuth, getCurrentUser } from '../auth';
-import { getSettings, isSubmissionOpen } from '../services/settings';
+import { requireAuth } from '../auth';
+import { isSubmissionOpen } from '../services/games';
 import { getAvgRating } from '../services/ratings';
 
 const router = Router();
 
 router.get('/mine', requireAuth, (req, res) => {
-  const me = getCurrentUser(req)!;
+  const { user: me, game } = res.locals;
   const mine = db.select().from(predictions).where(eq(predictions.authorId, me.id)).all();
-  const s = getSettings();
 
   const result = mine.map(p => {
     const history = db.select().from(predictionHistory)
@@ -29,7 +28,7 @@ router.get('/mine', requireAuth, (req, res) => {
       updatedAt: p.updatedAt,
       editCount: history.length,
       avgRating,
-      ratingThreshold: s.ratingThreshold,
+      ratingThreshold: game.ratingThreshold,
     };
   });
 
@@ -37,12 +36,11 @@ router.get('/mine', requireAuth, (req, res) => {
 });
 
 router.post('/', requireAuth, (req, res) => {
-  const s = getSettings();
-  if (!isSubmissionOpen(s)) {
+  const { user: me, game } = res.locals;
+  if (!isSubmissionOpen(game)) {
     return res.status(403).json({ error: 'Submission period has ended' });
   }
 
-  const me = getCurrentUser(req)!;
   const { target_id, text } = req.body;
 
   if (!target_id || !text?.trim()) {
@@ -52,7 +50,8 @@ router.post('/', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Cannot write a prediction about yourself' });
   }
 
-  const target = db.select().from(users).where(eq(users.id, parseInt(target_id))).get();
+  const target = db.select().from(users)
+    .where(and(eq(users.id, parseInt(target_id)), eq(users.gameId, game.id))).get();
   if (!target) return res.status(404).json({ error: 'Target user not found' });
 
   const existing = db.select().from(predictions)
@@ -61,6 +60,7 @@ router.post('/', requireAuth, (req, res) => {
   if (existing) return res.status(409).json({ error: 'Prediction already exists, use PUT to edit' });
 
   const result = db.insert(predictions).values({
+    gameId: game.id,
     authorId: me.id,
     targetId: parseInt(target_id),
     currentText: text.trim(),
@@ -76,15 +76,15 @@ router.post('/', requireAuth, (req, res) => {
 });
 
 router.put('/:id', requireAuth, (req, res) => {
-  const s = getSettings();
-  if (!isSubmissionOpen(s)) {
+  const { user: me, game } = res.locals;
+  if (!isSubmissionOpen(game)) {
     return res.status(403).json({ error: 'Submission period has ended' });
   }
 
-  const me = getCurrentUser(req)!;
   const predId = parseInt(req.params.id);
 
-  const pred = db.select().from(predictions).where(eq(predictions.id, predId)).get();
+  const pred = db.select().from(predictions)
+    .where(and(eq(predictions.id, predId), eq(predictions.gameId, game.id))).get();
   if (!pred) return res.status(404).json({ error: 'Prediction not found' });
   if (pred.authorId !== me.id) return res.status(403).json({ error: 'Not your prediction' });
 
@@ -119,7 +119,7 @@ router.put('/:id', requireAuth, (req, res) => {
 });
 
 router.get('/to-rate', requireAuth, (req, res) => {
-  const me = getCurrentUser(req)!;
+  const { user: me, game } = res.locals;
 
   // Targets I have already written a prediction for
   const myPredictions = db.select({ targetId: predictions.targetId })
@@ -127,14 +127,13 @@ router.get('/to-rate', requireAuth, (req, res) => {
   const myTargetIds = new Set(myPredictions.map(p => p.targetId));
 
   // Predictions where I am NOT the author AND NOT the target AND target is someone I wrote about
-  const all = db.select().from(predictions).all();
+  const all = db.select().from(predictions).where(eq(predictions.gameId, game.id)).all();
   const rateable = all.filter(p =>
     p.authorId !== me.id &&
     p.targetId !== me.id &&
     myTargetIds.has(p.targetId)
   );
 
-  const s = getSettings();
   const result = rateable.map(p => {
     const history = db.select().from(predictionHistory)
       .where(eq(predictionHistory.predictionId, p.id)).all();
@@ -148,7 +147,7 @@ router.get('/to-rate', requireAuth, (req, res) => {
       .get();
 
     let authorName: string | undefined;
-    if (!s.anonymousPredictions) {
+    if (!game.anonymousPredictions) {
       const author = db.select({ name: users.name }).from(users)
         .where(eq(users.id, p.authorId)).get();
       authorName = author?.name;
@@ -170,12 +169,11 @@ router.get('/to-rate', requireAuth, (req, res) => {
 });
 
 router.get('/about-me', requireAuth, (req, res) => {
-  const s = getSettings();
-  if (s.currentPhase === 'submission') {
+  const { user: me, game } = res.locals;
+  if (game.currentPhase === 'submission') {
     return res.status(403).json({ error: 'Not available during submission phase' });
   }
 
-  const me = getCurrentUser(req)!;
   const mine = db.select().from(predictions).where(eq(predictions.targetId, me.id)).all();
 
   const result = mine.map(p => {
@@ -186,7 +184,7 @@ router.get('/about-me', requireAuth, (req, res) => {
 
     // Reveal author name only if anonymous mode is OFF
     let authorName: string | undefined;
-    if (!s.anonymousPredictions) {
+    if (!game.anonymousPredictions) {
       const author = db.select({ name: users.name }).from(users)
         .where(eq(users.id, p.authorId)).get();
       authorName = author?.name;

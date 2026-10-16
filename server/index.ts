@@ -2,11 +2,13 @@ import path from 'path';
 import { initDb } from './db';
 import { startPhaseScheduler } from './phase-scheduler';
 import { createApp } from './app';
+import { seedAdminFromEnv } from './services/games';
 
 const PORT = parseInt(process.env.PORT || '3011');
 
 // Init DB
 initDb();
+seedAdminFromEnv();
 
 const app = createApp();
 

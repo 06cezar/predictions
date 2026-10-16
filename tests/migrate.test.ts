@@ -109,6 +109,47 @@ describe('migrate()', () => {
     expect(sqlite.prepare('SELECT sql FROM sqlite_master ORDER BY name').all()).toEqual(schemaBefore);
   });
 
+  it('moves single-game data into game #1, keeping its settings', () => {
+    const sqlite = legacyDb();
+    migrate(sqlite, { legacyGameName: 'The Originals' });
+
+    expect(sqlite.prepare('SELECT * FROM games').all()).toEqual([expect.objectContaining({
+      id: 1,
+      name: 'The Originals',
+      open_join: 0,
+      is_demo: 0,
+      current_phase: 'reveal',
+      submission_deadline: '2026-04-16T20:43:00.000Z',
+      rating_threshold: 40,
+      join_code: expect.stringMatching(/^[A-Z2-9]{6}$/),
+    })]);
+    expect(sqlite.prepare('SELECT DISTINCT game_id FROM users').all()).toEqual([{ game_id: 1 }]);
+    expect(sqlite.prepare('SELECT DISTINCT game_id FROM predictions').all()).toEqual([{ game_id: 1 }]);
+    expect(tables(sqlite)).not.toContain('settings');
+    expect(sqlite.pragma('foreign_key_check')).toEqual([]);
+  });
+
+  it('keeps ids and rejects rows pointing at a missing game afterwards', () => {
+    const sqlite = legacyDb();
+    migrate(sqlite);
+
+    expect(sqlite.prepare('SELECT id, author_id, target_id FROM predictions ORDER BY id').all()).toEqual([
+      { id: 1, author_id: 1, target_id: 2 },
+      { id: 2, author_id: 2, target_id: 1 },
+    ]);
+    expect(() => sqlite.prepare(`INSERT INTO users (game_id, name, token) VALUES (99, 'X', 'x')`).run())
+      .toThrow(/FOREIGN KEY/);
+    // AUTOINCREMENT keeps counting after the copied rows
+    const { lastInsertRowid } = sqlite.prepare(`INSERT INTO users (game_id, name, token) VALUES (1, 'Cid', 'cid')`).run();
+    expect(lastInsertRowid).toBe(3);
+  });
+
+  it('creates no game on an empty database', () => {
+    const sqlite = new Database(':memory:');
+    migrate(sqlite);
+    expect(sqlite.prepare('SELECT COUNT(*) AS n FROM games').get()).toEqual({ n: 0 });
+  });
+
   it('leaves foreign keys enforced afterwards', () => {
     const sqlite = new Database(':memory:');
     migrate(sqlite);

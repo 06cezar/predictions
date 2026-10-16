@@ -2,24 +2,28 @@ import { Router } from 'express';
 import { db } from '../db';
 import { bonusCategories, bonusVotes, users } from '../schema';
 import { eq, and } from 'drizzle-orm';
-import { requireAuth, requireAdmin, getCurrentUser } from '../auth';
-import { getSettings } from '../services/settings';
+import { requireAuth, requireAdmin } from '../auth';
+import { Game } from '../services/games';
 import { tallyVotes } from '../services/scoring';
 
 const router = Router();
 
+/** A bonus category of this game, or undefined (also for other games' categories). */
+function findCategory(game: Game, id: number) {
+  return db.select().from(bonusCategories).where(and(eq(bonusCategories.id, id), eq(bonusCategories.gameId, game.id))).get();
+}
+
 // GET /api/bonus — get categories + my votes + tally (tally only at done or for admin)
 router.get('/', requireAuth, (req, res) => {
-  const me = getCurrentUser(req)!;
-  const s = getSettings();
+  const { user: me, game } = res.locals;
 
-  if (!s.bonusActive && s.currentPhase !== 'done' && !me.isAdmin) {
+  if (!game.bonusActive && game.currentPhase !== 'done' && !me.isAdmin) {
     return res.status(403).json({ error: 'Not available yet' });
   }
 
-  const allUsers = db.select({ id: users.id, name: users.name }).from(users).all();
-  const allCats = db.select().from(bonusCategories).all();
-  const showTally = s.currentPhase === 'done' || me.isAdmin;
+  const allUsers = db.select({ id: users.id, name: users.name }).from(users).where(eq(users.gameId, game.id)).all();
+  const allCats = db.select().from(bonusCategories).where(eq(bonusCategories.gameId, game.id)).all();
+  const showTally = game.currentPhase === 'done' || me.isAdmin;
 
   const categories = allCats.map(cat => {
     const myVotes = db.select().from(bonusVotes)
@@ -41,15 +45,14 @@ router.get('/', requireAuth, (req, res) => {
     };
   });
 
-  res.json({ categories, users: allUsers, phase: s.currentPhase, bonusActive: s.bonusActive });
+  res.json({ categories, users: allUsers, phase: game.currentPhase, bonusActive: game.bonusActive });
 });
 
 // POST /api/bonus/vote — submit votes for a category (replaces existing)
 router.post('/vote', requireAuth, (req, res) => {
-  const me = getCurrentUser(req)!;
-  const s = getSettings();
+  const { user: me, game } = res.locals;
 
-  if (!s.bonusActive) {
+  if (!game.bonusActive) {
     return res.status(403).json({ error: 'Voting only available when Bonus is active' });
   }
 
@@ -68,12 +71,12 @@ router.post('/vote', requireAuth, (req, res) => {
   if (new Set(nomineeIds).size !== 3) return res.status(400).json({ error: 'Cannot vote for same person twice' });
   if (nomineeIds.includes(me.id)) return res.status(400).json({ error: 'Cannot vote for yourself' });
 
-  const cat = db.select().from(bonusCategories).where(eq(bonusCategories.id, categoryId)).get();
+  const cat = findCategory(game, categoryId);
   if (!cat) return res.status(404).json({ error: 'Category not found' });
 
-  // Verify all nominees exist
+  // Verify all nominees are players of this game
   for (const nid of nomineeIds) {
-    const u = db.select({ id: users.id }).from(users).where(eq(users.id, nid)).get();
+    const u = db.select({ id: users.id }).from(users).where(and(eq(users.id, nid), eq(users.gameId, game.id))).get();
     if (!u) return res.status(400).json({ error: `User ${nid} not found` });
   }
 
@@ -90,28 +93,31 @@ router.post('/vote', requireAuth, (req, res) => {
 router.post('/categories', requireAdmin, (req, res) => {
   const { name, points } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: 'name required' });
-  const cat = db.insert(bonusCategories).values({ name: name.trim(), points: parseInt(points) || 5 }).returning().get();
+  const cat = db.insert(bonusCategories)
+    .values({ gameId: res.locals.game.id, name: name.trim(), points: parseInt(points) || 5 })
+    .returning().get();
   res.json(cat);
 });
 
 // PUT /api/bonus/categories/:id (admin) — update category
 router.put('/categories/:id', requireAdmin, (req, res) => {
-  const id = parseInt(req.params.id);
+  const cat = findCategory(res.locals.game, parseInt(req.params.id));
+  if (!cat) return res.status(404).json({ error: 'Category not found' });
   const { name, points } = req.body;
-  const updates: Record<string, any> = {};
+  const updates: Partial<typeof bonusCategories.$inferInsert> = {};
   if (name?.trim()) updates.name = name.trim();
   if (points !== undefined) updates.points = parseInt(points);
   if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'Nothing to update' });
-  db.update(bonusCategories).set(updates).where(eq(bonusCategories.id, id)).run();
-  const updated = db.select().from(bonusCategories).where(eq(bonusCategories.id, id)).get();
-  res.json(updated);
+  db.update(bonusCategories).set(updates).where(eq(bonusCategories.id, cat.id)).run();
+  res.json(findCategory(res.locals.game, cat.id));
 });
 
 // DELETE /api/bonus/categories/:id (admin) — delete category and its votes
 router.delete('/categories/:id', requireAdmin, (req, res) => {
-  const id = parseInt(req.params.id);
-  db.delete(bonusVotes).where(eq(bonusVotes.categoryId, id)).run();
-  db.delete(bonusCategories).where(eq(bonusCategories.id, id)).run();
+  const cat = findCategory(res.locals.game, parseInt(req.params.id));
+  if (!cat) return res.status(404).json({ error: 'Category not found' });
+  db.delete(bonusVotes).where(eq(bonusVotes.categoryId, cat.id)).run();
+  db.delete(bonusCategories).where(eq(bonusCategories.id, cat.id)).run();
   res.json({ success: true });
 });
 

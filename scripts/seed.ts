@@ -6,7 +6,7 @@
  */
 import { db, initDb } from '../server/db';
 import { users, predictions, ratings } from '../server/schema';
-import { updateSettings } from '../server/services/settings';
+import { createGame, updateGame } from '../server/services/games';
 import { wipeAllData } from './wipe';
 
 initDb();
@@ -30,6 +30,8 @@ async function seed() {
     console.log('Force reseed enabled. Existing data cleared.');
   }
 
+  const game = createGame({ name: 'Demo game' });
+
   // Create users
   const userData = [
     { name: 'Alex (Admin)', token: makeToken('lion', 'sunset', 42), isAdmin: true },
@@ -41,7 +43,7 @@ async function seed() {
 
   const createdUsers = [];
   for (const u of userData) {
-    const created = db.insert(users).values(u).returning().get();
+    const created = db.insert(users).values({ ...u, gameId: game.id }).returning().get();
     createdUsers.push(created);
   }
 
@@ -70,7 +72,7 @@ async function seed() {
 
   const createdPreds = [];
   for (const p of predData) {
-    const created = db.insert(predictions).values(p).returning().get();
+    const created = db.insert(predictions).values({ ...p, gameId: game.id }).returning().get();
     createdPreds.push(created);
   }
   console.log(`\n✅ Created ${createdPreds.length} predictions`);
@@ -112,7 +114,7 @@ async function seed() {
   const submissionDeadline = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
   const revealDeadline = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
 
-  updateSettings({
+  updateGame(game.id, {
     submissionDeadline,
     revealDeadline,
     ratingThreshold: 40,

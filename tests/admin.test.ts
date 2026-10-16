@@ -135,7 +135,7 @@ describe('Admin routes', () => {
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
     createPrediction(db, alice.id, bob.id, 'Bob will succeed');
-    db.update(schema.settings).set({ anonymousPredictions: false }).where(eq(schema.settings.id, 1)).run();
+    db.update(schema.games).set({ anonymousPredictions: false }).where(eq(schema.games.id, 1)).run();
 
     const agent = request.agent(app);
     await loginAs(agent, 'token-admin');

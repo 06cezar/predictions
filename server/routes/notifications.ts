@@ -2,14 +2,12 @@ import { Router } from 'express';
 import { db } from '../db';
 import { notifications, users } from '../schema';
 import { eq, and, ne } from 'drizzle-orm';
-import { requireAuth, getCurrentUser } from '../auth';
-import { getSettings } from '../services/settings';
+import { requireAuth } from '../auth';
 
 const router = Router();
 
 router.get('/', requireAuth, (req, res) => {
-  const me = getCurrentUser(req)!;
-  const s = getSettings();
+  const { user: me, game } = res.locals;
 
   const items = db.select().from(notifications)
     .where(and(eq(notifications.userId, me.id), ne(notifications.dismissed, true)))
@@ -21,7 +19,7 @@ router.get('/', requireAuth, (req, res) => {
 
       if (n.type === 'prediction_about_you') {
         let authorName: string | null = null;
-        if (!s.anonymousPredictions && n.authorId) {
+        if (!game.anonymousPredictions && n.authorId) {
           const author = db.select({ name: users.name }).from(users)
             .where(eq(users.id, n.authorId)).get();
           authorName = author?.name ?? null;
@@ -63,7 +61,7 @@ router.get('/', requireAuth, (req, res) => {
 });
 
 router.post('/dismiss/:id', requireAuth, (req, res) => {
-  const me = getCurrentUser(req)!;
+  const me = res.locals.user;
   const id = parseInt(req.params.id);
   db.update(notifications)
     .set({ dismissed: true })
@@ -73,7 +71,7 @@ router.post('/dismiss/:id', requireAuth, (req, res) => {
 });
 
 router.post('/read-all', requireAuth, (req, res) => {
-  const me = getCurrentUser(req)!;
+  const me = res.locals.user;
   db.update(notifications)
     .set({ read: true })
     .where(and(eq(notifications.userId, me.id), eq(notifications.read, false)))

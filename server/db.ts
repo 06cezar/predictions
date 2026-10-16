@@ -33,15 +33,5 @@ export function setDb(newDb: Db) {
 }
 
 export function initDb() {
-  migrate(sqlite);
-
-  // Seed admin user from env vars if table is empty
-  if (process.env.ADMIN_TOKEN) {
-    const count = (sqlite.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number }).c;
-    if (count === 0) {
-      const name = process.env.ADMIN_NAME || 'Admin';
-      sqlite.prepare('INSERT INTO users (name, token, is_admin) VALUES (?, ?, 1)').run(name, process.env.ADMIN_TOKEN);
-      console.log(`[db] Seeded admin user: ${name}`);
-    }
-  }
+  migrate(sqlite, { legacyGameName: process.env.LEGACY_GAME_NAME });
 }

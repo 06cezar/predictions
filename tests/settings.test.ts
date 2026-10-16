@@ -92,7 +92,7 @@ describe('Anonymous predictions setting', () => {
     const bob = createUser(db, 'Bob', 'token-bob');
     createPrediction(db, alice.id, bob.id, 'Bob will do great things');
     // Turn anonymous OFF
-    db.update(schema.settings).set({ anonymousPredictions: false }).where(eq(schema.settings.id, 1)).run();
+    db.update(schema.games).set({ anonymousPredictions: false }).where(eq(schema.games.id, 1)).run();
     setPhase(db, 'reveal');
 
     const bobAgent = request.agent(app);
@@ -117,7 +117,7 @@ describe('Anonymous predictions setting', () => {
 
   it('anonymousPredictions is included in GET /api/settings', async () => {
     createUser(db, 'Alice', 'token-alice');
-    db.update(schema.settings).set({ anonymousPredictions: false }).where(eq(schema.settings.id, 1)).run();
+    db.update(schema.games).set({ anonymousPredictions: false }).where(eq(schema.games.id, 1)).run();
 
     const agent = request.agent(app);
     await loginAs(agent, 'token-alice');

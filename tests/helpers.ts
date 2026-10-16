@@ -3,15 +3,32 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from '../server/schema';
 import { setDb } from '../server/db';
 import { migrate } from '../server/migrate';
+import { randomJoinCode } from '../server/random';
+import { eq } from 'drizzle-orm';
 import { createApp } from '../server/app';
 import request from 'supertest';
+
+type TestDb = ReturnType<typeof drizzle<typeof schema>>;
+
+/** Every test database starts with one game; helpers use it unless told otherwise. */
+export const DEFAULT_GAME_ID = 1;
 
 export function createTestDb() {
   const sqlite = new Database(':memory:');
   sqlite.pragma('foreign_keys = ON');
   migrate(sqlite);
   const db = drizzle(sqlite, { schema });
+  createGame(db, 'Test game');
   return { sqlite, db };
+}
+
+/** Create a game directly in the DB. */
+export function createGame(
+  db: TestDb,
+  name: string,
+  values: Partial<typeof schema.games.$inferInsert> = {},
+) {
+  return db.insert(schema.games).values({ name, joinCode: randomJoinCode(), ...values }).returning().get()!;
 }
 
 export function setupTestDb() {
@@ -26,8 +43,9 @@ export function createUser(
   name: string,
   token: string,
   isAdmin = false,
+  gameId = DEFAULT_GAME_ID,
 ) {
-  return db.insert(schema.users).values({ name, token, isAdmin }).returning().get()!;
+  return db.insert(schema.users).values({ gameId, name, token, isAdmin }).returning().get()!;
 }
 
 /** Create a prediction directly in the DB. */
@@ -37,7 +55,8 @@ export function createPrediction(
   targetId: number,
   text: string,
 ) {
-  return db.insert(schema.predictions).values({ authorId, targetId, currentText: text }).returning().get()!;
+  const author = db.select().from(schema.users).where(eq(schema.users.id, authorId)).get()!;
+  return db.insert(schema.predictions).values({ gameId: author.gameId, authorId, targetId, currentText: text }).returning().get()!;
 }
 
 /** Create a rating directly in the DB. */
@@ -60,13 +79,14 @@ export function createOutcome(
   return db.insert(schema.outcomes).values({ predictionId, happened, markedBy }).returning().get()!;
 }
 
-/** Set the current phase in settings. */
+/** Set a game's current phase (and optionally other settings). */
 export function setPhase(
   db: ReturnType<typeof createTestDb>['db'],
   phase: 'submission' | 'reveal' | 'done',
-  extra: Partial<typeof schema.settings.$inferInsert> = {},
+  extra: Partial<typeof schema.games.$inferInsert> = {},
+  gameId = DEFAULT_GAME_ID,
 ) {
-  db.update(schema.settings).set({ currentPhase: phase, ...extra }).run();
+  db.update(schema.games).set({ currentPhase: phase, ...extra }).where(eq(schema.games.id, gameId)).run();
 }
 
 /**

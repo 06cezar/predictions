@@ -182,7 +182,7 @@ describe('Leaderboard scoring rules', () => {
     const charlie = createUser(db, 'Charlie', 'token-charlie');
 
     // Change threshold to 80: tier1=20, tier2=40, threshold=80
-    db.update(schema.settings).set({ ratingThreshold: 80 }).where(eq(schema.settings.id, 1)).run();
+    db.update(schema.games).set({ ratingThreshold: 80 }).where(eq(schema.games.id, 1)).run();
     setPhase(db, 'done');
 
     const pred = createPrediction(db, alice.id, bob.id, 'Mid prediction');

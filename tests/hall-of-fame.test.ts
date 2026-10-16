@@ -137,7 +137,7 @@ describe('Hall of Fame routes', () => {
     });
 
     it('reveals author names when anonymous mode is off', async () => {
-      db.update(schema.settings).set({ anonymousPredictions: false }).run();
+      db.update(schema.games).set({ anonymousPredictions: false }).run();
       const res = await getAs('token-ana', 'most-courageous');
       expect(res.body.authorName).toBe('Ana');
     });

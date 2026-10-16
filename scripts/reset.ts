@@ -1,11 +1,11 @@
 /**
- * Wipe the game and start over with a single admin user.
+ * Wipe every game and start over with one game and its admin.
  *
- *   ADMIN_TOKEN=my-secret-token ADMIN_NAME=Alex npm run reset
+ *   ADMIN_TOKEN=my-secret-token ADMIN_NAME=Alex ADMIN_GAME_NAME="Class of 2026" npm run reset
  */
 import { db, initDb } from '../server/db';
 import { users } from '../server/schema';
-import { updateSettings } from '../server/services/settings';
+import { createGame } from '../server/services/games';
 import { wipeAllData } from './wipe';
 
 const token = process.env.ADMIN_TOKEN;
@@ -17,22 +17,15 @@ if (!token) {
 initDb();
 wipeAllData();
 
-updateSettings({
-  currentPhase: 'submission',
-  submissionDeadline: null,
-  revealDeadline: null,
-  ratingThreshold: 40,
-  autoAdvancePhase: true,
-  adminOverride: false,
-  anonymousPredictions: true,
-  bonusActive: false,
-});
+const game = createGame({ name: process.env.ADMIN_GAME_NAME || 'Predictions', openJoin: false, ratingThreshold: 40 });
 
 const admin = db.insert(users).values({
+  gameId: game.id,
   name: process.env.ADMIN_NAME || 'Admin',
   token,
   isAdmin: true,
 }).returning().get();
 
 console.log('✅ Database reset complete.');
+console.log(`🎲 Game: ${game.name} (join code ${game.joinCode})`);
 console.log(`👑 Admin user: ${admin.name}`);

@@ -732,8 +732,8 @@ export function Admin() {
                 ✨ Hall of Fame
               </a>
             </div>
-            <a href="/api/admin/export/db" download className="btn-secondary w-full text-center text-sm py-2 block">
-              🗄️ Full Database (.db)
+            <a href="/api/admin/export/game.json" download className="btn-secondary w-full text-center text-sm py-2 block">
+              🗄️ Whole game (.json)
             </a>
           </div>
         </div>

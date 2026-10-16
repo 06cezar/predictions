@@ -2,29 +2,28 @@ import { Router } from 'express';
 import { db } from '../db';
 import { outcomes, predictions, notifications, users } from '../schema';
 import { eq, and } from 'drizzle-orm';
-import { requireAuth, getCurrentUser } from '../auth';
-import { getSettings } from '../services/settings';
+import { requireAuth } from '../auth';
 
 const router = Router();
 
 router.post('/', requireAuth, (req, res) => {
-  const s = getSettings();
-  if (s.currentPhase === 'submission') {
+  const { user: me, game } = res.locals;
+  if (game.currentPhase === 'submission') {
     return res.status(403).json({ error: 'Outcomes not available during submission phase' });
   }
-  if (s.currentPhase === 'done') {
+  if (game.currentPhase === 'done') {
     return res.status(403).json({ error: 'Outcomes are locked - game is over' });
   }
-  if (s.revealDeadline && new Date() >= new Date(s.revealDeadline)) {
+  if (game.revealDeadline && new Date() >= new Date(game.revealDeadline)) {
     return res.status(403).json({ error: 'Reveal phase has ended - outcomes are locked' });
   }
 
-  const me = getCurrentUser(req)!;
   const { prediction_id, happened } = req.body;
 
   if (prediction_id === undefined) return res.status(400).json({ error: 'prediction_id required' });
 
-  const pred = db.select().from(predictions).where(eq(predictions.id, parseInt(prediction_id))).get();
+  const pred = db.select().from(predictions)
+    .where(and(eq(predictions.id, parseInt(prediction_id)), eq(predictions.gameId, game.id))).get();
   if (!pred) return res.status(404).json({ error: 'Prediction not found' });
   if (pred.targetId !== me.id) return res.status(403).json({ error: 'Only the target can mark outcomes' });
 

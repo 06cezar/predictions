@@ -1,25 +1,31 @@
-import { getSettings, updateSettings } from './services/settings';
+import { db } from './db';
+import { games } from './schema';
+import { updateGame, Game, Phase } from './services/games';
 import { notifyAllUsersPhaseChange } from './notifications-helper';
 
+/** The phase a game should move to now that a deadline has passed, if any. */
+function duePhase(game: Game, now: Date): Phase | null {
+  if (!game.autoAdvancePhase) return null;
+  if (game.currentPhase === 'submission' && game.submissionDeadline && now >= new Date(game.submissionDeadline)) {
+    return 'reveal';
+  }
+  if (game.currentPhase === 'reveal' && game.revealDeadline && now >= new Date(game.revealDeadline)) {
+    return 'done';
+  }
+  return null;
+}
+
+/** Advance every game whose deadline has passed. */
+export function runScheduledTasks(now = new Date()) {
+  for (const game of db.select().from(games).all()) {
+    const next = duePhase(game, now);
+    if (!next) continue;
+    console.log(`[Scheduler] Game ${game.id}: ${game.currentPhase} → ${next}`);
+    updateGame(game.id, { currentPhase: next });
+    notifyAllUsersPhaseChange(game.id, next);
+  }
+}
+
 export function startPhaseScheduler() {
-  setInterval(() => {
-    const s = getSettings();
-    if (!s || !s.autoAdvancePhase) return;
-
-    const now = new Date();
-
-    if (s.currentPhase === 'submission' && s.submissionDeadline) {
-      if (now >= new Date(s.submissionDeadline)) {
-        console.log('[Scheduler] Advancing from submission → reveal');
-        updateSettings({ currentPhase: 'reveal' });
-        notifyAllUsersPhaseChange('reveal');
-      }
-    } else if (s.currentPhase === 'reveal' && s.revealDeadline) {
-      if (now >= new Date(s.revealDeadline)) {
-        console.log('[Scheduler] Advancing from reveal → done');
-        updateSettings({ currentPhase: 'done' });
-        notifyAllUsersPhaseChange('done');
-      }
-    }
-  }, 60_000); // Check every minute
+  setInterval(() => runScheduledTasks(), 60_000); // Check every minute
 }

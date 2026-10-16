@@ -2,13 +2,12 @@ import { Router } from 'express';
 import { db } from '../db';
 import { ratings, predictions } from '../schema';
 import { eq, and } from 'drizzle-orm';
-import { requireAuth, getCurrentUser } from '../auth';
-import { getSettings } from '../services/settings';
+import { requireAuth } from '../auth';
 
 const router = Router();
 
 router.post('/', requireAuth, (req, res) => {
-  const me = getCurrentUser(req)!;
+  const { user: me, game } = res.locals;
   const { prediction_id, score } = req.body;
 
   if (prediction_id === undefined || score === undefined) {
@@ -20,15 +19,15 @@ router.post('/', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Score must be 0-100' });
   }
 
-  const gameSettings = getSettings();
-  if (gameSettings.currentPhase !== 'submission') {
+  if (game.currentPhase !== 'submission') {
     return res.status(403).json({ error: 'Rating is only allowed during the submission phase' });
   }
-  if (!gameSettings.adminOverride && gameSettings.submissionDeadline && new Date() >= new Date(gameSettings.submissionDeadline)) {
+  if (!game.adminOverride && game.submissionDeadline && new Date() >= new Date(game.submissionDeadline)) {
     return res.status(403).json({ error: 'Submission deadline has passed - rating is closed' });
   }
 
-  const pred = db.select().from(predictions).where(eq(predictions.id, parseInt(prediction_id))).get();
+  const pred = db.select().from(predictions)
+    .where(and(eq(predictions.id, parseInt(prediction_id)), eq(predictions.gameId, game.id))).get();
   if (!pred) return res.status(404).json({ error: 'Prediction not found' });
   if (pred.authorId === me.id) return res.status(403).json({ error: 'Cannot rate your own prediction' });
   if (pred.targetId === me.id) return res.status(403).json({ error: 'Cannot rate a prediction about yourself' });

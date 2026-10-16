@@ -2,16 +2,15 @@ import { Router } from 'express';
 import { db } from '../db';
 import { users, predictions } from '../schema';
 import { eq, and } from 'drizzle-orm';
-import { requireAuth, getCurrentUser } from '../auth';
+import { requireAuth } from '../auth';
 import { getAvgRating } from '../services/ratings';
 
 const router = Router();
 
 router.get('/me', requireAuth, (req, res) => {
-  const user = getCurrentUser(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
-  const allUsers = db.select({ id: users.id }).from(users).all();
-  const totalTargets = allUsers.filter(u => u.id !== user.id).length;
+  const { user, game } = res.locals;
+  const players = db.select({ id: users.id }).from(users).where(eq(users.gameId, game.id)).all();
+  const totalTargets = players.filter(u => u.id !== user.id).length;
 
   const myPredictions = db.select().from(predictions).where(eq(predictions.authorId, user.id)).all();
   const predictionsAboutMe = db.select().from(predictions).where(eq(predictions.targetId, user.id)).all();
@@ -20,6 +19,7 @@ router.get('/me', requireAuth, (req, res) => {
     id: user.id,
     name: user.name,
     isAdmin: user.isAdmin,
+    game: { id: game.id, name: game.name, isDemo: game.isDemo },
     stats: {
       predictionsWritten: myPredictions.length,
       totalTargets,
@@ -29,8 +29,8 @@ router.get('/me', requireAuth, (req, res) => {
 });
 
 router.get('/', requireAuth, (req, res) => {
-  const me = getCurrentUser(req)!;
-  const allUsers = db.select({ id: users.id, name: users.name }).from(users).all();
+  const { user: me, game } = res.locals;
+  const allUsers = db.select({ id: users.id, name: users.name }).from(users).where(eq(users.gameId, game.id)).all();
 
   // For each user, check if current user has written a prediction for them
   // and get the avg rating of that prediction
