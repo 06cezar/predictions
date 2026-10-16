@@ -1,6 +1,7 @@
 import express from 'express';
 import session from 'express-session';
 import rateLimit from 'express-rate-limit';
+import { DATA_DIR } from './db';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
 import predictionRoutes from './routes/predictions';
@@ -38,17 +39,26 @@ export function createApp() {
     legacyHeaders: false,
   }));
 
-  // Use SQLite session store in production, MemoryStore in tests
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (isProduction && !process.env.SESSION_SECRET) {
+    throw new Error('SESSION_SECRET must be set in production');
+  }
+
+  // Use SQLite session store outside tests, MemoryStore in tests
   const sessionOptions: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || 'predictions-secret-key-change-in-production',
+    secret: process.env.SESSION_SECRET || 'dev-only-session-secret',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 },
+    cookie: {
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: isProduction, // Fly.io terminates TLS; 'trust proxy' lets Express see https
+    },
   };
   if (process.env.NODE_ENV !== 'test') {
     const SQLiteStore = require('connect-sqlite3')(session);
-    const dbDir = process.env.NODE_ENV === 'production' ? '/data' : process.cwd();
-    sessionOptions.store = new SQLiteStore({ db: 'sessions.db', dir: dbDir });
+    sessionOptions.store = new SQLiteStore({ db: 'sessions.db', dir: DATA_DIR });
   }
   app.use(session(sessionOptions));
 
