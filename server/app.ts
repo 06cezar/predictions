@@ -13,6 +13,7 @@ import settingsRoutes from './routes/settings';
 import notificationRoutes from './routes/notifications';
 import bonusRoutes from './routes/bonus';
 import inviteRoutes from './routes/invite';
+import gameRoutes from './routes/games';
 
 export function createApp() {
   const app = express();
@@ -35,6 +36,21 @@ export function createApp() {
     windowMs: 60 * 1000, // 1 minute
     max: 200,
     message: { error: 'Too many requests, please slow down.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+  }));
+  // Anyone can create games and join with a code, so cap how often one address can
+  app.post(['/api/games', '/api/demo'], rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10,
+    message: { error: 'Too many new games from this address, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+  }));
+  app.post('/api/games/join/:code', rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 20,
+    message: { error: 'Too many join attempts, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
   }));
@@ -73,6 +89,7 @@ export function createApp() {
   app.use('/api/notifications', notificationRoutes);
   app.use('/api/bonus', bonusRoutes);
   app.use('/api/invite', inviteRoutes);
+  app.use('/api/games', gameRoutes);
 
   return app;
 }

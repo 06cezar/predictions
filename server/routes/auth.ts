@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { db } from '../db';
 import { users } from '../schema';
 import { eq } from 'drizzle-orm';
+import { logIn } from '../auth';
 
 const router = Router();
 
@@ -12,7 +13,7 @@ router.post('/login', (req, res) => {
   const user = db.select().from(users).where(eq(users.token, token.trim())).get();
   if (!user) return res.status(401).json({ error: 'Invalid token' });
 
-  req.session.userId = user.id;
+  logIn(req, user);
   res.json({ success: true, user: { id: user.id, name: user.name, isAdmin: user.isAdmin } });
 });
 
