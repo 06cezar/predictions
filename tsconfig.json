@@ -9,6 +9,12 @@
     "outDir": "dist",
     "rootDir": "."
   },
-  "include": ["server/**/*", "seed.ts"],
-  "exclude": ["node_modules", "client"]
+  "include": [
+    "server/**/*",
+    "scripts/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "client"
+  ]
 }

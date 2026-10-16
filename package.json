@@ -1,15 +1,22 @@
 {
   "name": "predictions",
   "version": "1.0.0",
+  "private": true,
+  "description": "A social prediction game: friends predict each other's year, rate how bold each prediction is, then reveal what came true.",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "tsx watch server/index.ts",
     "dev:client": "cd client && npm run dev",
     "build": "cd client && npm run build && cd .. && tsc -p tsconfig.server.json",
-    "seed": "tsx seed.ts",
-    "db:push": "drizzle-kit push",
+    "start": "node dist/server/server/index.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tests/tsconfig.json && cd client && tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed": "tsx scripts/seed.ts",
+    "reset": "tsx scripts/reset.ts"
   },
   "dependencies": {
     "better-sqlite3": "^9.4.3",
@@ -28,7 +35,6 @@
     "@types/node": "^20.11.28",
     "@types/supertest": "^6.0.2",
     "concurrently": "^8.2.2",
-    "drizzle-kit": "^0.20.14",
     "supertest": "^6.3.4",
     "typescript": "^5.4.2",
     "vitest": "^1.4.0"

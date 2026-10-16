@@ -1,11 +1,15 @@
-import { db, initDb } from './server/db';
-import { users, predictions, ratings, settings } from './server/schema';
-import { eq } from 'drizzle-orm';
+/**
+ * Fill an empty database with five demo players, predictions and ratings.
+ *
+ *   npm run seed            # only if the database is empty
+ *   npm run seed -- --force # wipe everything first
+ */
+import { db, initDb } from '../server/db';
+import { users, predictions, ratings } from '../server/schema';
+import { updateSettings } from '../server/services/settings';
+import { wipeAllData } from './wipe';
 
 initDb();
-
-const ADJECTIVES = ['lion', 'sunset', 'thunder', 'silver', 'golden', 'crystal', 'midnight', 'blazing'];
-const NOUNS = ['horizon', 'storm', 'ember', 'tide', 'spark', 'flame', 'wave', 'glow'];
 
 function makeToken(adj: string, noun: string, num: number) {
   return `${adj}-${noun}-${num}`;
@@ -22,10 +26,8 @@ async function seed() {
       process.exit(0);
     }
 
-    db.delete(ratings).run();
-    db.delete(predictions).run();
-    db.delete(users).run();
-    console.log('Force reseed enabled. Existing users, predictions, and ratings cleared.');
+    wipeAllData();
+    console.log('Force reseed enabled. Existing data cleared.');
   }
 
   // Create users
@@ -48,7 +50,7 @@ async function seed() {
     console.log(`   ${u.isAdmin ? '👑' : '👤'} ${u.name.padEnd(20)} token: ${u.token}`);
   }
 
-  const [admin, jordan, morgan, casey, river] = createdUsers;
+  const [, jordan, morgan, casey, river] = createdUsers;
 
   // Create some sample predictions
   const predData = [
@@ -110,11 +112,11 @@ async function seed() {
   const submissionDeadline = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
   const revealDeadline = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
 
-  db.update(settings).set({
+  updateSettings({
     submissionDeadline,
     revealDeadline,
     ratingThreshold: 40,
-  }).where(eq(settings.id, 1)).run();
+  });
 
   console.log(`\n✅ Settings configured:`);
   console.log(`   Submission deadline: ${submissionDeadline}`);

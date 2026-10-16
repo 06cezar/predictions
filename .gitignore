@@ -1,10 +1,18 @@
 node_modules/
-client/node_modules/
 dist/
-client/dist/
+coverage/
+
+# Local SQLite data
 *.db
 *.db-shm
 *.db-wal
 *.db.backup-*
+
 *.log
 .env
+.env.*
+!.env.example
+
+# Local tooling
+.claude/
+*.bundle
