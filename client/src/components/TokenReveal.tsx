@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCopied } from '../hooks/useCopied';
 
 interface Props {
   title: string;
@@ -9,20 +9,14 @@ interface Props {
 }
 
 function CopyField({ label, value }: { label: string; value: string }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard.writeText(value).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    }).catch(() => {});
-  };
+  const { copied, copy } = useCopied(1500);
 
   return (
     <div>
       <p className="text-xs text-white/50 uppercase tracking-widest mb-1.5">{label}</p>
       <div className="flex gap-2">
         <code className="input flex-1 font-mono text-amber truncate select-all">{value}</code>
-        <button type="button" onClick={copy} className="btn-secondary text-sm px-3 shrink-0">
+        <button type="button" onClick={() => copy(value)} className="btn-secondary text-sm px-3 shrink-0">
           {copied ? 'Copied' : 'Copy'}
         </button>
       </div>

@@ -34,7 +34,7 @@ const BOT_PREDICTIONS: { author: Bot; target: Bot; text: string; ratings: Partia
 
 /** What the bots predict about the visitor, so they have outcomes to mark in the reveal. */
 const ABOUT_VISITOR: { author: Bot; text: (name: string) => string; ratings: Partial<Record<Bot, number>> }[] = [
-  { author: 'Jordan', text: n => `${n} will land an interview at a company they've admired for years.`, ratings: { Morgan: 70, Casey: 64 } },
+  { author: 'Jordan', text: n => `${n} will get an interview at a dream company.`, ratings: { Morgan: 70, Casey: 64 } },
   { author: 'Morgan', text: n => `${n} will ship a side project that strangers actually use.`, ratings: { Jordan: 35, River: 28 } },
   { author: 'Casey', text: n => `${n} will run a 10k race and post the finish photo everywhere.`, ratings: { Jordan: 20, Morgan: 15 } },
   { author: 'River', text: n => `${n} will learn to make proper sourdough and bring it to every gathering.`, ratings: { Casey: 55, Morgan: 47 } },
