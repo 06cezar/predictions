@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { api } from './api';
 import type { User } from './api';
-import { Login } from './pages/Login';
+import { Welcome } from './pages/Welcome';
+import { JoinGame } from './pages/JoinGame';
 import { Dashboard } from './pages/Dashboard';
 import { Predict } from './pages/Predict';
 import { Rate } from './pages/Rate';
@@ -12,16 +13,17 @@ import { Admin } from './pages/Admin';
 import { Bonus } from './pages/Bonus';
 import { Join } from './pages/Join';
 import { Navbar } from './components/Navbar';
+import { DemoBanner } from './components/DemoBanner';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // The server keeps the session; after any login, ask it who we are (and in which game).
+  const loadMe = () => api.users.me().then(setUser).catch(() => setUser(null));
+
   useEffect(() => {
-    api.users.me()
-      .then(setUser)
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+    loadMe().finally(() => setLoading(false));
   }, []);
 
   if (loading) {
@@ -34,12 +36,16 @@ function App() {
 
   return (
     <BrowserRouter>
+      {user?.game?.isDemo && <DemoBanner />}
       <Routes>
         <Route path="/login" element={
-          user ? <Navigate to="/" /> : <Login onLogin={setUser} />
+          user ? <Navigate to="/" /> : <Welcome onLogin={loadMe} />
         } />
         <Route path="/join/:code" element={
-          user ? <Navigate to="/" /> : <Join onLogin={setUser} />
+          user ? <Navigate to="/" /> : <Join onLogin={loadMe} />
+        } />
+        <Route path="/game/:code" element={
+          user ? <Navigate to="/" /> : <JoinGame onLogin={loadMe} />
         } />
         {user ? (
           <>

@@ -1,7 +1,14 @@
+export interface GameInfo {
+  id: number;
+  name: string;
+  isDemo: boolean;
+}
+
 export interface User {
   id: number;
   name: string;
   isAdmin?: boolean;
+  game?: GameInfo;
   stats?: {
     predictionsWritten: number;
     totalTargets: number;
@@ -31,8 +38,14 @@ export interface Prediction {
   outcome?: { happened: boolean | null; markedAt: string } | null;
 }
 
+/** A game's full settings, as admins see them. */
 export interface Settings {
   id: number;
+  name: string;
+  joinCode: string;
+  openJoin: boolean;
+  isDemo: boolean;
+  createdAt: string;
   currentPhase: 'submission' | 'reveal' | 'done';
   submissionDeadline: string | null;
   revealDeadline: string | null;
@@ -41,6 +54,19 @@ export interface Settings {
   adminOverride: boolean;
   anonymousPredictions: boolean;
   bonusActive: boolean;
+}
+
+/** What every player of a game sees. */
+export interface PublicSettings extends Pick<Settings, 'currentPhase' | 'submissionDeadline' | 'revealDeadline' | 'ratingThreshold' | 'anonymousPredictions' | 'bonusActive' | 'adminOverride' | 'isDemo'> {
+  gameName: string;
+  demoExpiresAt: string | null;
+}
+
+/** Response of creating, joining or starting a demo game: you are logged in. */
+export interface JoinedGame {
+  token: string;
+  user: User;
+  game: { id: number; name: string; joinCode?: string; isDemo?: boolean; expiresAt?: string };
 }
 
 export interface LeaderboardEntry {
@@ -75,7 +101,19 @@ export const api = {
     list: () => request<UserRow[]>('/api/users'),
   },
   settings: {
-    get: () => request<Pick<Settings, 'currentPhase' | 'submissionDeadline' | 'revealDeadline' | 'ratingThreshold' | 'anonymousPredictions' | 'bonusActive' | 'adminOverride'>>('/api/settings'),
+    get: () => request<PublicSettings>('/api/settings'),
+  },
+  games: {
+    create: (gameName: string, playerName: string, token?: string) => request<JoinedGame>('/api/games', {
+      method: 'POST', body: JSON.stringify({ gameName, playerName, token }),
+    }),
+    lookup: (code: string) => request<{ name: string; currentPhase: Settings['currentPhase']; openJoin: boolean }>(`/api/games/join/${encodeURIComponent(code)}`),
+    join: (code: string, name: string, token?: string) => request<JoinedGame>(`/api/games/join/${encodeURIComponent(code)}`, {
+      method: 'POST', body: JSON.stringify({ name, token }),
+    }),
+  },
+  demo: {
+    start: (name?: string) => request<JoinedGame>('/api/demo', { method: 'POST', body: JSON.stringify({ name }) }),
   },
   predictions: {
     mine: () => request<Prediction[]>('/api/predictions/mine'),
@@ -171,5 +209,6 @@ export const api = {
     setPhase: (phase: string) => request('/api/admin/phase/set', { method: 'POST', body: JSON.stringify({ phase }) }),
     resetGame: () => request('/api/admin/reset', { method: 'POST' }),
     toggleBonusActive: () => request<{ bonusActive: boolean }>('/api/admin/bonus-active/toggle', { method: 'POST' }),
+    regenerateJoinCode: () => request<{ joinCode: string }>('/api/admin/join-code/regenerate', { method: 'POST' }),
   },
 };

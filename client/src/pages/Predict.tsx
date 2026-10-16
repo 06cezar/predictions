@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { api, Prediction, Settings } from '../api';
+import { api, Prediction, PublicSettings } from '../api';
 
 interface UserInfo {
   id: number;
@@ -15,7 +15,7 @@ export function Predict() {
   const [targetUser, setTargetUser] = useState<UserInfo | null>(null);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [text, setText] = useState('');
-  const [settings, setSettings] = useState<Pick<Settings, 'currentPhase' | 'submissionDeadline' | 'revealDeadline' | 'ratingThreshold' | 'anonymousPredictions' | 'bonusActive' | 'adminOverride'> | null>(null);
+  const [settings, setSettings] = useState<PublicSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -110,7 +110,7 @@ export function Predict() {
         <textarea
           value={text}
           onChange={e => setText(e.target.value)}
-          placeholder={`What do you see happening for ${targetUser?.name} after the May 1st outing?`}
+          placeholder={`What do you see happening for ${targetUser?.name} this year?`}
           disabled={!!isSubmissionClosed}
           rows={6}
           className="input resize-none text-base leading-relaxed"

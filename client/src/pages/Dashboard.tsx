@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-import { api, User, UserRow, Settings } from '../api';
+import { api, User, UserRow, PublicSettings } from '../api';
 import { Countdown } from '../components/Countdown';
 import { PhaseBadge } from '../components/PhaseBadge';
 import { UserRow as UserRowComponent } from '../components/UserRow';
@@ -15,7 +15,7 @@ type Notification = { id: number; type: string; message: string; read: boolean; 
 
 export function Dashboard({ user, onLogout }: Props) {
   const [users, setUsers] = useState<UserRow[]>([]);
-  const [settings, setSettings] = useState<Pick<Settings, 'currentPhase' | 'submissionDeadline' | 'revealDeadline' | 'ratingThreshold' | 'anonymousPredictions' | 'bonusActive' | 'adminOverride'> | null>(null);
+  const [settings, setSettings] = useState<PublicSettings | null>(null);
   const [me, setMe] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [notifs, setNotifs] = useState<Notification[]>([]);
@@ -53,7 +53,7 @@ export function Dashboard({ user, onLogout }: Props) {
     <div className="min-h-screen p-4 pb-24 max-w-2xl mx-auto">
       <div className="flex items-center justify-between py-6 mb-6 animate-fade-up">
         <div>
-          <h1 className="font-display text-3xl font-bold text-glow">Predictions</h1>
+          <h1 className="font-display text-3xl font-bold text-glow">{user.game?.name ?? 'Predictions'}</h1>
           <p className="text-white/40 text-sm mt-1">Welcome back, <span className="text-amber/80 font-medium">{user.name}</span></p>
         </div>
         <PhaseBadge phase={phase} bonusActive={bonusActive} />

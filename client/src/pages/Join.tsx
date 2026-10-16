@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 
 interface Props {
-  onLogin: (user: any) => void;
+  onLogin: () => Promise<void>;
 }
 
 export function Join({ onLogin }: Props) {
@@ -37,8 +37,8 @@ export function Join({ onLogin }: Props) {
     try {
       const result = await api.invite.join(code, name.trim(), token.trim() || undefined);
       // Auto-login with the new token
-      const { user } = await api.auth.login(result.token);
-      onLogin(user);
+      await api.auth.login(result.token);
+      await onLogin();
       navigate('/');
     } catch (err: any) {
       setError(err.message || 'Something went wrong');
@@ -86,7 +86,7 @@ export function Join({ onLogin }: Props) {
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="e.g. Padu"
+              placeholder="e.g. Alex"
               className="input"
               autoFocus
               autoComplete="off"
@@ -101,7 +101,7 @@ export function Join({ onLogin }: Props) {
               type="text"
               value={token}
               onChange={e => setToken(e.target.value)}
-              placeholder="e.g. penny-sud"
+              placeholder="e.g. brave-owl-4821"
               className="input"
               autoComplete="off"
             />
