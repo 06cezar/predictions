@@ -1,34 +1,17 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { predictions, predictionHistory, ratings, settings, users, outcomes, notifications } from '../schema';
-import { eq, and, ne, sql } from 'drizzle-orm';
+import { predictions, predictionHistory, ratings, users, outcomes, notifications } from '../schema';
+import { eq, and } from 'drizzle-orm';
 import { requireAuth, getCurrentUser } from '../auth';
+import { getSettings, isSubmissionOpen } from '../services/settings';
+import { getAvgRating } from '../services/ratings';
 
 const router = Router();
-
-function getSettings() {
-  return db.select().from(settings).where(eq(settings.id, 1)).get()!;
-}
-
-function isSubmissionOpen(s: ReturnType<typeof getSettings>) {
-  if (s.adminOverride) return true;
-  if (s.currentPhase !== 'submission') return false;
-  if (s.submissionDeadline) {
-    return new Date() < new Date(s.submissionDeadline);
-  }
-  return true;
-}
-
-function getAvgRating(predictionId: number): number | null {
-  const ratingRows = db.select({ score: ratings.score }).from(ratings)
-    .where(eq(ratings.predictionId, predictionId)).all();
-  if (ratingRows.length === 0) return null;
-  return Math.round(ratingRows.reduce((s, r) => s + r.score, 0) / ratingRows.length);
-}
 
 router.get('/mine', requireAuth, (req, res) => {
   const me = getCurrentUser(req)!;
   const mine = db.select().from(predictions).where(eq(predictions.authorId, me.id)).all();
+  const s = getSettings();
 
   const result = mine.map(p => {
     const history = db.select().from(predictionHistory)
@@ -36,7 +19,6 @@ router.get('/mine', requireAuth, (req, res) => {
     const target = db.select({ id: users.id, name: users.name }).from(users)
       .where(eq(users.id, p.targetId)).get();
     const avgRating = getAvgRating(p.id);
-    const s = getSettings();
 
     return {
       id: p.id,

@@ -90,11 +90,13 @@ describe('Hall of Fame routes', () => {
     setUpdatedAt(p5.id, '2026-04-02T08:00:00.000Z');
   }
 
-  async function getAs(token: string, endpoint: string) {
+  async function fetchAs(token: string, path: string) {
     const agent = request.agent(app);
     await loginAs(agent, token);
-    return agent.get(`/api/leaderboard/${endpoint}`);
+    return agent.get(path);
   }
+
+  const getAs = (token: string, endpoint: string) => fetchAs(token, `/api/leaderboard/${endpoint}`);
 
   describe('access control', () => {
     it.each(HOF_ENDPOINTS)('%s requires auth', async (endpoint) => {
@@ -203,6 +205,45 @@ describe('Hall of Fame routes', () => {
       for (const p of preds) setUpdatedAt(p.id, '2026-04-01T10:00:00.000Z');
       const res = await getAs('token-ana', 'first-to-submit');
       expect(res.body).toEqual({ names: ['Ana', 'Bob', 'Cat', 'Dan'], tied: true });
+    });
+  });
+
+  describe('CSV exports', () => {
+    beforeEach(() => {
+      seedGame();
+      setPhase(db, 'done');
+    });
+
+    it('Hall of Fame CSV lists the same winners as the app', async () => {
+      const res = await fetchAs('token-zed', '/api/admin/export/hof.csv');
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toContain('text/csv');
+      expect(res.text.split('\n')).toEqual([
+        'Category,Winner,Detail',
+        '"Most Courageous","?","About Bob - avg 20% - Bob moves abroad"',
+        '"Biggest Miss","?","About Bob - avg 90% - Bob adopts a cat"',
+        '"Most Controversial","?","About Cat - avg 50%, spread 50 - Cat learns piano"',
+        '"Can\'t Make Up Their Mind","?","About Cat - 2 edits - Cat learns piano"',
+        '"Star of the Show","Bob","1 true predictions"',
+        '"The Joker","Dan","0 true predictions"',
+        '"Best Friends","Ana & Bob",""',
+        '"Last Minute","?","About Dan - 2026-04-02T08:00:00.000Z - Dan quits his job"',
+        '"First to Submit","Dan","2026-04-01T09:00:00.000Z"',
+      ]);
+    });
+
+    it('scores CSV ranks players by weighted score', async () => {
+      const res = await fetchAs('token-zed', '/api/admin/export/scores.csv');
+      expect(res.status).toBe(200);
+      const [header, first] = res.text.split('\n');
+      expect(header).toBe('Rank,Name,True Predictions,Weighted Score');
+      // Ana's prediction came true at avg 20, in the 12-25 band below threshold 50 -> x4
+      expect(first).toBe('1,Ana,1,4');
+    });
+
+    it('CSV exports are admin-only', async () => {
+      const res = await fetchAs('token-ana', '/api/admin/export/hof.csv');
+      expect(res.status).toBe(403);
     });
   });
 

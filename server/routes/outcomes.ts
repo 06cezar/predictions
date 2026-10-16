@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { outcomes, predictions, settings, notifications, users } from '../schema';
+import { outcomes, predictions, notifications, users } from '../schema';
 import { eq, and } from 'drizzle-orm';
 import { requireAuth, getCurrentUser } from '../auth';
+import { getSettings } from '../services/settings';
 
 const router = Router();
 
 router.post('/', requireAuth, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
+  const s = getSettings();
   if (s.currentPhase === 'submission') {
     return res.status(403).json({ error: 'Outcomes not available during submission phase' });
   }

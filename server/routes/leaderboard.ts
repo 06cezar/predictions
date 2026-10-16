@@ -1,396 +1,100 @@
-import { Router } from 'express';
-import { db } from '../db';
-import { users, predictions, outcomes, ratings, predictionHistory, settings, bonusCategories, bonusVotes } from '../schema';
-import { eq } from 'drizzle-orm';
+import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth, requireAdmin, getCurrentUser } from '../auth';
+import { getSettings, Settings } from '../services/settings';
+import { GameSnapshot, Prediction, loadSnapshot } from '../services/snapshot';
+import { calcScores, scoringTiers } from '../services/scoring';
+import * as awards from '../services/awards';
 
 const router = Router();
 
-export function calcScores() {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
-  const threshold = s.ratingThreshold;
-  const tier1 = Math.floor(threshold * 0.25);
-  const tier2 = Math.floor(threshold * 0.5);
-  const tier3 = Math.floor(threshold * 0.75);
-  const allUsers = db.select().from(users).all();
-
-  // Calculate bonus points per user (from bonus voting)
-  const bonusPointsMap: Record<number, number> = {};
-  const allBonusCats = db.select().from(bonusCategories).all();
-  for (const cat of allBonusCats) {
-    const votes = db.select().from(bonusVotes).where(eq(bonusVotes.categoryId, cat.id)).all();
-    const tally: Record<number, number> = {};
-    for (const vote of votes) {
-      const pts = 4 - vote.rank;
-      tally[vote.nomineeId] = (tally[vote.nomineeId] ?? 0) + pts;
-    }
-    const maxPts = Object.values(tally).length > 0 ? Math.max(...Object.values(tally)) : 0;
-    if (maxPts > 0) {
-      const winnerIds = Object.entries(tally)
-        .filter(([, p]) => p === maxPts)
-        .map(([id]) => parseInt(id));
-      const pointsEach = cat.points / winnerIds.length;
-      for (const wid of winnerIds) {
-        bonusPointsMap[wid] = (bonusPointsMap[wid] ?? 0) + pointsEach;
-      }
-    }
-  }
-
-  const board = allUsers.map(u => {
-    const myPreds = db.select().from(predictions).where(eq(predictions.authorId, u.id)).all();
-    let happened = 0;
-    let totalWeighted = 0;
-    for (const p of myPreds) {
-      const outcome = db.select().from(outcomes).where(eq(outcomes.predictionId, p.id)).get();
-      if (outcome?.happened === true) {
-        happened++;
-        const editCount = db.select().from(predictionHistory)
-          .where(eq(predictionHistory.predictionId, p.id)).all().length;
-        const penalizedEdits = Math.max(0, editCount - (p.forgivenEdits ?? 0));
-        const ratingRows = db.select({ score: ratings.score }).from(ratings)
-          .where(eq(ratings.predictionId, p.id)).all();
-        let bonus: number;
-        if (ratingRows.length > 0) {
-          const avg = ratingRows.reduce((r, row) => r + row.score, 0) / ratingRows.length;
-          if (avg < tier1)          bonus = 5.0;
-          else if (avg < tier2)     bonus = 4.0;
-          else if (avg < tier3)     bonus = 3.0;
-          else if (avg < threshold) bonus = 2.0;
-          else                      bonus = 1.0;
-        } else {
-          bonus = 1.0;
-        }
-        totalWeighted += Math.max(0.5, bonus - penalizedEdits * 0.5);
-      }
-    }
-    const bonusW = Math.round((bonusPointsMap[u.id] ?? 0) * 10) / 10;
-    const finalW = Math.round((totalWeighted + bonusW) * 10) / 10;
-    return { id: u.id, name: u.name, score: happened, weightedScore: finalW, bonusPoints: bonusW };
-  });
-
-  board.sort((a, b) => b.weightedScore - a.weightedScore || b.score - a.score);
-  return board.map((u, i) => ({ ...u, rank: i + 1 }));
+function leaderboard() {
+  const s = getSettings();
+  const tiers = scoringTiers(s.ratingThreshold);
+  return calcScores(loadSnapshot(), s.ratingThreshold).map(u => ({ ...u, ...tiers }));
 }
 
 router.get('/', requireAuth, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
-  if (s.currentPhase !== 'done') {
+  if (getSettings().currentPhase !== 'done') {
     return res.status(403).json({ error: 'Leaderboard is only available after the game is done' });
   }
-  const t = s.ratingThreshold;
-  const meta = { threshold: t, tier1: Math.floor(t * 0.25), tier2: Math.floor(t * 0.5), tier3: Math.floor(t * 0.75) };
-  res.json(calcScores().map(u => ({ ...u, ...meta })));
+  res.json(leaderboard());
 });
 
 router.get('/preview', requireAdmin, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
-  const t = s.ratingThreshold;
-  const meta = { threshold: t, tier1: Math.floor(t * 0.25), tier2: Math.floor(t * 0.5), tier3: Math.floor(t * 0.75) };
-  res.json(calcScores().map(u => ({ ...u, ...meta })));
+  res.json(leaderboard());
 });
 
-router.get('/most-courageous', requireAuth, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
-  const u = getCurrentUser(req); if (s.currentPhase !== 'done' && !u?.isAdmin) return res.status(403).json({ error: 'Not available yet' });
+// ---- Hall of Fame ----
 
-  const allPreds = db.select().from(predictions).all();
-  let best: { predictionId: number; avg: number } | null = null;
-
-  for (const p of allPreds) {
-    const outcome = db.select().from(outcomes).where(eq(outcomes.predictionId, p.id)).get();
-    if (outcome?.happened !== true) continue;
-    const ratingRows = db.select({ score: ratings.score }).from(ratings)
-      .where(eq(ratings.predictionId, p.id)).all();
-    if (ratingRows.length === 0) continue;
-    const avg = ratingRows.reduce((sum, r) => sum + r.score, 0) / ratingRows.length;
-    if (best === null || avg < best.avg) best = { predictionId: p.id, avg };
+/** Awards are revealed when the game is done; admins can preview them earlier. */
+function requireDoneOrAdmin(req: Request, res: Response, next: NextFunction) {
+  if (getSettings().currentPhase !== 'done' && !getCurrentUser(req)?.isAdmin) {
+    return res.status(403).json({ error: 'Not available yet' });
   }
+  next();
+}
 
-  if (!best) return res.json(null);
-
-  const p = db.select().from(predictions).where(eq(predictions.id, best.predictionId)).get()!;
-  const author = db.select({ name: users.name }).from(users).where(eq(users.id, p.authorId)).get();
-  const target = db.select({ name: users.name }).from(users).where(eq(users.id, p.targetId)).get();
-
-  res.json({
+/** Public view of a prediction; the author stays hidden in anonymous mode. */
+function describe(p: Prediction, g: GameSnapshot, s: Settings) {
+  return {
     text: p.currentText,
-    authorName: s.anonymousPredictions ? null : author?.name,
-    targetName: target?.name,
-    avg: Math.round(best.avg),
+    authorName: s.anonymousPredictions ? null : g.userName(p.authorId),
+    targetName: g.userName(p.targetId),
+  };
+}
+
+function hallOfFame(path: string, render: (g: GameSnapshot, s: Settings) => unknown) {
+  router.get(path, requireAuth, requireDoneOrAdmin, (req, res) => {
+    res.json(render(loadSnapshot(), getSettings()));
   });
+}
+
+hallOfFame('/most-courageous', (g, s) => {
+  const award = awards.mostCourageous(g);
+  return award && { ...describe(award.prediction, g, s), avg: Math.round(award.avg) };
 });
 
-router.get('/most-controversial', requireAuth, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
-  const u = getCurrentUser(req); if (s.currentPhase !== 'done' && !u?.isAdmin) return res.status(403).json({ error: 'Not available yet' });
-
-  const allPreds = db.select().from(predictions).all();
-  let best: { predictionId: number; stdDev: number } | null = null;
-
-  for (const p of allPreds) {
-    const ratingRows = db.select({ score: ratings.score }).from(ratings)
-      .where(eq(ratings.predictionId, p.id)).all();
-    if (ratingRows.length < 2) continue;
-    const scores = ratingRows.map(r => r.score);
-    const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
-    const stdDev = Math.sqrt(scores.reduce((sum, x) => sum + Math.pow(x - mean, 2), 0) / scores.length);
-    if (best === null || stdDev > best.stdDev) best = { predictionId: p.id, stdDev };
-  }
-
-  if (!best) return res.json(null);
-
-  const p = db.select().from(predictions).where(eq(predictions.id, best.predictionId)).get()!;
-  const author = db.select({ name: users.name }).from(users).where(eq(users.id, p.authorId)).get();
-  const target = db.select({ name: users.name }).from(users).where(eq(users.id, p.targetId)).get();
-  const ratingRows = db.select({ score: ratings.score }).from(ratings).where(eq(ratings.predictionId, p.id)).all();
-  const scores = ratingRows.map(r => r.score).sort((a, b) => a - b);
-  const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-
-  res.json({
-    text: p.currentText,
-    authorName: s.anonymousPredictions ? null : author?.name,
-    targetName: target?.name,
-    avg,
-    stdDev: Math.round(best.stdDev),
-    individualRatings: scores,
-  });
+hallOfFame('/most-controversial', (g, s) => {
+  const award = awards.mostControversial(g);
+  return award && {
+    ...describe(award.prediction, g, s),
+    avg: Math.round(award.avg),
+    stdDev: Math.round(award.stdDev),
+    individualRatings: award.scores,
+  };
 });
 
-router.get('/biggest-miss', requireAuth, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
-  const u = getCurrentUser(req); if (s.currentPhase !== 'done' && !u?.isAdmin) return res.status(403).json({ error: 'Not available yet' });
-
-  const allPreds = db.select().from(predictions).all();
-  let best: { predictionId: number; avg: number } | null = null;
-
-  for (const p of allPreds) {
-    const outcome = db.select().from(outcomes).where(eq(outcomes.predictionId, p.id)).get();
-    if (outcome?.happened !== false) continue;
-    const ratingRows = db.select({ score: ratings.score }).from(ratings)
-      .where(eq(ratings.predictionId, p.id)).all();
-    if (ratingRows.length === 0) continue;
-    const avg = ratingRows.reduce((sum, r) => sum + r.score, 0) / ratingRows.length;
-    if (best === null || avg > best.avg) best = { predictionId: p.id, avg };
-  }
-
-  if (!best) return res.json(null);
-
-  const p = db.select().from(predictions).where(eq(predictions.id, best.predictionId)).get()!;
-  const author = db.select({ name: users.name }).from(users).where(eq(users.id, p.authorId)).get();
-  const target = db.select({ name: users.name }).from(users).where(eq(users.id, p.targetId)).get();
-
-  res.json({
-    text: p.currentText,
-    authorName: s.anonymousPredictions ? null : author?.name,
-    targetName: target?.name,
-    avg: Math.round(best.avg),
-  });
+hallOfFame('/biggest-miss', (g, s) => {
+  const award = awards.biggestMiss(g);
+  return award && { ...describe(award.prediction, g, s), avg: Math.round(award.avg) };
 });
 
-router.get('/mr-does-it-all', requireAuth, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
-  const u = getCurrentUser(req); if (s.currentPhase !== 'done' && !u?.isAdmin) return res.status(403).json({ error: 'Not available yet' });
+hallOfFame('/mr-does-it-all', g =>
+  awards.starOfTheShow(g).map(w => ({ name: w.name, count: w.count })));
 
-  const allUsers = db.select().from(users).all();
-  const board: { userId: number; name: string; count: number; avgRating: number }[] = [];
+hallOfFame('/best-friends', g =>
+  awards.bestFriends(g).map(p => ({ userA: p.userA, userB: p.userB })));
 
-  for (const u of allUsers) {
-    const targetPreds = db.select().from(predictions).where(eq(predictions.targetId, u.id)).all();
-    let count = 0;
-    let totalRating = 0;
-    let ratingCount = 0;
-    for (const p of targetPreds) {
-      const outcome = db.select().from(outcomes).where(eq(outcomes.predictionId, p.id)).get();
-      if (outcome?.happened === true) {
-        count++;
-        const ratingRows = db.select({ score: ratings.score }).from(ratings).where(eq(ratings.predictionId, p.id)).all();
-        if (ratingRows.length > 0) {
-          totalRating += ratingRows.reduce((a, r) => a + r.score, 0) / ratingRows.length;
-          ratingCount++;
-        }
-      }
-    }
-    if (count > 0) {
-      board.push({ userId: u.id, name: u.name, count, avgRating: ratingCount > 0 ? totalRating / ratingCount : 100 });
-    }
-  }
-
-  if (board.length === 0) return res.json([]);
-
-  board.sort((a, b) => b.count - a.count || a.avgRating - b.avgRating);
-
-  const topCount = board[0].count;
-  const topAvg = board[0].avgRating;
-  const winners = board.filter(u => u.count === topCount && Math.abs(u.avgRating - topAvg) < 0.01);
-
-  res.json(winners.map(w => ({ name: w.name, count: w.count })));
+hallOfFame('/most-revised', (g, s) => {
+  const award = awards.mostRevised(g);
+  return award && {
+    ...describe(award.prediction, g, s),
+    editCount: award.history.length,
+    history: award.history,
+  };
 });
 
-router.get('/best-friends', requireAuth, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
-  const u = getCurrentUser(req); if (s.currentPhase !== 'done' && !u?.isAdmin) return res.status(403).json({ error: 'Not available yet' });
+hallOfFame('/most-unpredictable', g =>
+  awards.theJoker(g).map(w => ({ name: w.name, count: w.count })));
 
-  const allUsers = db.select().from(users).all();
-  const pairs: { userA: string; userB: string; avgRating: number }[] = [];
-
-  for (let i = 0; i < allUsers.length; i++) {
-    for (let j = i + 1; j < allUsers.length; j++) {
-      const a = allUsers[i];
-      const b = allUsers[j];
-      let count = 0;
-      let totalRating = 0;
-      let ratingCount = 0;
-
-      for (const [authorId, targetId] of [[a.id, b.id], [b.id, a.id]]) {
-        const preds = db.select().from(predictions)
-          .where(eq(predictions.authorId, authorId)).all()
-          .filter(p => p.targetId === targetId);
-        for (const p of preds) {
-          const outcome = db.select().from(outcomes).where(eq(outcomes.predictionId, p.id)).get();
-          if (outcome?.happened === true) {
-            count++;
-            const ratingRows = db.select({ score: ratings.score }).from(ratings).where(eq(ratings.predictionId, p.id)).all();
-            if (ratingRows.length > 0) {
-              totalRating += ratingRows.reduce((a, r) => a + r.score, 0) / ratingRows.length;
-              ratingCount++;
-            }
-          }
-        }
-      }
-
-      if (count === 2) {
-        pairs.push({ userA: a.name, userB: b.name, avgRating: ratingCount > 0 ? totalRating / ratingCount : 100 });
-      }
-    }
-  }
-
-  if (pairs.length === 0) return res.json([]);
-
-  pairs.sort((a, b) => a.avgRating - b.avgRating);
-  const topAvg = pairs[0].avgRating;
-  const winners = pairs.filter(p => Math.abs(p.avgRating - topAvg) < 0.01);
-
-  res.json(winners.map(p => ({ userA: p.userA, userB: p.userB })));
+hallOfFame('/last-minute', (g, s) => {
+  const latest = awards.lastMinute(g);
+  return latest && { ...describe(latest, g, s), updatedAt: latest.updatedAt };
 });
 
-router.get('/most-revised', requireAuth, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
-  const u = getCurrentUser(req); if (s.currentPhase !== 'done' && !u?.isAdmin) return res.status(403).json({ error: 'Not available yet' });
-
-  const allPreds = db.select().from(predictions).all();
-  let best: { predictionId: number; editCount: number } | null = null;
-
-  for (const p of allPreds) {
-    const editCount = db.select().from(predictionHistory).where(eq(predictionHistory.predictionId, p.id)).all().length;
-    if (editCount === 0) continue;
-    if (best === null || editCount > best.editCount || (editCount === best.editCount && p.id > best.predictionId)) {
-      best = { predictionId: p.id, editCount };
-    }
-  }
-
-  if (!best) return res.json(null);
-
-  const p = db.select().from(predictions).where(eq(predictions.id, best.predictionId)).get()!;
-  const author = db.select({ name: users.name }).from(users).where(eq(users.id, p.authorId)).get();
-  const target = db.select({ name: users.name }).from(users).where(eq(users.id, p.targetId)).get();
-  const history = db.select({ oldText: predictionHistory.oldText })
-    .from(predictionHistory).where(eq(predictionHistory.predictionId, p.id)).all();
-
-  res.json({
-    text: p.currentText,
-    authorName: s.anonymousPredictions ? null : author?.name,
-    targetName: target?.name,
-    editCount: best.editCount,
-    history: history.map(h => h.oldText),
-  });
-});
-
-router.get('/most-unpredictable', requireAuth, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
-  const u = getCurrentUser(req); if (s.currentPhase !== 'done' && !u?.isAdmin) return res.status(403).json({ error: 'Not available yet' });
-
-  const allUsers = db.select().from(users).all();
-  const board: { userId: number; name: string; count: number; avgRating: number }[] = [];
-
-  for (const u of allUsers) {
-    const targetPreds = db.select().from(predictions).where(eq(predictions.targetId, u.id)).all();
-    if (targetPreds.length === 0) continue;
-    let trueCount = 0;
-    let totalRating = 0;
-    let ratingCount = 0;
-    for (const p of targetPreds) {
-      const outcome = db.select().from(outcomes).where(eq(outcomes.predictionId, p.id)).get();
-      if (outcome?.happened === true) trueCount++;
-      const ratingRows = db.select({ score: ratings.score }).from(ratings).where(eq(ratings.predictionId, p.id)).all();
-      if (ratingRows.length > 0) {
-        totalRating += ratingRows.reduce((a, r) => a + r.score, 0) / ratingRows.length;
-        ratingCount++;
-      }
-    }
-    board.push({ userId: u.id, name: u.name, count: trueCount, avgRating: ratingCount > 0 ? totalRating / ratingCount : 0 });
-  }
-
-  if (board.length === 0) return res.json([]);
-
-  // Only show The Joker if at least one outcome has been marked
-  const anyOutcome = db.select().from(outcomes).all().some(o => o.happened !== null);
-  if (!anyOutcome) return res.json([]);
-
-  // Fewest true predictions → tiebreak: highest avg rating (everyone expected things to happen but they didn't)
-  board.sort((a, b) => a.count - b.count || b.avgRating - a.avgRating);
-
-  const topCount = board[0].count;
-  const topAvg = board[0].avgRating;
-  const winners = board.filter(u => u.count === topCount && Math.abs(u.avgRating - topAvg) < 0.01);
-
-  res.json(winners.map(w => ({ name: w.name, count: w.count })));
-});
-
-router.get('/last-minute', requireAuth, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
-  const u = getCurrentUser(req); if (s.currentPhase !== 'done' && !u?.isAdmin) return res.status(403).json({ error: 'Not available yet' });
-
-  const allPreds = db.select().from(predictions).all();
-  if (allPreds.length === 0) return res.json(null);
-
-  allPreds.sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''));
-  const latest = allPreds[0];
-
-  const author = db.select({ name: users.name }).from(users).where(eq(users.id, latest.authorId)).get();
-  const target = db.select({ name: users.name }).from(users).where(eq(users.id, latest.targetId)).get();
-
-  res.json({
-    text: latest.currentText,
-    authorName: s.anonymousPredictions ? null : author?.name,
-    targetName: target?.name,
-    updatedAt: latest.updatedAt,
-  });
-});
-
-router.get('/first-to-submit', requireAuth, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
-  const u = getCurrentUser(req); if (s.currentPhase !== 'done' && !u?.isAdmin) return res.status(403).json({ error: 'Not available yet' });
-
-  const allUsers = db.select().from(users).all();
-  const board: { name: string; lastPredAt: string }[] = [];
-
-  for (const u of allUsers) {
-    const preds = db.select().from(predictions).where(eq(predictions.authorId, u.id)).all();
-    if (preds.length === 0) continue;
-    const lastPredAt = preds.map(p => p.updatedAt ?? '').sort().reverse()[0];
-    if (lastPredAt) board.push({ name: u.name, lastPredAt });
-  }
-
-  if (board.length === 0) return res.json(null);
-
-  board.sort((a, b) => a.lastPredAt.localeCompare(b.lastPredAt));
-  const topTime = board[0].lastPredAt;
-  const winners = board.filter(u => u.lastPredAt === topTime);
-
-  res.json(winners.length === 1
-    ? { names: [board[0].name], tied: false }
-    : { names: winners.map(w => w.name), tied: true }
-  );
+hallOfFame('/first-to-submit', g => {
+  const award = awards.firstToSubmit(g);
+  return award && { names: award.names, tied: award.names.length > 1 };
 });
 
 export default router;

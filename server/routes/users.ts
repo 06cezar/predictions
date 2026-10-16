@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { users, predictions, ratings } from '../schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { users, predictions } from '../schema';
+import { eq, and } from 'drizzle-orm';
 import { requireAuth, getCurrentUser } from '../auth';
+import { getAvgRating } from '../services/ratings';
 
 const router = Router();
 
@@ -40,20 +41,11 @@ router.get('/', requireAuth, (req, res) => {
         .where(and(eq(predictions.authorId, me.id), eq(predictions.targetId, u.id)))
         .get();
 
-      let avgRating: number | null = null;
-      if (pred) {
-        const ratingRows = db.select({ score: ratings.score }).from(ratings)
-          .where(eq(ratings.predictionId, pred.id)).all();
-        if (ratingRows.length > 0) {
-          avgRating = Math.round(ratingRows.reduce((s, r) => s + r.score, 0) / ratingRows.length);
-        }
-      }
-
       return {
         id: u.id,
         name: u.name,
         hasPrediction: !!pred,
-        avgRating,
+        avgRating: pred ? getAvgRating(pred.id) : null,
       };
     });
 

@@ -1,14 +1,15 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { notifications, users, settings } from '../schema';
+import { notifications, users } from '../schema';
 import { eq, and, ne } from 'drizzle-orm';
 import { requireAuth, getCurrentUser } from '../auth';
+import { getSettings } from '../services/settings';
 
 const router = Router();
 
 router.get('/', requireAuth, (req, res) => {
   const me = getCurrentUser(req)!;
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
+  const s = getSettings();
 
   const items = db.select().from(notifications)
     .where(and(eq(notifications.userId, me.id), ne(notifications.dismissed, true)))

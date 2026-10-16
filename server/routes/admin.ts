@@ -1,10 +1,13 @@
 import { Router } from 'express';
-import { db } from '../db';
-import { users, predictions, predictionHistory, ratings, settings, outcomes, notifications, bonusCategories, bonusVotes, blockedTokens, inviteLinks } from '../schema';
+import { db, DATA_DIR } from '../db';
+import { users, predictions, predictionHistory, ratings, outcomes, notifications, bonusCategories, bonusVotes, blockedTokens, inviteLinks } from '../schema';
 import { eq, and } from 'drizzle-orm';
 import { requireAdmin, getCurrentUser } from '../auth';
-import { calcScores } from './leaderboard';
 import { notifyAllUsersPhaseChange } from '../notifications-helper';
+import { getSettings, updateSettings, PHASES, Phase } from '../services/settings';
+import { loadSnapshot, Prediction } from '../services/snapshot';
+import { calcScores } from '../services/scoring';
+import * as awards from '../services/awards';
 import { nanoid } from 'nanoid';
 import path from 'path';
 
@@ -99,7 +102,6 @@ router.delete('/users/:id', requireAdmin, (req, res) => {
 });
 
 router.get('/predictions', requireAdmin, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
   const me = getCurrentUser(req)!;
   const all = db.select().from(predictions).all();
 
@@ -165,7 +167,7 @@ router.delete('/predictions/:id', requireAdmin, (req, res) => {
 router.get('/stats', requireAdmin, (req, res) => {
   const allPredictions = db.select().from(predictions).all();
   const allRatings = db.select().from(ratings).all();
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
+  const s = getSettings();
 
   const avgRating = allRatings.length > 0
     ? Math.round(allRatings.reduce((sum, r) => sum + r.score, 0) / allRatings.length)
@@ -231,7 +233,7 @@ router.get('/stats', requireAdmin, (req, res) => {
 });
 
 router.get('/settings', requireAdmin, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get();
+  const s = getSettings();
   res.json(s);
 });
 
@@ -248,59 +250,46 @@ router.put('/settings', requireAdmin, (req, res) => {
   if (anonymousPredictions !== undefined) updates.anonymousPredictions = anonymousPredictions;
   if (bonusActive !== undefined) updates.bonusActive = bonusActive;
 
-  db.update(settings).set(updates).where(eq(settings.id, 1)).run();
+  updateSettings(updates);
 
-  const updated = db.select().from(settings).where(eq(settings.id, 1)).get();
+  const updated = getSettings();
   res.json(updated);
 });
 
+function setPhase(phase: Phase) {
+  updateSettings({ currentPhase: phase });
+  notifyAllUsersPhaseChange(phase);
+  return { success: true, newPhase: phase };
+}
+
 router.post('/phase/set', requireAdmin, (req, res) => {
   const { phase } = req.body;
-  const phases = ['submission', 'reveal', 'done'];
-  if (!phases.includes(phase)) {
+  if (!PHASES.includes(phase)) {
     return res.status(400).json({ error: 'Invalid phase' });
   }
-  db.update(settings).set({ currentPhase: phase as any }).where(eq(settings.id, 1)).run();
-  notifyAllUsersPhaseChange(phase);
-  res.json({ success: true, newPhase: phase });
+  res.json(setPhase(phase));
 });
 
 router.post('/phase/advance', requireAdmin, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
-
-  const phases: Array<'submission' | 'reveal' | 'done'> = ['submission', 'reveal', 'done'];
-  const currentIndex = phases.indexOf(s.currentPhase as any);
-
-  if (currentIndex >= phases.length - 1) {
+  const currentIndex = PHASES.indexOf(getSettings().currentPhase);
+  if (currentIndex >= PHASES.length - 1) {
     return res.status(400).json({ error: 'Already in final phase' });
   }
-
-  const nextPhase = phases[currentIndex + 1];
-  db.update(settings).set({ currentPhase: nextPhase }).where(eq(settings.id, 1)).run();
-  notifyAllUsersPhaseChange(nextPhase);
-  res.json({ success: true, newPhase: nextPhase });
+  res.json(setPhase(PHASES[currentIndex + 1]));
 });
 
 router.post('/phase/reverse', requireAdmin, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
-
-  const phases: Array<'submission' | 'reveal' | 'done'> = ['submission', 'reveal', 'done'];
-  const currentIndex = phases.indexOf(s.currentPhase as any);
-
+  const currentIndex = PHASES.indexOf(getSettings().currentPhase);
   if (currentIndex <= 0) {
     return res.status(400).json({ error: 'Already in first phase' });
   }
-
-  const prevPhase = phases[currentIndex - 1];
-  db.update(settings).set({ currentPhase: prevPhase }).where(eq(settings.id, 1)).run();
-  notifyAllUsersPhaseChange(prevPhase);
-  res.json({ success: true, newPhase: prevPhase });
+  res.json(setPhase(PHASES[currentIndex - 1]));
 });
 
 router.post('/bonus-active/toggle', requireAdmin, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
+  const s = getSettings();
   const newVal = !s.bonusActive;
-  db.update(settings).set({ bonusActive: newVal }).where(eq(settings.id, 1)).run();
+  updateSettings({ bonusActive: newVal });
   res.json({ success: true, bonusActive: newVal });
 });
 
@@ -336,108 +325,52 @@ router.post('/predictions/:id/unforgive-edit', requireAdmin, (req, res) => {
 
 function csvCell(v: any) { return `"${String(v ?? '').replace(/"/g, '""')}"`; }
 
+/** Hall of Fame as CSV, using the same award rules as the in-app Hall of Fame. */
 router.get('/export/hof.csv', requireAdmin, (req, res) => {
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
-  const anon = s.anonymousPredictions;
-  const allUsers = db.select().from(users).all();
-  const allPreds = db.select().from(predictions).all();
-  const allOutcomes = db.select().from(outcomes).all();
-  const allRatings = db.select().from(ratings).all();
-  const allHistory = db.select().from(predictionHistory).all();
-
-  const userName = (id: number) => allUsers.find(u => u.id === id)?.name ?? '';
-  const avgRating = (predId: number) => {
-    const rs = allRatings.filter(r => r.predictionId === predId);
-    return rs.length > 0 ? rs.reduce((s, r) => s + r.score, 0) / rs.length : null;
-  };
+  const g = loadSnapshot();
+  const anon = getSettings().anonymousPredictions;
+  const name = (id: number) => g.userName(id) ?? '';
+  const author = (p: Prediction) => anon ? '?' : name(p.authorId);
+  const about = (p: Prediction, detail: string) => `About ${name(p.targetId)} - ${detail} - ${p.currentText}`;
+  const names = (winners: { name: string }[]) => winners.map(w => w.name).join(', ');
 
   const rows: string[][] = [];
 
-  // Most Courageous
-  const truePreds = allPreds.filter(p => allOutcomes.find(o => o.predictionId === p.id)?.happened === true);
-  const withAvg = truePreds.map(p => ({ p, avg: avgRating(p.id) })).filter(x => x.avg !== null) as { p: typeof allPreds[0]; avg: number }[];
-  if (withAvg.length > 0) {
-    withAvg.sort((a, b) => a.avg - b.avg);
-    const best = withAvg[0];
-    rows.push(['Most Courageous', anon ? '?' : userName(best.p.authorId), `About ${userName(best.p.targetId)} - avg ${Math.round(best.avg)}% - ${best.p.currentText}`]);
+  const courageous = awards.mostCourageous(g);
+  if (courageous) {
+    rows.push(['Most Courageous', author(courageous.prediction), about(courageous.prediction, `avg ${Math.round(courageous.avg)}%`)]);
   }
 
-  // Biggest Miss
-  const falsePreds = allPreds.filter(p => allOutcomes.find(o => o.predictionId === p.id)?.happened === false);
-  const falseWithAvg = falsePreds.map(p => ({ p, avg: avgRating(p.id) })).filter(x => x.avg !== null) as { p: typeof allPreds[0]; avg: number }[];
-  if (falseWithAvg.length > 0) {
-    falseWithAvg.sort((a, b) => b.avg - a.avg);
-    const best = falseWithAvg[0];
-    rows.push(['Biggest Miss', anon ? '?' : userName(best.p.authorId), `About ${userName(best.p.targetId)} - avg ${Math.round(best.avg)}% - ${best.p.currentText}`]);
+  const miss = awards.biggestMiss(g);
+  if (miss) {
+    rows.push(['Biggest Miss', author(miss.prediction), about(miss.prediction, `avg ${Math.round(miss.avg)}%`)]);
   }
 
-  // Can't Make Up Their Mind
-  let mostRevised: { p: typeof allPreds[0]; editCount: number } | null = null;
-  for (const p of allPreds) {
-    const editCount = allHistory.filter(h => h.predictionId === p.id).length;
-    if (editCount === 0) continue;
-    if (!mostRevised || editCount > mostRevised.editCount || (editCount === mostRevised.editCount && p.id > mostRevised.p.id))
-      mostRevised = { p, editCount };
-  }
-  if (mostRevised) {
-    rows.push(["Can't Make Up Their Mind", anon ? '?' : userName(mostRevised.p.authorId), `About ${userName(mostRevised.p.targetId)} - ${mostRevised.editCount} edits - ${mostRevised.p.currentText}`]);
+  const controversial = awards.mostControversial(g);
+  if (controversial) {
+    const detail = `avg ${Math.round(controversial.avg)}%, spread ${Math.round(controversial.stdDev)}`;
+    rows.push(['Most Controversial', author(controversial.prediction), about(controversial.prediction, detail)]);
   }
 
-  // Star of the Show
-  const starBoard = allUsers.map(u => {
-    const count = allPreds.filter(p => p.targetId === u.id && allOutcomes.find(o => o.predictionId === p.id)?.happened === true).length;
-    return { name: u.name, count };
-  }).filter(u => u.count > 0).sort((a, b) => b.count - a.count);
-  if (starBoard.length > 0) {
-    const top = starBoard[0].count;
-    const winners = starBoard.filter(u => u.count === top);
-    rows.push(['Star of the Show', winners.map(w => w.name).join(', '), `${top} true predictions`]);
+  const revised = awards.mostRevised(g);
+  if (revised) {
+    rows.push(["Can't Make Up Their Mind", author(revised.prediction), about(revised.prediction, `${revised.history.length} edits`)]);
   }
 
-  // The Joker
-  const jokerBoard = allUsers.map(u => {
-    const count = allPreds.filter(p => p.targetId === u.id && allOutcomes.find(o => o.predictionId === p.id)?.happened === true).length;
-    return { name: u.name, count };
-  }).sort((a, b) => a.count - b.count);
-  if (jokerBoard.length > 0 && !(jokerBoard[0].count === 0 && jokerBoard.every(u => u.count === 0))) {
-    const top = jokerBoard[0].count;
-    const winners = jokerBoard.filter(u => u.count === top);
-    rows.push(['The Joker', winners.map(w => w.name).join(', '), `${top} true predictions`]);
-  }
+  const stars = awards.starOfTheShow(g);
+  if (stars.length > 0) rows.push(['Star of the Show', names(stars), `${stars[0].count} true predictions`]);
 
-  // Best Friends
-  const friendPairs: { userA: string; userB: string }[] = [];
-  for (let i = 0; i < allUsers.length; i++) {
-    for (let j = i + 1; j < allUsers.length; j++) {
-      const a = allUsers[i]; const b = allUsers[j];
-      let count = 0;
-      for (const [aId, bId] of [[a.id, b.id], [b.id, a.id]]) {
-        const p = allPreds.find(p => p.authorId === aId && p.targetId === bId);
-        if (p && allOutcomes.find(o => o.predictionId === p.id)?.happened === true) count++;
-      }
-      if (count === 2) friendPairs.push({ userA: a.name, userB: b.name });
-    }
-  }
-  if (friendPairs.length > 0) rows.push(['Best Friends', friendPairs.map(p => `${p.userA} & ${p.userB}`).join(', '), '']);
+  const jokers = awards.theJoker(g);
+  if (jokers.length > 0) rows.push(['The Joker', names(jokers), `${jokers[0].count} true predictions`]);
 
-  // Last Minute
-  if (allPreds.length > 0) {
-    const latest = [...allPreds].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))[0];
-    rows.push(['Last Minute', anon ? '?' : userName(latest.authorId), `About ${userName(latest.targetId)} - ${latest.updatedAt} - ${latest.currentText}`]);
-  }
+  const friends = awards.bestFriends(g);
+  if (friends.length > 0) rows.push(['Best Friends', friends.map(p => `${p.userA} & ${p.userB}`).join(', '), '']);
 
-  // First to Submit
-  const firstBoard = allUsers.map(u => {
-    const preds = allPreds.filter(p => p.authorId === u.id);
-    if (preds.length === 0) return null;
-    const lastPredAt = preds.map(p => p.updatedAt ?? '').sort().reverse()[0];
-    return { name: u.name, lastPredAt };
-  }).filter(Boolean) as { name: string; lastPredAt: string }[];
-  if (firstBoard.length > 0) {
-    firstBoard.sort((a, b) => a.lastPredAt.localeCompare(b.lastPredAt));
-    const winners = firstBoard.filter(u => u.lastPredAt === firstBoard[0].lastPredAt);
-    rows.push(['First to Submit', winners.map(w => w.name).join(', '), firstBoard[0].lastPredAt]);
-  }
+  const latest = awards.lastMinute(g);
+  if (latest) rows.push(['Last Minute', author(latest), about(latest, latest.updatedAt)]);
+
+  const first = awards.firstToSubmit(g);
+  if (first) rows.push(['First to Submit', first.names.join(', '), first.at]);
 
   const csv = ['Category,Winner,Detail', ...rows.map(r => r.map(csvCell).join(','))].join('\n');
   res.setHeader('Content-Type', 'text/csv');
@@ -490,10 +423,7 @@ router.get('/export/scores.csv', requireAdmin, (req, res) => {
 });
 
 router.get('/export/db', requireAdmin, (req, res) => {
-  const dbPath = process.env.NODE_ENV === 'production'
-    ? '/data/predictions.db'
-    : path.join(process.cwd(), 'predictions.db');
-  res.download(dbPath, 'predictions.db');
+  res.download(path.join(DATA_DIR, 'predictions.db'), 'predictions.db');
 });
 
 router.post('/reset', requireAdmin, (req, res) => {
@@ -504,7 +434,7 @@ router.post('/reset', requireAdmin, (req, res) => {
   db.delete(ratings).run();
   db.delete(predictionHistory).run();
   db.delete(predictions).run();
-  db.update(settings).set({ currentPhase: 'submission', submissionDeadline: null, revealDeadline: null, bonusActive: false }).where(eq(settings.id, 1)).run();
+  updateSettings({ currentPhase: 'submission', submissionDeadline: null, revealDeadline: null, bonusActive: false });
   res.json({ success: true });
 });
 

@@ -1,39 +1,17 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { bonusCategories, bonusVotes, users, settings } from '../schema';
+import { bonusCategories, bonusVotes, users } from '../schema';
 import { eq, and } from 'drizzle-orm';
 import { requireAuth, requireAdmin, getCurrentUser } from '../auth';
+import { getSettings } from '../services/settings';
+import { tallyVotes } from '../services/scoring';
 
 const router = Router();
-
-export function calcBonusPointsMap(): Record<number, number> {
-  const bonusPointsMap: Record<number, number> = {};
-  const allCats = db.select().from(bonusCategories).all();
-  for (const cat of allCats) {
-    const votes = db.select().from(bonusVotes).where(eq(bonusVotes.categoryId, cat.id)).all();
-    const tally: Record<number, number> = {};
-    for (const vote of votes) {
-      const pts = 4 - vote.rank; // rank1=3, rank2=2, rank3=1
-      tally[vote.nomineeId] = (tally[vote.nomineeId] ?? 0) + pts;
-    }
-    const maxPts = Object.values(tally).length > 0 ? Math.max(...Object.values(tally)) : 0;
-    if (maxPts > 0) {
-      const winnerIds = Object.entries(tally)
-        .filter(([, pts]) => pts === maxPts)
-        .map(([id]) => parseInt(id));
-      const pointsEach = cat.points / winnerIds.length;
-      for (const winnerId of winnerIds) {
-        bonusPointsMap[winnerId] = (bonusPointsMap[winnerId] ?? 0) + pointsEach;
-      }
-    }
-  }
-  return bonusPointsMap;
-}
 
 // GET /api/bonus — get categories + my votes + tally (tally only at done or for admin)
 router.get('/', requireAuth, (req, res) => {
   const me = getCurrentUser(req)!;
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
+  const s = getSettings();
 
   if (!s.bonusActive && s.currentPhase !== 'done' && !me.isAdmin) {
     return res.status(403).json({ error: 'Not available yet' });
@@ -49,28 +27,17 @@ router.get('/', requireAuth, (req, res) => {
       .all()
       .sort((a, b) => a.rank - b.rank);
 
-    let tally: Record<number, number> | undefined;
-    let winners: number[] | undefined;
-    if (showTally) {
-      const votes = db.select().from(bonusVotes).where(eq(bonusVotes.categoryId, cat.id)).all();
-      tally = {};
-      for (const vote of votes) {
-        const pts = 4 - vote.rank;
-        tally[vote.nomineeId] = (tally[vote.nomineeId] ?? 0) + pts;
-      }
-      const maxPts = Object.values(tally).length > 0 ? Math.max(...Object.values(tally)) : 0;
-      winners = maxPts > 0
-        ? Object.entries(tally).filter(([, pts]) => pts === maxPts).map(([id]) => parseInt(id))
-        : [];
-    }
+    const results = showTally
+      ? tallyVotes(db.select().from(bonusVotes).where(eq(bonusVotes.categoryId, cat.id)).all())
+      : undefined;
 
     return {
       id: cat.id,
       name: cat.name,
       points: cat.points,
       myVotes: myVotes.map(v => ({ rank: v.rank, nomineeId: v.nomineeId })),
-      tally,
-      winners,
+      tally: results?.tally,
+      winners: results?.winners,
     };
   });
 
@@ -80,7 +47,7 @@ router.get('/', requireAuth, (req, res) => {
 // POST /api/bonus/vote — submit votes for a category (replaces existing)
 router.post('/vote', requireAuth, (req, res) => {
   const me = getCurrentUser(req)!;
-  const s = db.select().from(settings).where(eq(settings.id, 1)).get()!;
+  const s = getSettings();
 
   if (!s.bonusActive) {
     return res.status(403).json({ error: 'Voting only available when Bonus is active' });

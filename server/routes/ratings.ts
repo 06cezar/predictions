@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { ratings, predictions, settings } from '../schema';
+import { ratings, predictions } from '../schema';
 import { eq, and } from 'drizzle-orm';
 import { requireAuth, getCurrentUser } from '../auth';
+import { getSettings } from '../services/settings';
 
 const router = Router();
 
@@ -19,7 +20,7 @@ router.post('/', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Score must be 0-100' });
   }
 
-  const gameSettings = db.select().from(settings).where(eq(settings.id, 1)).get()!;
+  const gameSettings = getSettings();
   if (gameSettings.currentPhase !== 'submission') {
     return res.status(403).json({ error: 'Rating is only allowed during the submission phase' });
   }
