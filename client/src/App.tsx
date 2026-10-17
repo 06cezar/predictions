@@ -4,6 +4,7 @@ import { api } from './api';
 import type { User } from './api';
 import { Welcome } from './pages/Welcome';
 import { JoinGame } from './pages/JoinGame';
+import { About } from './pages/About';
 import { Dashboard } from './pages/Dashboard';
 import { Predict } from './pages/Predict';
 import { Rate } from './pages/Rate';
@@ -44,6 +45,7 @@ function App() {
         <Route path="/join/:code" element={
           user ? <Navigate to="/" /> : <Join onLogin={loadMe} />
         } />
+        <Route path="/about" element={<About loggedIn={!!user} onLogin={loadMe} />} />
         <Route path="/game/:code" element={
           user ? <Navigate to="/" /> : <JoinGame onLogin={loadMe} />
         } />

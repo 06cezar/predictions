@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api, JoinedGame } from '../api';
 import { TokenReveal } from '../components/TokenReveal';
 
@@ -74,6 +74,12 @@ export function Welcome({ onLogin }: Props) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[480px] h-[480px] rounded-full bg-orange/10 blur-[120px] pointer-events-none" />
+      <Link
+        to="/about"
+        className="absolute top-4 right-4 flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+      >
+        <span aria-hidden>❓</span> What is this?
+      </Link>
       <div className="w-full max-w-md space-y-8 relative">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-float select-none" style={{ filter: 'drop-shadow(0 8px 24px rgba(59,47,245,0.45))' }}>🔮</div>

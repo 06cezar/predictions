@@ -22,7 +22,10 @@ export function DemoBanner() {
           are bots. Write a few predictions, then move the game to <b>Reveal</b> and <b>Done</b> from{' '}
           <Link to="/admin" className="text-amber hover:underline">Admin → Settings</Link> to see the scoring and Hall of Fame.
         </p>
-        {until && <p className="text-white/45 text-xs">This sandbox is private to you and deleted on {until}.</p>}
+        <p className="text-white/45 text-xs">
+          {until && <>This sandbox is private to you and deleted on {until}. </>}
+          <Link to="/about" className="text-lilac hover:underline">How does the game work?</Link>
+        </p>
       </div>
     </div>
   );
