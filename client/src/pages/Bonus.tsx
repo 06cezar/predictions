@@ -47,6 +47,8 @@ export function Bonus({ user }: Props) {
 
   const isDone = phase === 'done';
   const isVoting = bonusActive && !isDone;
+  // Rank your top 3, or everyone else when the game has fewer than 4 players
+  const required = Math.max(1, Math.min(3, users.length - 1));
 
   const getVotesForCat = (catId: number) => drafts[catId] || [];
 
@@ -65,7 +67,7 @@ export function Bonus({ user }: Props) {
 
   const handleSubmit = async (catId: number) => {
     const votes = getVotesForCat(catId);
-    if (votes.length !== 3) return;
+    if (votes.length !== required) return;
     setSaving(prev => ({ ...prev, [catId]: true }));
     try {
       await api.bonus.vote(catId, votes);
@@ -105,7 +107,7 @@ export function Bonus({ user }: Props) {
         <div>
           <h1 className="font-display text-2xl font-bold">🎖️ Bonus Round</h1>
           <p className="text-white/40 text-sm mt-0.5">
-            {isVoting ? 'Vote for your top 3 in each category' : 'Bonus round results'}
+            {isVoting ? `Vote for your top ${required} in each category` : 'Bonus round results'}
           </p>
         </div>
       </div>
@@ -120,10 +122,10 @@ export function Bonus({ user }: Props) {
       <div className="space-y-6">
         {categories.map((cat, ci) => {
           const catVotes = getVotesForCat(cat.id);
-          const allRanksSet = catVotes.length === 3;
+          const allRanksSet = catVotes.length === required;
           const hasChanged = JSON.stringify(catVotes.sort((a,b) => a.rank - b.rank)) !==
             JSON.stringify([...cat.myVotes].sort((a,b) => a.rank - b.rank));
-          const alreadyVoted = cat.myVotes.length === 3;
+          const alreadyVoted = cat.myVotes.length === required;
 
           // For the done phase: show tally sorted
           const tallyEntries = cat.tally
@@ -158,7 +160,7 @@ export function Bonus({ user }: Props) {
               {/* Voting UI */}
               {isVoting && (
                 <div className="space-y-2">
-                  {[1, 2, 3].map(rank => {
+                  {[1, 2, 3].slice(0, required).map(rank => {
                     const currentVote = catVotes.find(v => v.rank === rank);
                     // Nominees already used in other ranks
                     const usedIds = catVotes.filter(v => v.rank !== rank).map(v => v.nomineeId);

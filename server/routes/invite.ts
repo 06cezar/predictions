@@ -4,6 +4,7 @@ import { users, inviteLinks } from '../schema';
 import { and, eq } from 'drizzle-orm';
 import { requireAdmin } from '../auth';
 import { claimToken } from '../services/tokens';
+import { cleanName } from '../services/games';
 import { nanoid } from 'nanoid';
 
 const router = Router();
@@ -51,18 +52,18 @@ router.get('/join/:code', (req, res) => {
 // POST /api/invite/join/:code — public: register in the link's game
 router.post('/join/:code', (req, res) => {
   const { code } = req.params;
-  const { name, token: requestedToken } = req.body;
+  const name = cleanName(req.body.name);
 
-  if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
+  if (!name) return res.status(400).json({ error: 'Name is required' });
 
   const link = db.select().from(inviteLinks).where(eq(inviteLinks.code, code)).get();
   if (!link) return res.status(404).json({ error: 'Invite link not found' });
   if (link.usedBy) return res.status(410).json({ error: 'This invite link has already been used' });
 
-  const claim = claimToken(requestedToken, { playerName: name.trim(), source: 'invite link' });
+  const claim = claimToken(req.body.token, { playerName: name, source: 'invite link' });
   if (!claim.ok) return res.status(409).json({ error: claim.error });
 
-  const newUser = db.insert(users).values({ gameId: link.gameId, name: name.trim(), token: claim.token }).returning().get();
+  const newUser = db.insert(users).values({ gameId: link.gameId, name, token: claim.token }).returning().get();
 
   db.update(inviteLinks)
     .set({ usedBy: newUser.id, usedAt: new Date().toISOString() })

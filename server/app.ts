@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import session from 'express-session';
 import rateLimit from 'express-rate-limit';
 import { DATA_DIR } from './db';
@@ -92,6 +92,20 @@ export function createApp() {
   app.use('/api/invite', inviteRoutes);
   app.use('/api/games', gameRoutes);
   app.use('/api/demo', demoRoutes);
+
+  // Unknown API routes answer JSON (in production they must not fall through to the SPA)
+  app.use('/api', (req, res) => {
+    res.status(404).json({ error: 'Not found' });
+  });
+
+  // Last resort: log the error, answer without internals
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+    if (err?.type === 'entity.parse.failed') {
+      return res.status(400).json({ error: 'Malformed JSON' });
+    }
+    console.error(err);
+    res.status(500).json({ error: 'Something went wrong' });
+  });
 
   return app;
 }

@@ -61,18 +61,24 @@ router.post('/vote', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'categoryId and votes required' });
   }
 
-  // Validate: exactly 3 votes, ranks 1-3, no duplicates, no self-vote
-  if (votes.length !== 3) return res.status(400).json({ error: 'Must submit exactly 3 votes' });
-  const ranks = votes.map((v: any) => v.rank).sort();
-  if (JSON.stringify(ranks) !== JSON.stringify([1, 2, 3])) {
-    return res.status(400).json({ error: 'Must have exactly rank 1, 2 and 3' });
-  }
-  const nomineeIds = votes.map((v: any) => v.nomineeId);
-  if (new Set(nomineeIds).size !== 3) return res.status(400).json({ error: 'Cannot vote for same person twice' });
-  if (nomineeIds.includes(me.id)) return res.status(400).json({ error: 'Cannot vote for yourself' });
-
   const cat = findCategory(game, categoryId);
   if (!cat) return res.status(404).json({ error: 'Category not found' });
+
+  // Rank your top 3, or everyone else when the game has fewer than 4 players
+  const otherPlayers = db.select({ id: users.id }).from(users).where(eq(users.gameId, game.id)).all().length - 1;
+  const required = Math.min(3, otherPlayers);
+  if (required < 1) return res.status(400).json({ error: 'Voting needs at least two players' });
+
+  // Validate: one vote per rank 1..required, no duplicates, no self-vote
+  if (votes.length !== required) return res.status(400).json({ error: `Must submit exactly ${required} votes` });
+  const ranks = votes.map((v: any) => v.rank).sort();
+  if (JSON.stringify(ranks) !== JSON.stringify([1, 2, 3].slice(0, required))) {
+    return res.status(400).json({ error: `Must rank places 1 to ${required}` });
+  }
+  const nomineeIds = votes.map((v: any) => v.nomineeId);
+  if (new Set(nomineeIds).size !== required) return res.status(400).json({ error: 'Cannot vote for same person twice' });
+  if (nomineeIds.includes(me.id)) return res.status(400).json({ error: 'Cannot vote for yourself' });
+
 
   // Verify all nominees are players of this game
   for (const nid of nomineeIds) {

@@ -1,6 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api';
+import { TokenReveal } from '../components/TokenReveal';
 
 interface Props {
   onLogin: () => Promise<void>;
@@ -17,6 +18,7 @@ export function Join({ onLogin }: Props) {
   const [token, setToken] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [joined, setJoined] = useState<{ name: string; token: string } | null>(null);
 
   useEffect(() => {
     if (!code) return;
@@ -36,10 +38,9 @@ export function Join({ onLogin }: Props) {
 
     try {
       const result = await api.invite.join(code, name.trim(), token.trim() || undefined);
-      // Auto-login with the new token
       await api.auth.login(result.token);
-      await onLogin();
-      navigate('/');
+      // Show the token before entering: it's the only way back in later
+      setJoined({ name: result.name, token: result.token });
     } catch (err: any) {
       setError(err.message || 'Something went wrong');
     } finally {
@@ -79,7 +80,15 @@ export function Join({ onLogin }: Props) {
           <p className="text-white/50 italic font-display">You've been invited! Create your account below.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="card space-y-5">
+        {joined && (
+          <TokenReveal
+            title={`Welcome, ${joined.name}`}
+            token={joined.token}
+            onContinue={async () => { await onLogin(); navigate('/'); }}
+          />
+        )}
+
+        {!joined && <form onSubmit={handleSubmit} className="card space-y-5">
           <div>
             <label className="block text-sm text-white/60 mb-2">Your name <span className="text-orange">*</span></label>
             <input
@@ -118,11 +127,13 @@ export function Join({ onLogin }: Props) {
           >
             {loading ? 'Joining...' : 'Join the game →'}
           </button>
-        </form>
+        </form>}
 
-        <p className="text-center text-white/30 text-sm">
-          Already have a token? <a href="/login" className="text-amber hover:text-amber/80 transition-colors">Sign in here</a>
-        </p>
+        {!joined && (
+          <p className="text-center text-white/30 text-sm">
+            Already have a token? <a href="/login" className="text-amber hover:text-amber/80 transition-colors">Sign in here</a>
+          </p>
+        )}
       </div>
     </div>
   );

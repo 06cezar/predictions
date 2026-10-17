@@ -63,7 +63,7 @@ export function Dashboard({ user, onLogout }: Props) {
         <Link to="/bonus" className="card mb-4 text-center py-4 animate-fade-up border border-amber/20 hover:border-amber/40 transition-colors block" style={{ animationDelay: '0.04s' }}>
           <p className="text-2xl mb-1">🎖️</p>
           <p className="font-medium text-white/80">Bonus Round is live!</p>
-          <p className="text-xs text-white/40 mt-1">{phase === 'done' ? 'See bonus round results →' : 'Vote for your top 3 in each category →'}</p>
+          <p className="text-xs text-white/40 mt-1">{phase === 'done' ? 'See bonus round results →' : 'Vote in each category →'}</p>
         </Link>
       )}
 

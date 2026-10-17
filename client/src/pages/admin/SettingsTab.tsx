@@ -143,14 +143,14 @@ function GameSection({ settings, onUpdate, onChanged }: Props) {
       <div>
         <label className="block text-sm text-white/60 mb-2">Join code</label>
         <div className="flex gap-2">
-          <code className="input flex-1 font-mono tracking-[0.3em] text-amber">{settings.joinCode}</code>
-          <button onClick={() => copy(joinLink, 'link')} className="btn-secondary text-sm px-3">
+          <code className="input flex-1 min-w-0 font-mono tracking-[0.3em] text-amber">{settings.joinCode}</code>
+          <button onClick={() => copy(joinLink, 'link')} className="btn-secondary text-sm px-3 whitespace-nowrap">
             {copied === 'link' ? '✓ Copied' : 'Copy link'}
           </button>
           <button
             onClick={regenerate}
             onBlur={() => setRegenerateConfirm(false)}
-            className={`text-sm px-3 rounded-xl transition-colors ${regenerateConfirm ? 'bg-orange text-white' : 'btn-ghost'}`}
+            className={`text-sm px-3 rounded-xl whitespace-nowrap transition-colors ${regenerateConfirm ? 'bg-orange text-white' : 'btn-ghost'}`}
           >
             {regenerateConfirm ? 'Confirm?' : 'New code'}
           </button>

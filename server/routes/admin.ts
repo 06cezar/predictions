@@ -3,7 +3,7 @@ import { db } from '../db';
 import { users, predictions, predictionHistory, ratings, outcomes, notifications, bonusCategories, bonusVotes, inviteLinks } from '../schema';
 import { eq, and, inArray, getTableColumns } from 'drizzle-orm';
 import { requireAdmin } from '../auth';
-import { Game, GameChanges, PHASES, Phase, getGame, updateGame, clearGameData, newJoinCode } from '../services/games';
+import { Game, GameChanges, PHASES, Phase, cleanName, getGame, updateGame, clearGameData, newJoinCode } from '../services/games';
 import { loadSnapshot, Prediction } from '../services/snapshot';
 import { calcScores } from '../services/scoring';
 import { changePhase } from '../services/phases';
@@ -31,13 +31,13 @@ router.get('/users', (req, res) => {
 
 router.post('/users', (req, res) => {
   const { game } = res.locals;
-  const { name, token: customToken } = req.body;
-  if (!name?.trim()) return res.status(400).json({ error: 'name required' });
+  const name = cleanName(req.body.name);
+  if (!name) return res.status(400).json({ error: 'name required' });
 
-  const claim = claimToken(customToken, { playerName: name.trim(), source: 'added by an admin', adminOfGameId: game.id });
+  const claim = claimToken(req.body.token, { playerName: name, source: 'added by an admin', adminOfGameId: game.id });
   if (!claim.ok) return res.status(400).json({ error: 'Token already in use' });
 
-  const user = db.insert(users).values({ gameId: game.id, name: name.trim(), token: claim.token }).returning().get();
+  const user = db.insert(users).values({ gameId: game.id, name, token: claim.token }).returning().get();
   res.json(user);
 });
 
@@ -45,9 +45,10 @@ router.put('/users/:id', (req, res) => {
   const player = findPlayer(res.locals.game, parseInt(req.params.id));
   if (!player) return res.status(404).json({ error: 'User not found' });
 
-  const { name, regenerateToken } = req.body;
+  const name = cleanName(req.body.name);
   const updates: Partial<typeof users.$inferInsert> = {};
-  if (name?.trim()) updates.name = name.trim();
+  if (name) updates.name = name;
+  const { regenerateToken } = req.body;
   if (regenerateToken) updates.token = generateUniqueToken();
   if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'Nothing to update' });
   db.update(users).set(updates).where(eq(users.id, player.id)).run();
@@ -208,21 +209,40 @@ router.get('/settings', (req, res) => {
   res.json(res.locals.game);
 });
 
+const BOOLEAN_SETTINGS = ['openJoin', 'autoAdvancePhase', 'adminOverride', 'anonymousPredictions', 'bonusActive'] as const;
+const DEADLINES = ['submissionDeadline', 'revealDeadline'] as const;
+
+// The phase is not a setting: it changes only through /phase/*, so notifications
+// (and demo bots marking outcomes) always follow a phase change.
 router.put('/settings', (req, res) => {
   const { game } = res.locals;
-  const { name, openJoin, currentPhase, submissionDeadline, revealDeadline, ratingThreshold, autoAdvancePhase, adminOverride, anonymousPredictions, bonusActive } = req.body;
-
+  const body = req.body ?? {};
   const updates: GameChanges = {};
-  if (typeof name === 'string' && name.trim()) updates.name = name.trim();
-  if (openJoin !== undefined) updates.openJoin = openJoin;
-  if (currentPhase !== undefined) updates.currentPhase = currentPhase;
-  if (submissionDeadline !== undefined) updates.submissionDeadline = submissionDeadline;
-  if (revealDeadline !== undefined) updates.revealDeadline = revealDeadline;
-  if (ratingThreshold !== undefined) updates.ratingThreshold = parseInt(ratingThreshold);
-  if (autoAdvancePhase !== undefined) updates.autoAdvancePhase = autoAdvancePhase;
-  if (adminOverride !== undefined) updates.adminOverride = adminOverride;
-  if (anonymousPredictions !== undefined) updates.anonymousPredictions = anonymousPredictions;
-  if (bonusActive !== undefined) updates.bonusActive = bonusActive;
+
+  if (body.name !== undefined) {
+    const name = cleanName(body.name);
+    if (!name) return res.status(400).json({ error: 'The game needs a name' });
+    updates.name = name;
+  }
+  for (const key of BOOLEAN_SETTINGS) {
+    if (body[key] === undefined) continue;
+    if (typeof body[key] !== 'boolean') return res.status(400).json({ error: `${key} must be true or false` });
+    updates[key] = body[key];
+  }
+  for (const key of DEADLINES) {
+    if (body[key] === undefined) continue;
+    if (body[key] !== null && (typeof body[key] !== 'string' || isNaN(Date.parse(body[key])))) {
+      return res.status(400).json({ error: `${key} must be a date or null` });
+    }
+    updates[key] = body[key];
+  }
+  if (body.ratingThreshold !== undefined) {
+    const threshold = Number(body.ratingThreshold);
+    if (!Number.isInteger(threshold) || threshold < 0 || threshold > 100) {
+      return res.status(400).json({ error: 'ratingThreshold must be a whole number from 0 to 100' });
+    }
+    updates.ratingThreshold = threshold;
+  }
 
   if (Object.keys(updates).length > 0) updateGame(game.id, updates);
   res.json(getGame(game.id));

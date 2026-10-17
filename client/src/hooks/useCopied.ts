@@ -5,9 +5,11 @@ export function useCopied(resetAfterMs = 2000) {
   const [copied, setCopied] = useState<string | null>(null);
 
   const copy = (text: string, key: string = text) => {
-    navigator.clipboard.writeText(text).catch(() => {});
-    setCopied(key);
-    setTimeout(() => setCopied(current => (current === key ? null : current)), resetAfterMs);
+    // navigator.clipboard only exists on https or localhost
+    navigator.clipboard?.writeText(text).then(() => {
+      setCopied(key);
+      setTimeout(() => setCopied(current => (current === key ? null : current)), resetAfterMs);
+    }).catch(() => {});
   };
 
   return { copied, copy };

@@ -64,7 +64,7 @@ export function JoinGame({ onLogin }: Props) {
   return (
     <Shell>
       <div className="text-center">
-        <p className="text-white/40 text-sm uppercase tracking-widest mb-2">You're joining</p>
+        {game && <p className="text-white/40 text-sm uppercase tracking-widest mb-2">You're joining</p>}
         <h1 className="font-display text-4xl font-bold text-white text-glow">{game?.name ?? 'Predictions'}</h1>
       </div>
 
