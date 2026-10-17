@@ -8,6 +8,13 @@ import { loadSnapshot } from './snapshot';
 /** Demo games delete themselves this long after they were created. */
 export const DEMO_TTL_HOURS = 72;
 
+/**
+ * Each demo phase lasts this long, so a demo nobody skips still plays out
+ * on its own (submission closes after 30 minutes, results after 60), long
+ * before it is deleted.
+ */
+export const DEMO_PHASE_MINUTES = 30;
+
 type Bot = 'Jordan' | 'Morgan' | 'Casey' | 'River';
 
 /** The four bots, with fixed tokens used only by `npm run seed`. */
@@ -66,7 +73,8 @@ const BOT_VOTES: Record<Bot, Bot[]> = {
   River: ['Casey', 'Morgan', 'Jordan'],
 };
 
-const days = (n: number) => new Date(Date.now() + n * 24 * 60 * 60 * 1000).toISOString();
+const minutesFromNow = (n: number) => new Date(Date.now() + n * 60 * 1000).toISOString();
+export const demoPhaseEnds = () => minutesFromNow(DEMO_PHASE_MINUTES);
 
 interface DemoOptions {
   /** The visitor, who plays as the game's admin. */
@@ -85,14 +93,17 @@ interface DemoOptions {
  */
 export function createDemoGame(options: DemoOptions = {}) {
   const visitorName = options.visitorName?.trim() || 'You';
+  const isDemo = options.isDemo ?? true;
+  // A local seed keeps a month per phase; a real demo runs on the short demo clock
+  const phaseMinutes = isDemo ? DEMO_PHASE_MINUTES : 30 * 24 * 60;
   const game = createGame({
     name: 'Demo game',
-    isDemo: options.isDemo ?? true,
+    isDemo,
     openJoin: false,
     anonymousPredictions: false,
     ratingThreshold: 40,
-    submissionDeadline: days(30),
-    revealDeadline: days(60),
+    submissionDeadline: minutesFromNow(phaseMinutes),
+    revealDeadline: minutesFromNow(2 * phaseMinutes),
   });
 
   const visitor = db.insert(users).values({
@@ -229,6 +240,10 @@ export function demoProgress(game: Game, userId: number) {
     .where(eq(bonusVotes.voterId, userId)).all().map(v => v.categoryId));
   return {
     phase: game.currentPhase,
+    /** When the current phase ends on its own (null once the round is over). */
+    nextDeadline: game.currentPhase === 'submission' ? game.submissionDeadline
+      : game.currentPhase === 'reveal' ? game.revealDeadline
+      : null,
     written: myTargets.size,
     writeTotal: g.users.length - 1,
     rated: toRate.filter(p => myRatings.has(p.id)).length,

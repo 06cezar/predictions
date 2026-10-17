@@ -1,5 +1,5 @@
 import { Game, Phase, updateGame } from './games';
-import { botsFinishSubmission, botsMarkOutcomes } from './demo';
+import { botsFinishSubmission, botsMarkOutcomes, demoPhaseEnds } from './demo';
 import { notifyAllUsersPhaseChange } from '../notifications-helper';
 
 /** Move a game to another phase. Every phase change (admin, scheduler, demo skip) goes through here. */
@@ -10,8 +10,6 @@ export function changePhase(game: Game, phase: Phase) {
   notifyAllUsersPhaseChange(game.id, phase);
 }
 
-const hoursFromNow = (h: number) => new Date(Date.now() + h * 60 * 60 * 1000).toISOString();
-
 /**
  * Demo only: fast-forward to the next phase as if its deadline had just
  * passed. The bots do their part on the way (see changePhase).
@@ -19,7 +17,7 @@ const hoursFromNow = (h: number) => new Date(Date.now() + h * 60 * 60 * 1000).to
 export function skipDemoPhase(game: Game): Phase | null {
   const now = new Date().toISOString();
   if (game.currentPhase === 'submission') {
-    updateGame(game.id, { submissionDeadline: now, revealDeadline: hoursFromNow(48) });
+    updateGame(game.id, { submissionDeadline: now, revealDeadline: demoPhaseEnds() });
     changePhase(game, 'reveal');
     return 'reveal';
   }

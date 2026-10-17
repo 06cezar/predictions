@@ -39,8 +39,9 @@ from the admin panel.
   predictions, with a guide that walks you through each step. **Skip ahead** fast-forwards to the
   next phase as if the deadline had passed: the bots rate your predictions, then confirm or deny
   what you predicted about them. The bots are deterministic (same predictions, ratings derived from
-  your text, fixed personalities), so the same moves always give the same leaderboard. Demos
-  delete themselves after three days.
+  your text, fixed personalities), so the same moves always give the same leaderboard. Left
+  alone, a demo plays out by itself: each phase lasts 30 minutes. Demos delete themselves after
+  three days.
 
 ### Scoring
 

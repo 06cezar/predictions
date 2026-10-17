@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import { eq } from 'drizzle-orm';
 import * as schema from '../server/schema';
-import { botRating } from '../server/services/demo';
+import { botRating, createDemoGame, DEMO_TTL_HOURS } from '../server/services/demo';
+import { runScheduledTasks } from '../server/phase-scheduler';
 import { setupTestDb, createUser, createTestApp, loginAs } from './helpers';
 
 type Agent = ReturnType<typeof request.agent>;
@@ -109,6 +110,47 @@ describe('Demo round', () => {
       const asBot = request.agent(app);
       await loginAs(asBot, bot.token);
       expect((await asBot.post('/api/demo/skip')).status).toBe(403);
+    });
+  });
+
+  describe('runs on its own if nobody skips', () => {
+    const minutesFromNow = (m: number) => new Date(Date.now() + m * 60_000);
+    const near = (iso: string | null, minutes: number) =>
+      Math.abs(Date.parse(iso!) - minutesFromNow(minutes).getTime()) < 60_000;
+
+    it('gives each phase 30 minutes, ending long before the demo is deleted', async () => {
+      const { agent } = await startDemo();
+      const settings = (await agent.get('/api/admin/settings')).body;
+      expect(near(settings.submissionDeadline, 30)).toBe(true);
+      expect(near(settings.revealDeadline, 60)).toBe(true);
+      expect(60).toBeLessThan(DEMO_TTL_HOURS * 60);
+    });
+
+    it('moves to the reveal after 30 minutes and to the results after 60, bots included', async () => {
+      const { agent, id } = await startDemo();
+      const aboutJordan = await predict(agent, id('Jordan'), 'Jordan opens a bakery');
+
+      runScheduledTasks(minutesFromNow(31));
+      expect((await agent.get('/api/demo/progress')).body.phase).toBe('reveal');
+      expect(ratingsOf(aboutJordan)).toHaveLength(3);
+      expect(outcomeOf(aboutJordan)).toBe(true);
+
+      runScheduledTasks(minutesFromNow(61));
+      const progress = (await agent.get('/api/demo/progress')).body;
+      expect(progress.phase).toBe('done');
+      expect(progress.nextDeadline).toBeNull();
+    });
+
+    it('after a skip, the reveal also gets 30 minutes', async () => {
+      const { agent } = await startDemo();
+      const { game } = (await agent.post('/api/demo/skip')).body;
+      expect(near(game.revealDeadline, 30)).toBe(true);
+      expect(near((await agent.get('/api/demo/progress')).body.nextDeadline, 30)).toBe(true);
+    });
+
+    it('a local seed (not a demo) keeps a month per phase', () => {
+      const { game } = createDemoGame({ isDemo: false });
+      expect(Date.parse(game.submissionDeadline!)).toBeGreaterThan(Date.now() + 29 * 24 * 3600_000);
     });
   });
 

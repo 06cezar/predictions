@@ -23,6 +23,13 @@ interface Step {
 
 const COLLAPSED_KEY = 'demo-guide-collapsed';
 
+/** "or wait 12 min" hint for skipping: phases also end on their own (30 min each in a demo). */
+function waitHint(deadline: string | null) {
+  if (!deadline) return '';
+  const minutes = Math.ceil((Date.parse(deadline) - Date.now()) / 60_000);
+  return minutes <= 1 ? ', any moment now' : ` (or wait ${minutes} min, it happens on its own)`;
+}
+
 function buildSteps(p: DemoProgress, settingsSeen: boolean): Step[] {
   const submission = p.phase === 'submission';
   const done = p.phase === 'done';
@@ -47,7 +54,7 @@ function buildSteps(p: DemoProgress, settingsSeen: boolean): Step[] {
     },
     {
       title: 'Skip to the reveal',
-      detail: 'The bots rate your predictions and the deadline passes',
+      detail: 'The bots rate your predictions and the deadline passes' + (submission ? waitHint(p.nextDeadline) : ''),
       done: !submission,
       skip: true,
     },
@@ -72,7 +79,7 @@ function buildSteps(p: DemoProgress, settingsSeen: boolean): Step[] {
     },
     {
       title: 'Skip to the results',
-      detail: 'The reveal deadline passes',
+      detail: 'The reveal deadline passes' + (p.phase === 'reveal' ? waitHint(p.nextDeadline) : ''),
       done,
       locked: submission,
       skip: true,
@@ -102,6 +109,11 @@ export function DemoGuide({ gameId, onLogin }: Props) {
   }, [gameId]);
 
   useEffect(refresh, [refresh, location.pathname, location.search]);
+  useEffect(() => {
+    // Keeps the countdown fresh and notices when a phase ends on its own
+    const timer = setInterval(refresh, 30_000);
+    return () => clearInterval(timer);
+  }, [refresh]);
   useEffect(() => {
     window.addEventListener(API_MUTATED, refresh);
     window.addEventListener(DEMO_GUIDE_CHANGED, refresh);

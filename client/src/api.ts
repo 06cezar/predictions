@@ -72,6 +72,7 @@ export interface JoinedGame {
 /** Where the player is in a demo round (see DemoGuide). */
 export interface DemoProgress {
   phase: Settings['currentPhase'];
+  nextDeadline: string | null;
   written: number;
   writeTotal: number;
   rated: number;
