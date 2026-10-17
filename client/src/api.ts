@@ -69,6 +69,18 @@ export interface JoinedGame {
   game: { id: number; name: string; joinCode?: string; isDemo?: boolean; expiresAt?: string };
 }
 
+/** Where the player is in a demo round (see DemoGuide). */
+export interface DemoProgress {
+  phase: Settings['currentPhase'];
+  written: number;
+  writeTotal: number;
+  rated: number;
+  rateTotal: number;
+  marked: number;
+  markTotal: number;
+  expiresAt: string;
+}
+
 export interface LeaderboardEntry {
   id: number;
   name: string;
@@ -76,6 +88,9 @@ export interface LeaderboardEntry {
   score: number;
   weightedScore: number;
 }
+
+/** Fired after every successful change, so views like the demo guide can refresh. */
+export const API_MUTATED = 'api:mutated';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -86,6 +101,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || 'Request failed');
   }
+  if (options?.method && options.method !== 'GET') window.dispatchEvent(new Event(API_MUTATED));
   return res.json();
 }
 
@@ -114,6 +130,8 @@ export const api = {
   },
   demo: {
     start: (name?: string) => request<JoinedGame>('/api/demo', { method: 'POST', body: JSON.stringify({ name }) }),
+    progress: () => request<DemoProgress>('/api/demo/progress'),
+    skip: () => request<{ newPhase: Settings['currentPhase']; game: Settings }>('/api/demo/skip', { method: 'POST' }),
   },
   predictions: {
     mine: () => request<Prediction[]>('/api/predictions/mine'),

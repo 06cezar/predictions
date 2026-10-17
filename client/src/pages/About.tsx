@@ -159,7 +159,7 @@ export function About({ loggedIn, onLogin }: Props) {
           </div>
           <div className="card space-y-1">
             <p className="font-medium">🧪 Just looking?</p>
-            <p className="text-white/60">Try the demo: your own game with four bots, deleted after 3 days.</p>
+            <p className="text-white/60">Run a demo round as the admin: four bots, a guide, and a button to skip ahead in time.</p>
           </div>
         </div>
         <p className="text-xs text-white/40">
@@ -187,7 +187,7 @@ export function About({ loggedIn, onLogin }: Props) {
         ) : (
           <>
             <button onClick={startDemo} disabled={busy} className="btn-primary flex-1 py-3">
-              {busy ? 'Starting...' : 'Try the demo →'}
+              {busy ? 'Setting up...' : 'Run a demo round →'}
             </button>
             <Link to="/login" className="btn-secondary flex-1 text-center py-3">Create or join a game</Link>
           </>

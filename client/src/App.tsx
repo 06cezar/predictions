@@ -14,7 +14,7 @@ import { Admin } from './pages/Admin';
 import { Bonus } from './pages/Bonus';
 import { Join } from './pages/Join';
 import { Navbar } from './components/Navbar';
-import { DemoBanner } from './components/DemoBanner';
+import { DemoGuide } from './components/DemoGuide';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -37,7 +37,7 @@ function App() {
 
   return (
     <BrowserRouter>
-      {user?.game?.isDemo && <DemoBanner />}
+      {user?.game?.isDemo && <DemoGuide key={user.game.id} gameId={user.game.id} onLogin={loadMe} />}
       <Routes>
         <Route path="/login" element={
           user ? <Navigate to="/" /> : <Welcome onLogin={loadMe} />
@@ -64,7 +64,7 @@ function App() {
           <Route path="*" element={<Navigate to="/login" />} />
         )}
       </Routes>
-      {user && <Navbar user={user} onLogout={() => setUser(null)} />}
+      {user && <Navbar key={user.id} user={user} onLogout={() => setUser(null)} />}
     </BrowserRouter>
   );
 }

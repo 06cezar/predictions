@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { markDemoSettingsSeen } from '../../demoGuide';
 import { api, Settings } from '../../api';
 import { useCopied } from '../../hooks/useCopied';
 import { SettingsUpdate, ToggleRow, toLocalInput } from './shared';
@@ -20,6 +21,10 @@ const PHASE_BUTTONS = [
 ] as const;
 
 export function SettingsTab({ settings, onUpdate, onChanged }: Props) {
+  useEffect(() => {
+    if (settings.isDemo) markDemoSettingsSeen(settings.id);
+  }, [settings.id, settings.isDemo]);
+
   return (
     <div className="space-y-5">
       <GameSection settings={settings} onUpdate={onUpdate} onChanged={onChanged} />

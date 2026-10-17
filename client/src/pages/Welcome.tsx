@@ -96,12 +96,14 @@ export function Welcome({ onLogin }: Props) {
           />
         ) : (
           <>
-            <div className="space-y-2">
+            <div className="card text-center space-y-3">
+              <p className="text-white/80">Want a quick feel for how it works?</p>
               <button onClick={startDemo} disabled={busy} className="btn-primary w-full text-base py-3">
-                Try the demo →
+                {busy ? 'Setting up...' : 'Run a demo round as the admin →'}
               </button>
-              <p className="text-center text-white/35 text-xs">
-                A private sandbox with four bot players. No sign-up, deleted after 3 days.
+              <p className="text-white/35 text-xs">
+                Four bot players, a step-by-step guide and a button to skip ahead in time.
+                No sign-up; private to you and deleted after 3 days.
               </p>
             </div>
 

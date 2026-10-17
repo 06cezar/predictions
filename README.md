@@ -8,8 +8,10 @@ true score the most.
 It started as a game for my own friend group. Now anyone can run their own game on the same
 deployment, or try it alone in a private demo with bot players.
 
-**Try it:** https://predictions-app.fly.dev → **Try the demo** (no sign-up; you get a private
-game with four bots, as its admin).
+**Try it:** https://predictions-app.fly.dev → **Run a demo round as the admin** (no sign-up: a
+private game with four bots, a step-by-step guide, and a button that skips ahead in time).
+New to the idea? The start page links to a short "How it works".
+
 
 **Stack:** TypeScript · React 18 · Vite · Tailwind CSS · Express · SQLite (better-sqlite3) ·
 Drizzle ORM · Vitest + Supertest · Docker · Fly.io · GitHub Actions
@@ -33,9 +35,12 @@ from the admin panel.
   or add players themselves.
 - **Log in** with your token: one field, no passwords. Tokens are unique across all games, so a
   token also tells the server which game you're in.
-- **Try the demo**: a fresh private game where four bots have already written and rated
-  predictions. When you move it to the reveal, the bots mark their outcomes, so you can play it
-  through to the Hall of Fame alone. Demos delete themselves after three days.
+- **Run a demo round**: a fresh private game where four bots have already written and rated
+  predictions, with a guide that walks you through each step. **Skip ahead** fast-forwards to the
+  next phase as if the deadline had passed: the bots rate your predictions, then confirm or deny
+  what you predicted about them. The bots are deterministic (same predictions, ratings derived from
+  your text, fixed personalities), so the same moves always give the same leaderboard. Demos
+  delete themselves after three days.
 
 ### Scoring
 
@@ -84,8 +89,8 @@ server/
     snapshot.ts        a game's data, loaded with one query per table
     scoring.ts         leaderboard scoring and bonus tallies
     awards.ts          the nine Hall of Fame awards as pure functions
-    phases.ts          the single place a game changes phase
-    demo.ts            demo content, bots marking outcomes, expiry
+    phases.ts          the single place a game changes phase (and the demo's skip)
+    demo.ts            demo content, deterministic bots, progress, expiry
   migrate.ts         versioned schema migrations (PRAGMA user_version)
   schema.ts          Drizzle table definitions
 tests/               Vitest + Supertest tests against in-memory SQLite

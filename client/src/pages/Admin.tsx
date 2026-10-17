@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api, Settings } from '../api';
 import { UsersTab } from './admin/UsersTab';
 import { PredictionsTab } from './admin/PredictionsTab';
@@ -16,7 +16,9 @@ type Tab = typeof TABS[number];
  * game's settings and progress stats); each tab loads the rest itself.
  */
 export function Admin() {
-  const [tab, setTab] = useState<Tab>('users');
+  const [searchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab') as Tab | null;
+  const [tab, setTab] = useState<Tab>(requestedTab && TABS.includes(requestedTab) ? requestedTab : 'users');
   const [settings, setSettings] = useState<Settings | null>(null);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
