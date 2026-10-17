@@ -36,8 +36,8 @@ export function Leaderboard() {
   const [bestFriends, setBestFriends] = useState<{ userA: string; userB: string }[]>([]);
   const [showRatings, setShowRatings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [mrDoesItAll, setMrDoesItAll] = useState<{ name: string; count: number }[]>([]);
-  const [mostUnpredictable, setMostUnpredictable] = useState<{ name: string; count: number }[]>([]);
+  const [starOfTheShow, setStarOfTheShow] = useState<{ name: string; count: number }[]>([]);
+  const [theJoker, setTheJoker] = useState<{ name: string; count: number }[]>([]);
   const [hofRevealing, setHofRevealing] = useState(false);
   const [hofRevealed, setHofRevealed] = useState(false);
   const [rankingsRevealing, setRankingsRevealing] = useState(false);
@@ -62,8 +62,8 @@ export function Leaderboard() {
       api.leaderboard.lastMinute().then(setLastMinute).catch(() => {});
       api.leaderboard.firstToSubmit().then(setFirstToSubmit).catch(() => {});
       api.leaderboard.bestFriends().then(setBestFriends).catch(() => {});
-      api.leaderboard.mrDoesItAll().then(setMrDoesItAll).catch(() => {});
-      api.leaderboard.mostUnpredictable().then(setMostUnpredictable).catch(() => {});
+      api.leaderboard.starOfTheShow().then(setStarOfTheShow).catch(() => {});
+      api.leaderboard.theJoker().then(setTheJoker).catch(() => {});
     }).catch(() => {
       setLocked(true);
       api.settings.get().then(s => {
@@ -100,7 +100,7 @@ export function Leaderboard() {
     </div>
   );
 
-  const hasHof = courageous || biggestMiss || controversial || mostRevised || lastMinute || firstToSubmit || bestFriends.length > 0 || mrDoesItAll.length > 0 || mostUnpredictable.length > 0;
+  const hasHof = courageous || biggestMiss || controversial || mostRevised || lastMinute || firstToSubmit || bestFriends.length > 0 || starOfTheShow.length > 0 || theJoker.length > 0;
 
   return (
     <div className="min-h-screen p-4 pb-24 max-w-2xl mx-auto">
@@ -271,11 +271,11 @@ export function Leaderboard() {
                   )}
                 </div>
               )}
-              {mostUnpredictable.map((winner, i) => (
+              {theJoker.map((winner, i) => (
                 <div key={winner.name} className="card mb-3 border border-cyan-500/30 bg-cyan-500/5 space-y-2 animate-fade-up" style={{ animationDelay: `${0.26 + i * 0.08}s` }}>
                   <p className="text-xs text-cyan-400 uppercase tracking-widest font-medium">
-                    🃏 The Joker{mostUnpredictable.length > 1 ? ` ${i + 1}` : ''}
-                    {mostUnpredictable.length > 1 && <span className="text-white/30 ml-1">(equal scores)</span>}
+                    🃏 The Joker{theJoker.length > 1 ? ` ${i + 1}` : ''}
+                    {theJoker.length > 1 && <span className="text-white/30 ml-1">(equal scores)</span>}
                   </p>
                   <p className="text-white/90">
                     <span className="text-white font-medium">{winner.name}</span> kept everyone guessing
@@ -283,11 +283,11 @@ export function Leaderboard() {
                   <p className="text-xs text-white/40">only {winner.count} prediction{winner.count !== 1 ? 's' : ''} about them came true</p>
                 </div>
               ))}
-              {mrDoesItAll.map((winner, i) => (
+              {starOfTheShow.map((winner, i) => (
                 <div key={winner.name} className="card mb-3 border border-emerald-500/30 bg-emerald-500/5 space-y-2 animate-fade-up" style={{ animationDelay: `${0.26 + i * 0.08}s` }}>
                   <p className="text-xs text-emerald-400 uppercase tracking-widest font-medium">
-                    ⭐ Star of the Show{mrDoesItAll.length > 1 ? ` ${i + 1}` : ''}
-                    {mrDoesItAll.length > 1 && <span className="text-white/30 ml-1">(equal scores)</span>}
+                    ⭐ Star of the Show{starOfTheShow.length > 1 ? ` ${i + 1}` : ''}
+                    {starOfTheShow.length > 1 && <span className="text-white/30 ml-1">(equal scores)</span>}
                   </p>
                   <p className="text-white/90">
                     <span className="text-white font-medium">{winner.name}</span> had the most predictions come true about them

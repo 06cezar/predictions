@@ -7,8 +7,8 @@ const AWARDS = [
   { key: 'controversial', emoji: '🔥', label: 'Most Controversial', load: api.leaderboard.mostControversial },
   { key: 'revised', emoji: '🔄', label: "Can't Make Up Their Mind", load: api.leaderboard.mostRevised },
   { key: 'bestFriends', emoji: '🤝', label: 'Best Friends', load: api.leaderboard.bestFriends },
-  { key: 'star', emoji: '⭐', label: 'Star of the Show', load: api.leaderboard.mrDoesItAll },
-  { key: 'joker', emoji: '🃏', label: 'The Joker', load: api.leaderboard.mostUnpredictable },
+  { key: 'star', emoji: '⭐', label: 'Star of the Show', load: api.leaderboard.starOfTheShow },
+  { key: 'joker', emoji: '🃏', label: 'The Joker', load: api.leaderboard.theJoker },
   { key: 'lastMinute', emoji: '⚡', label: 'Last Minute', load: api.leaderboard.lastMinute },
   { key: 'first', emoji: '🌅', label: 'First to Submit', load: api.leaderboard.firstToSubmit },
 ] as const;
@@ -86,7 +86,7 @@ export function PreviewTab() {
               : val.names?.join(', ') || val.name || val.text || '';
             const detail = Array.isArray(val) ? null
               : val.avg != null ? `${val.avg}% avg`
-              : val.editCount != null ? `${val.editCount} edits`
+              : val.editCount != null ? `${val.editCount} edit${val.editCount !== 1 ? 's' : ''}`
               : null;
             return (
               <div key={key} className="card flex items-center gap-3">

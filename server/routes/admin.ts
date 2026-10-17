@@ -362,7 +362,7 @@ router.get('/export/hof.csv', (req, res) => {
 
   const revised = awards.mostRevised(g);
   if (revised) {
-    rows.push(["Can't Make Up Their Mind", author(revised.prediction), about(revised.prediction, `${revised.history.length} edits`)]);
+    rows.push(["Can't Make Up Their Mind", author(revised.prediction), about(revised.prediction, `${revised.history.length} edit${revised.history.length !== 1 ? 's' : ''}`)]);
   }
 
   const stars = awards.starOfTheShow(g);

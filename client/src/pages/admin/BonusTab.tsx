@@ -65,7 +65,7 @@ export function BonusTab({ settings, onChanged }: Props) {
             type="text"
             value={newName}
             onChange={e => setNewName(e.target.value)}
-            placeholder="e.g. Best Wingman"
+            placeholder="e.g. Most likely to move abroad"
             className="input flex-1"
             onKeyDown={e => e.key === 'Enter' && handleCreate()}
           />

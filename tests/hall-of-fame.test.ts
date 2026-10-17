@@ -17,10 +17,10 @@ const HOF_ENDPOINTS = [
   'most-courageous',
   'most-controversial',
   'biggest-miss',
-  'mr-does-it-all',
+  'star-of-the-show',
   'best-friends',
   'most-revised',
-  'most-unpredictable',
+  'the-joker',
   'last-minute',
   'first-to-submit',
 ];
@@ -159,8 +159,8 @@ describe('Hall of Fame routes', () => {
       expect(res.body).toEqual({ text: 'Bob adopts a cat', authorName: null, targetName: 'Bob', avg: 90 });
     });
 
-    it('mr-does-it-all: most predictions came true, ties broken by lowest rating', async () => {
-      const res = await getAs('token-ana', 'mr-does-it-all');
+    it('star-of-the-show: most predictions came true, ties broken by lowest rating', async () => {
+      const res = await getAs('token-ana', 'star-of-the-show');
       expect(res.body).toEqual([{ name: 'Bob', count: 1 }]);
     });
 
@@ -180,8 +180,8 @@ describe('Hall of Fame routes', () => {
       });
     });
 
-    it('most-unpredictable: fewest predictions about them came true', async () => {
-      const res = await getAs('token-ana', 'most-unpredictable');
+    it('the-joker: fewest predictions about them came true', async () => {
+      const res = await getAs('token-ana', 'the-joker');
       expect(res.body).toEqual([{ name: 'Dan', count: 0 }]);
     });
 
@@ -257,10 +257,10 @@ describe('Hall of Fame routes', () => {
       ['most-courageous', null],
       ['most-controversial', null],
       ['biggest-miss', null],
-      ['mr-does-it-all', []],
+      ['star-of-the-show', []],
       ['best-friends', []],
       ['most-revised', null],
-      ['most-unpredictable', []],
+      ['the-joker', []],
       ['last-minute', null],
       ['first-to-submit', null],
     ])('%s returns %j', async (endpoint, expected) => {

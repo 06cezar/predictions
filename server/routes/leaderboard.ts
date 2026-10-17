@@ -68,7 +68,7 @@ hallOfFame('/biggest-miss', (g, game) => {
   return award && { ...describe(award.prediction, g, game), avg: Math.round(award.avg) };
 });
 
-hallOfFame('/mr-does-it-all', g =>
+hallOfFame('/star-of-the-show', g =>
   awards.starOfTheShow(g).map(w => ({ name: w.name, count: w.count })));
 
 hallOfFame('/best-friends', g =>
@@ -83,7 +83,7 @@ hallOfFame('/most-revised', (g, game) => {
   };
 });
 
-hallOfFame('/most-unpredictable', g =>
+hallOfFame('/the-joker', g =>
   awards.theJoker(g).map(w => ({ name: w.name, count: w.count })));
 
 hallOfFame('/last-minute', (g, game) => {
