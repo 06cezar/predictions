@@ -238,7 +238,7 @@ describe('Hall of Fame routes', () => {
       const [header, first] = res.text.split('\n');
       expect(header).toBe('Rank,Name,True Predictions,Weighted Score');
       // Ana's prediction came true at avg 20, in the 12-25 band below threshold 50 -> x4
-      expect(first).toBe('1,Ana,1,4');
+      expect(first).toBe('1,"Ana",1,4');
     });
 
     it('CSV exports are admin-only', async () => {

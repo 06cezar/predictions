@@ -10,11 +10,6 @@ export function toLocalInput(iso: string | null | undefined): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-/** SQLite "YYYY-MM-DD HH:MM:SS" (UTC) → Date. */
-export function fromSqliteTime(value: string) {
-  return new Date(value.replace(' ', 'T') + 'Z');
-}
-
 export function Toggle({ on, onClick, color = 'bg-orange' }: { on: boolean; onClick: () => void; color?: string }) {
   return (
     <button

@@ -13,6 +13,13 @@ function findCategory(game: Game, id: number) {
   return db.select().from(bonusCategories).where(and(eq(bonusCategories.id, id), eq(bonusCategories.gameId, game.id))).get();
 }
 
+/** Points for a category: a whole number from 1 to 100, or null if invalid. */
+function parsePoints(value: unknown): number | null {
+  const points = Number(value);
+  return Number.isInteger(points) && points >= 1 && points <= 100 ? points : null;
+}
+const BAD_POINTS = 'points must be a whole number from 1 to 100';
+
 // GET /api/bonus — get categories + my votes + tally (tally only at done or for admin)
 router.get('/', requireAuth, (req, res) => {
   const { user: me, game } = res.locals;
@@ -55,10 +62,17 @@ router.post('/vote', requireAuth, (req, res) => {
   if (!game.bonusActive) {
     return res.status(403).json({ error: 'Voting only available when Bonus is active' });
   }
+  // The results are shown once the game is done, so votes can no longer change them
+  if (game.currentPhase === 'done') {
+    return res.status(403).json({ error: 'Voting is closed - the game is over' });
+  }
 
   const { categoryId, votes } = req.body;
   if (!categoryId || !Array.isArray(votes)) {
     return res.status(400).json({ error: 'categoryId and votes required' });
+  }
+  if (!votes.every((v: any) => Number.isInteger(v?.rank) && Number.isInteger(v?.nomineeId))) {
+    return res.status(400).json({ error: 'Each vote needs a rank and a nomineeId' });
   }
 
   const cat = findCategory(game, categoryId);
@@ -98,9 +112,11 @@ router.post('/vote', requireAuth, (req, res) => {
 // POST /api/bonus/categories (admin) — create category
 router.post('/categories', requireAdmin, (req, res) => {
   const { name, points } = req.body;
-  if (!name?.trim()) return res.status(400).json({ error: 'name required' });
+  if (typeof name !== 'string' || !name.trim()) return res.status(400).json({ error: 'name required' });
+  const pts = points === undefined || points === '' ? 5 : parsePoints(points);
+  if (pts === null) return res.status(400).json({ error: BAD_POINTS });
   const cat = db.insert(bonusCategories)
-    .values({ gameId: res.locals.game.id, name: name.trim(), points: parseInt(points) || 5 })
+    .values({ gameId: res.locals.game.id, name: name.trim(), points: pts })
     .returning().get();
   res.json(cat);
 });
@@ -111,8 +127,12 @@ router.put('/categories/:id', requireAdmin, (req, res) => {
   if (!cat) return res.status(404).json({ error: 'Category not found' });
   const { name, points } = req.body;
   const updates: Partial<typeof bonusCategories.$inferInsert> = {};
-  if (name?.trim()) updates.name = name.trim();
-  if (points !== undefined) updates.points = parseInt(points);
+  if (typeof name === 'string' && name.trim()) updates.name = name.trim();
+  if (points !== undefined) {
+    const pts = parsePoints(points);
+    if (pts === null) return res.status(400).json({ error: BAD_POINTS });
+    updates.points = pts;
+  }
   if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'Nothing to update' });
   db.update(bonusCategories).set(updates).where(eq(bonusCategories.id, cat.id)).run();
   res.json(findCategory(res.locals.game, cat.id));

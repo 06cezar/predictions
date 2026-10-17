@@ -4,6 +4,7 @@ import { Game } from '../services/games';
 import { GameSnapshot, Prediction, loadSnapshot } from '../services/snapshot';
 import { calcScores, scoringTiers } from '../services/scoring';
 import * as awards from '../services/awards';
+import { toIso } from '../time';
 
 const router = Router();
 
@@ -88,7 +89,7 @@ hallOfFame('/the-joker', g =>
 
 hallOfFame('/last-minute', (g, game) => {
   const latest = awards.lastMinute(g);
-  return latest && { ...describe(latest, g, game), updatedAt: latest.updatedAt };
+  return latest && { ...describe(latest, g, game), updatedAt: toIso(latest.updatedAt) };
 });
 
 hallOfFame('/first-to-submit', g => {

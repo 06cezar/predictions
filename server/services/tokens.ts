@@ -40,8 +40,8 @@ interface ClaimContext {
  * the knowledge useless, and their game's admins are notified so they can hand
  * out the new token. See docs/invite-links.md.
  */
-export function claimToken(requested: string | undefined, ctx: ClaimContext): TokenClaim {
-  const token = requested?.trim();
+export function claimToken(requested: unknown, ctx: ClaimContext): TokenClaim {
+  const token = typeof requested === 'string' ? requested.trim() : '';
   if (!token) return { ok: true, token: generateUniqueToken() };
 
   if (db.select().from(blockedTokens).where(eq(blockedTokens.token, token)).get()) {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../api';
 import { useCopied } from '../../hooks/useCopied';
-import { fromSqliteTime } from './shared';
+import { parseServerTime } from '../../time';
 
 type InviteLink = Awaited<ReturnType<typeof api.invite.list>>[number];
 
@@ -61,7 +61,7 @@ export function InvitesTab() {
                         <span className="text-xs bg-amber/20 text-amber px-2 py-0.5 rounded-full">Active</span>
                       )}
                       <span className="text-xs text-white/30">
-                        {fromSqliteTime(link.createdAt).toLocaleString(undefined, { hour12: false, dateStyle: 'short', timeStyle: 'short' })}
+                        {parseServerTime(link.createdAt).toLocaleString(undefined, { hour12: false, dateStyle: 'short', timeStyle: 'short' })}
                       </span>
                     </div>
                     <p className="text-sm font-mono text-white/60 truncate">{inviteUrl(link.code)}</p>

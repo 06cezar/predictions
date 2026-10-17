@@ -8,6 +8,9 @@ import { getAvgRating } from '../services/ratings';
 
 const router = Router();
 
+const MAX_PREDICTION_LENGTH = 500;
+const TOO_LONG = `Keep predictions under ${MAX_PREDICTION_LENGTH} characters`;
+
 router.get('/mine', requireAuth, (req, res) => {
   const { user: me, game } = res.locals;
   const mine = db.select().from(predictions).where(eq(predictions.authorId, me.id)).all();
@@ -43,9 +46,10 @@ router.post('/', requireAuth, (req, res) => {
 
   const { target_id, text } = req.body;
 
-  if (!target_id || !text?.trim()) {
+  if (!target_id || typeof text !== 'string' || !text.trim()) {
     return res.status(400).json({ error: 'target_id and text are required' });
   }
+  if (text.trim().length > MAX_PREDICTION_LENGTH) return res.status(400).json({ error: TOO_LONG });
   if (parseInt(target_id) === me.id) {
     return res.status(400).json({ error: 'Cannot write a prediction about yourself' });
   }
@@ -89,7 +93,11 @@ router.put('/:id', requireAuth, (req, res) => {
   if (pred.authorId !== me.id) return res.status(403).json({ error: 'Not your prediction' });
 
   const { text } = req.body;
-  if (!text?.trim()) return res.status(400).json({ error: 'text is required' });
+  if (typeof text !== 'string' || !text.trim()) return res.status(400).json({ error: 'text is required' });
+  if (text.trim().length > MAX_PREDICTION_LENGTH) return res.status(400).json({ error: TOO_LONG });
+
+  // Saving the same text again is not an edit: it would cost half a point and clear the ratings
+  if (text.trim() === pred.currentText) return res.json(pred);
 
   // Save old text to history
   db.insert(predictionHistory).values({

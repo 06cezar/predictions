@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api, LeaderboardEntry } from '../api';
+import { parseServerTime } from '../time';
 
 const AVATAR_COLORS = ['bg-orange', 'bg-violet', 'bg-amber/80', 'bg-cyan-500', 'bg-pink-500', 'bg-emerald-500'];
 const MEDALS = ['🥇', '🥈', '🥉'];
@@ -219,7 +220,7 @@ export function Leaderboard() {
                       {lastMinute.authorName && <>by <span className="text-white/70">{lastMinute.authorName}</span> </>}
                       about <span className="text-white/70">{lastMinute.targetName}</span>
                     </span>
-                    <span className="text-orange font-medium">{new Date(lastMinute.updatedAt).toLocaleString(undefined, { hour12: false })}</span>
+                    <span className="text-orange font-medium">{parseServerTime(lastMinute.updatedAt).toLocaleString(undefined, { hour12: false })}</span>
                   </div>
                 </div>
               )}

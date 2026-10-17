@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api, Settings } from '../../api';
-import { fromSqliteTime } from './shared';
+import { parseServerTime } from '../../time';
 
 interface Props {
   phase: Settings['currentPhase'];
@@ -125,7 +125,7 @@ export function PredictionsTab({ phase, onChanged }: Props) {
             <div className="border-t border-white/10 pt-3 space-y-2">
               {p.history.map((h: any) => (
                 <div key={h.id} className="text-xs text-white/40 bg-white/5 rounded-lg p-3">
-                  <p className="text-white/60 mb-1">{fromSqliteTime(h.editedAt).toLocaleString(undefined, { hour12: false })}</p>
+                  <p className="text-white/60 mb-1">{parseServerTime(h.editedAt).toLocaleString(undefined, { hour12: false })}</p>
                   <p>{!revealed.has(p.id) ? '••••••••••••••••' : h.oldText}</p>
                 </div>
               ))}

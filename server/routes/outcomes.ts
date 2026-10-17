@@ -21,6 +21,10 @@ router.post('/', requireAuth, (req, res) => {
   const { prediction_id, happened } = req.body;
 
   if (prediction_id === undefined) return res.status(400).json({ error: 'prediction_id required' });
+  // Happened or not, or null to clear the mark; a missing value must not count as "didn't happen"
+  if (![true, false, null, 'true', 'false'].includes(happened)) {
+    return res.status(400).json({ error: 'happened must be true, false or null' });
+  }
 
   const pred = db.select().from(predictions)
     .where(and(eq(predictions.id, parseInt(prediction_id)), eq(predictions.gameId, game.id))).get();
@@ -29,7 +33,7 @@ router.post('/', requireAuth, (req, res) => {
 
   const existing = db.select().from(outcomes).where(eq(outcomes.predictionId, parseInt(prediction_id))).get();
 
-  const happenedVal = happened === null ? null : happened === true || happened === 'true' ? true : false;
+  const happenedVal = happened === null ? null : happened === true || happened === 'true';
 
   if (existing) {
     db.update(outcomes).set({ happened: happenedVal as boolean | null, markedBy: me.id, markedAt: new Date().toISOString() })

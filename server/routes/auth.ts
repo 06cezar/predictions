@@ -8,7 +8,7 @@ const router = Router();
 
 router.post('/login', (req, res) => {
   const { token } = req.body;
-  if (!token) return res.status(400).json({ error: 'Token required' });
+  if (typeof token !== 'string' || !token.trim()) return res.status(400).json({ error: 'Token required' });
 
   const user = db.select().from(users).where(eq(users.token, token.trim())).get();
   if (!user) return res.status(401).json({ error: 'Invalid token' });

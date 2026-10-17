@@ -1,6 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api, Prediction, PublicSettings } from '../api';
+import { parseServerTime } from '../time';
 
 interface UserInfo {
   id: number;
@@ -102,7 +103,7 @@ export function Predict() {
       {prediction && (
         <div className="mb-4 text-sm text-white/40">
           {prediction.editCount > 0 && `Edited ${prediction.editCount} time${prediction.editCount !== 1 ? 's' : ''} · `}
-          Last updated {new Date(prediction.updatedAt).toLocaleDateString()}
+          Last updated {parseServerTime(prediction.updatedAt).toLocaleDateString()}
         </div>
       )}
 
@@ -112,6 +113,7 @@ export function Predict() {
           onChange={e => setText(e.target.value)}
           placeholder={`What do you see happening for ${targetUser?.name} this year?`}
           disabled={!!isSubmissionClosed}
+          maxLength={500}
           rows={6}
           className="input resize-none text-base leading-relaxed"
         />
@@ -120,7 +122,7 @@ export function Predict() {
 
         <button
           type="submit"
-          disabled={saving || !text.trim() || !!isSubmissionClosed}
+          disabled={saving || !text.trim() || text.trim() === prediction?.currentText || !!isSubmissionClosed}
           className={`btn-primary w-full ${saved ? 'bg-green-600' : ''}`}
         >
           {saved ? '✓ Saved!' : saving ? 'Saving...' : prediction ? 'Update Prediction' : 'Save Prediction'}

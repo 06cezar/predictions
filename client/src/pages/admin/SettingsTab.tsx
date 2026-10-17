@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { markDemoSettingsSeen } from '../../demoGuide';
 import { api, Settings } from '../../api';
 import { useCopied } from '../../hooks/useCopied';
@@ -24,6 +24,25 @@ export function SettingsTab({ settings, onUpdate, onChanged }: Props) {
   useEffect(() => {
     if (settings.isDemo) markDemoSettingsSeen(settings.id);
   }, [settings.id, settings.isDemo]);
+
+  // The slider fires on every step while it is dragged; save only where it stops
+  const [threshold, setThreshold] = useState(settings.ratingThreshold);
+  const pendingThreshold = useRef<{ value: number; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const save = useRef(onUpdate);
+  save.current = onUpdate;
+  const flushThreshold = () => {
+    const pending = pendingThreshold.current;
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    pendingThreshold.current = null;
+    save.current({ ratingThreshold: pending.value });
+  };
+  useEffect(() => flushThreshold, []); // leaving the tab still saves the last value
+  const changeThreshold = (value: number) => {
+    setThreshold(value);
+    if (pendingThreshold.current) clearTimeout(pendingThreshold.current.timer);
+    pendingThreshold.current = { value, timer: setTimeout(flushThreshold, 400) };
+  };
 
   return (
     <div className="space-y-5">
@@ -52,7 +71,7 @@ export function SettingsTab({ settings, onUpdate, onChanged }: Props) {
         <h3 className="font-medium">Settings</h3>
         <div>
           <label className="block text-sm font-medium mb-0.5">
-            Rating Threshold: <span className="text-orange font-semibold">{settings.ratingThreshold}%</span>
+            Rating Threshold: <span className="text-orange font-semibold">{threshold}%</span>
           </label>
           <p className="text-xs text-white/40 mb-2">Predictions rated above this are considered "likely" - lower ratings score more points</p>
           <input
@@ -60,8 +79,8 @@ export function SettingsTab({ settings, onUpdate, onChanged }: Props) {
             min={0}
             max={100}
             step={1}
-            value={settings.ratingThreshold}
-            onChange={e => onUpdate({ ratingThreshold: parseInt(e.target.value) })}
+            value={threshold}
+            onChange={e => changeThreshold(parseInt(e.target.value))}
             className="w-full accent-orange"
           />
         </div>
@@ -180,8 +199,9 @@ function PhaseControl({ settings, onChanged }: Pick<Props, 'settings' | 'onChang
 
   const setPhase = async (phase: Phase) => {
     try {
-      const result = await api.admin.setPhase(phase) as { newPhase: Phase };
-      onChanged({ currentPhase: result.newPhase });
+      const { newPhase, submissionDeadline, revealDeadline } = await api.admin.setPhase(phase);
+      // A deadline that had already passed for the new phase is cleared by the server
+      onChanged({ currentPhase: newPhase, submissionDeadline, revealDeadline });
       setConfirming(null);
     } catch (err: any) { alert(err.message); }
   };

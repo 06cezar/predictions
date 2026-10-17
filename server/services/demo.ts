@@ -4,6 +4,7 @@ import { games, users, predictions, ratings, outcomes, bonusCategories, bonusVot
 import { createGame, deleteGame, Game } from './games';
 import { generateUniqueToken } from './tokens';
 import { loadSnapshot } from './snapshot';
+import { parseTimestamp } from '../time';
 
 /** Demo games delete themselves this long after they were created. */
 export const DEMO_TTL_HOURS = 72;
@@ -223,8 +224,7 @@ export function deleteExpiredDemos(now = new Date()) {
 
 /** When a demo game will be deleted, as ISO-8601. */
 export function demoExpiresAt(game: Game) {
-  const created = new Date(game.createdAt.replace(' ', 'T') + 'Z');
-  return new Date(created.getTime() + DEMO_TTL_HOURS * 60 * 60 * 1000).toISOString();
+  return new Date(parseTimestamp(game.createdAt) + DEMO_TTL_HOURS * 60 * 60 * 1000).toISOString();
 }
 
 /** Where a player is in the demo round, for the step-by-step guide. */

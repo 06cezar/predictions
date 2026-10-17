@@ -228,7 +228,8 @@ export const api = {
     }),
     advancePhase: () => request('/api/admin/phase/advance', { method: 'POST' }),
     reversePhase: () => request('/api/admin/phase/reverse', { method: 'POST' }),
-    setPhase: (phase: string) => request('/api/admin/phase/set', { method: 'POST', body: JSON.stringify({ phase }) }),
+    setPhase: (phase: string) => request<Pick<Settings, 'submissionDeadline' | 'revealDeadline'> & { newPhase: Settings['currentPhase'] }>(
+      '/api/admin/phase/set', { method: 'POST', body: JSON.stringify({ phase }) }),
     resetGame: () => request('/api/admin/reset', { method: 'POST' }),
     toggleBonusActive: () => request<{ bonusActive: boolean }>('/api/admin/bonus-active/toggle', { method: 'POST' }),
     regenerateJoinCode: () => request<{ joinCode: string }>('/api/admin/join-code/regenerate', { method: 'POST' }),

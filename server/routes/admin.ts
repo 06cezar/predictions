@@ -9,6 +9,7 @@ import { calcScores } from '../services/scoring';
 import { changePhase } from '../services/phases';
 import { claimToken, generateUniqueToken } from '../services/tokens';
 import * as awards from '../services/awards';
+import { toIso } from '../time';
 
 const router = Router();
 
@@ -58,6 +59,8 @@ router.put('/users/:id', (req, res) => {
 router.delete('/users/:id', (req, res) => {
   const player = findPlayer(res.locals.game, parseInt(req.params.id));
   if (!player) return res.status(404).json({ error: 'User not found' });
+  // The game would be left with nobody to run it
+  if (player.id === res.locals.user.id) return res.status(400).json({ error: "You can't remove yourself" });
   const id = player.id;
 
   // Predictions by or about this player, and everything hanging off them
@@ -255,9 +258,23 @@ router.post('/join-code/regenerate', (req, res) => {
   res.json({ joinCode });
 });
 
+const PHASE_DEADLINE = { submission: 'submissionDeadline', reveal: 'revealDeadline', done: null } as const;
+
 function setPhase(game: Game, phase: Phase) {
+  // Moving to a phase whose deadline has passed would be undone at the
+  // scheduler's next run (and the phase would be closed anyway), so clear it
+  const key = PHASE_DEADLINE[phase];
+  const deadline = key && game[key];
+  if (key && deadline && new Date(deadline) <= new Date()) updateGame(game.id, { [key]: null });
+
   changePhase(game, phase);
-  return { success: true, newPhase: phase };
+  const updated = getGame(game.id)!;
+  return {
+    success: true,
+    newPhase: phase,
+    submissionDeadline: updated.submissionDeadline,
+    revealDeadline: updated.revealDeadline,
+  };
 }
 
 router.post('/phase/set', (req, res) => {
@@ -324,7 +341,16 @@ router.post('/predictions/:id/unforgive-edit', (req, res) => {
   res.json({ success: true, forgivenEdits: newForgiven, editCount: editCountOf(pred.id) });
 });
 
-function csvCell(v: any) { return `"${String(v ?? '').replace(/"/g, '""')}"`; }
+/**
+ * One quoted CSV cell. Text that starts like a formula (=, +, -, @) gets a
+ * leading ' so a spreadsheet shows it instead of running it: names and
+ * predictions are written by players.
+ */
+function csvCell(v: any) {
+  const text = String(v ?? '');
+  const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+  return `"${safe.replace(/"/g, '""')}"`;
+}
 
 function sendCsv(res: import('express').Response, filename: string, csv: string) {
   res.setHeader('Content-Type', 'text/csv');
@@ -375,7 +401,7 @@ router.get('/export/hof.csv', (req, res) => {
   if (friends.length > 0) rows.push(['Best Friends', friends.map(p => `${p.userA} & ${p.userB}`).join(', '), '']);
 
   const latest = awards.lastMinute(g);
-  if (latest) rows.push(['Last Minute', author(latest), about(latest, latest.updatedAt)]);
+  if (latest) rows.push(['Last Minute', author(latest), about(latest, toIso(latest.updatedAt))]);
 
   const first = awards.firstToSubmit(g);
   if (first) rows.push(['First to Submit', first.names.join(', '), first.at]);
@@ -395,13 +421,13 @@ router.get('/export/predictions.csv', (req, res) => {
 
     return [
       p.id,
-      g.userName(p.authorId) ?? '',
-      g.userName(p.targetId) ?? '',
-      `"${(p.currentText ?? '').replace(/"/g, '""')}"`,
+      csvCell(g.userName(p.authorId)),
+      csvCell(g.userName(p.targetId)),
+      csvCell(p.currentText),
       avgRating ?? '',
       scores.length,
       g.history(p.id).length,
-      outcome ? (outcome.happened ? 'true' : 'false') : '',
+      outcome?.happened == null ? '' : String(outcome.happened),
     ].join(',');
   });
 
@@ -411,7 +437,7 @@ router.get('/export/predictions.csv', (req, res) => {
 router.get('/export/scores.csv', (req, res) => {
   const { game } = res.locals;
   const scores = calcScores(game.id, loadSnapshot(game.id), game.ratingThreshold);
-  const rows = scores.map(u => [u.rank, u.name, u.score, u.weightedScore].join(','));
+  const rows = scores.map(u => [u.rank, csvCell(u.name), u.score, u.weightedScore].join(','));
   sendCsv(res, 'scores.csv', ['Rank,Name,True Predictions,Weighted Score', ...rows].join('\n'));
 });
 

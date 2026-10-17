@@ -1,4 +1,5 @@
 import { GameSnapshot, Prediction, User, avgRating, mean } from './snapshot';
+import { parseTimestamp } from '../time';
 
 /**
  * Hall of Fame awards, computed from a game snapshot. Each returns null (or an
@@ -125,19 +126,17 @@ export function bestFriends(g: GameSnapshot) {
 
 /** Last Minute: the most recently written or edited prediction. */
 export function lastMinute(g: GameSnapshot): Prediction | null {
-  return pickBest(g.predictions, (a, b) => (a.updatedAt ?? '').localeCompare(b.updatedAt ?? '') > 0);
+  return pickBest(g.predictions, (a, b) => parseTimestamp(a.updatedAt) > parseTimestamp(b.updatedAt));
 }
 
 /** First to Submit: whoever's last prediction was written earliest. */
 export function firstToSubmit(g: GameSnapshot) {
   const finished = g.users.flatMap(u => {
-    const times = g.predictions.filter(p => p.authorId === u.id).map(p => p.updatedAt ?? '');
-    const lastAt = times.sort().reverse()[0];
-    return lastAt ? [{ name: u.name, lastAt }] : [];
+    const times = g.predictions.filter(p => p.authorId === u.id).map(p => parseTimestamp(p.updatedAt));
+    return times.length > 0 ? [{ name: u.name, lastAt: Math.max(...times) }] : [];
   });
   if (finished.length === 0) return null;
 
-  finished.sort((a, b) => a.lastAt.localeCompare(b.lastAt));
-  const at = finished[0].lastAt;
-  return { names: finished.filter(f => f.lastAt === at).map(f => f.name), at };
+  const at = Math.min(...finished.map(f => f.lastAt));
+  return { names: finished.filter(f => f.lastAt === at).map(f => f.name), at: new Date(at).toISOString() };
 }
