@@ -75,7 +75,7 @@ export function Dashboard({ user, onLogout }: Props) {
         </div>
       ) : deadline ? (
         <div className="mb-6 animate-fade-up" style={{ animationDelay: '0.05s' }}>
-          <Countdown deadline={deadline} label={phase === 'submission' ? 'Submission' : 'Reveal'} />
+          <Countdown deadline={deadline} label={phase === 'submission' ? 'Submission' : 'Reveal'} warnings={!settings?.isDemo} />
         </div>
       ) : null}
 

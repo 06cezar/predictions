@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 interface Props {
   deadline: string | null;
   label: string;
+  /** Show the "last day" / "less than 2 hours" banners (off in demos, whose phases last minutes). */
+  warnings?: boolean;
 }
 
 function formatTime(ms: number) {
@@ -27,7 +29,7 @@ function formatTime(ms: number) {
   return { display, warning };
 }
 
-export function Countdown({ deadline, label }: Props) {
+export function Countdown({ deadline, label, warnings = true }: Props) {
   const [timeLeft, setTimeLeft] = useState<number>(0);
 
   useEffect(() => {
@@ -43,7 +45,8 @@ export function Countdown({ deadline, label }: Props) {
 
   if (!deadline) return null;
 
-  const { display, warning } = formatTime(timeLeft);
+  const { display, warning: timeWarning } = formatTime(timeLeft);
+  const warning = warnings ? timeWarning : null;
 
   return (
     <div>
