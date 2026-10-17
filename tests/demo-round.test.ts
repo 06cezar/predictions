@@ -1,0 +1,158 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import request from 'supertest';
+import { eq } from 'drizzle-orm';
+import * as schema from '../server/schema';
+import { botRating } from '../server/services/demo';
+import { setupTestDb, createUser, createTestApp, loginAs } from './helpers';
+
+type Agent = ReturnType<typeof request.agent>;
+
+/** The guided demo round: deterministic bots, progress for the guide, and Skip. */
+describe('Demo round', () => {
+  let app: ReturnType<typeof createTestApp>;
+  let db: ReturnType<typeof setupTestDb>['db'];
+
+  beforeEach(() => {
+    ({ db } = setupTestDb());
+    app = createTestApp();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  async function startDemo(name = 'Ana') {
+    const agent = request.agent(app);
+    await agent.post('/api/demo').send({ name });
+    const players: { id: number; name: string }[] = (await agent.get('/api/users')).body;
+    const id = (n: string) => players.find(p => p.name === n)!.id;
+    return { agent, id };
+  }
+
+  async function predict(agent: Agent, targetId: number, text: string) {
+    const res = await agent.post('/api/predictions').send({ target_id: targetId, text });
+    expect(res.status).toBe(200);
+    return res.body.id as number;
+  }
+
+  const outcomeOf = (predictionId: number) =>
+    db.select().from(schema.outcomes).where(eq(schema.outcomes.predictionId, predictionId)).get()?.happened ?? null;
+
+  const ratingsOf = (predictionId: number) =>
+    db.select({ userId: schema.ratings.userId, score: schema.ratings.score }).from(schema.ratings)
+      .where(eq(schema.ratings.predictionId, predictionId)).all();
+
+  it("writes the bots' predictions about the visitor without names or pronouns", async () => {
+    const { agent } = await startDemo('Ana');
+    await agent.post('/api/demo/skip');
+    const aboutMe: { currentText: string }[] = (await agent.get('/api/predictions/about-me')).body;
+
+    expect(aboutMe.map(p => p.currentText)).toContain('Will jump into the pool in the freezing cold.');
+    for (const { currentText } of aboutMe) {
+      expect(currentText).toMatch(/^Will /);
+      expect(currentText).not.toMatch(/\b(Ana|he|she|they|their|them|his|her)\b/i);
+    }
+  });
+
+  describe('Skip', () => {
+    it('from submission: bots rate your predictions, the deadline passes, the reveal starts', async () => {
+      const { agent, id } = await startDemo();
+      const aboutJordan = await predict(agent, id('Jordan'), 'Jordan opens a bakery');
+      const aboutMorgan = await predict(agent, id('Morgan'), 'Morgan learns to surf');
+
+      const res = await agent.post('/api/demo/skip');
+      expect(res.status).toBe(200);
+      expect(res.body.newPhase).toBe('reveal');
+      expect(new Date(res.body.game.submissionDeadline).getTime()).toBeLessThanOrEqual(Date.now());
+      expect(new Date(res.body.game.revealDeadline).getTime()).toBeGreaterThan(Date.now());
+
+      // Every bot except the target rates, with its fixed personality
+      expect(ratingsOf(aboutJordan).sort((a, b) => a.userId - b.userId)).toEqual([
+        { userId: id('Morgan'), score: botRating('Morgan', 'Jordan opens a bakery') },
+        { userId: id('Casey'), score: botRating('Casey', 'Jordan opens a bakery') },
+        { userId: id('River'), score: botRating('River', 'Jordan opens a bakery') },
+      ]);
+      // Jordan confirms what you predicted about him; Morgan never admits anything
+      expect(outcomeOf(aboutJordan)).toBe(true);
+      expect(outcomeOf(aboutMorgan)).toBe(false);
+
+      // The predictions about you are left for you to mark
+      const aboutMe = (await agent.get('/api/predictions/about-me')).body;
+      expect(aboutMe.every((p: any) => p.outcome === null)).toBe(true);
+    });
+
+    it('from reveal: the reveal deadline passes and the results are in', async () => {
+      const { agent } = await startDemo();
+      await agent.post('/api/demo/skip');
+      const res = await agent.post('/api/demo/skip');
+
+      expect(res.body.newPhase).toBe('done');
+      expect(new Date(res.body.game.revealDeadline).getTime()).toBeLessThanOrEqual(Date.now());
+      expect((await agent.get('/api/leaderboard')).status).toBe(200);
+    });
+
+    it('is refused once the round is over', async () => {
+      const { agent } = await startDemo();
+      await agent.post('/api/demo/skip');
+      await agent.post('/api/demo/skip');
+      expect((await agent.post('/api/demo/skip')).status).toBe(400);
+    });
+
+    it('does not exist outside demo games', async () => {
+      createUser(db, 'Admin', 'token-admin', true);
+      const agent = request.agent(app);
+      await loginAs(agent, 'token-admin');
+      expect((await agent.post('/api/demo/skip')).status).toBe(404);
+      expect((await agent.get('/api/demo/progress')).status).toBe(404);
+    });
+
+    it('is admin-only', async () => {
+      const { id } = await startDemo();
+      const bot = db.select().from(schema.users).where(eq(schema.users.id, id('Casey'))).get()!;
+      const asBot = request.agent(app);
+      await loginAs(asBot, bot.token);
+      expect((await asBot.post('/api/demo/skip')).status).toBe(403);
+    });
+  });
+
+  it('reports progress for the step-by-step guide', async () => {
+    const { agent, id } = await startDemo();
+    const progress = async () => (await agent.get('/api/demo/progress')).body;
+
+    expect(await progress()).toMatchObject({
+      phase: 'submission', written: 0, writeTotal: 4, rated: 0, rateTotal: 0, marked: 0, markTotal: 4,
+    });
+
+    await predict(agent, id('Jordan'), 'Jordan opens a bakery');
+    const toRate: { id: number }[] = (await agent.get('/api/predictions/to-rate')).body;
+    await agent.post('/api/ratings').send({ prediction_id: toRate[0].id, score: 40 });
+    expect(await progress()).toMatchObject({ written: 1, rated: 1, rateTotal: 3 });
+
+    await agent.post('/api/demo/skip');
+    const aboutMe = (await agent.get('/api/predictions/about-me')).body;
+    await agent.post('/api/outcomes').send({ prediction_id: aboutMe[0].id, happened: true });
+    expect(await progress()).toMatchObject({ phase: 'reveal', marked: 1, markTotal: 4 });
+  });
+
+  it('plays out identically every time', async () => {
+    async function playRound() {
+      const { agent, id } = await startDemo('Ana');
+      await predict(agent, id('Jordan'), 'Jordan opens a bakery');
+      await predict(agent, id('Morgan'), 'Morgan learns to surf');
+      await predict(agent, id('Casey'), 'Casey gets a tattoo');
+      for (const p of (await agent.get('/api/predictions/to-rate')).body) {
+        await agent.post('/api/ratings').send({ prediction_id: p.id, score: 30 });
+      }
+      await agent.post('/api/demo/skip');
+      const aboutMe = (await agent.get('/api/predictions/about-me')).body;
+      for (const [i, p] of aboutMe.entries()) {
+        await agent.post('/api/outcomes').send({ prediction_id: p.id, happened: i % 2 === 0 });
+      }
+      await agent.post('/api/demo/skip');
+      const board = (await agent.get('/api/leaderboard')).body;
+      const star = (await agent.get('/api/leaderboard/star-of-the-show')).body;
+      return { board: board.map((e: any) => [e.rank, e.name, e.score, e.weightedScore]), star };
+    }
+
+    const first = await playRound();
+    expect(first.board).toHaveLength(5);
+    expect(await playRound()).toEqual(first);
+  });
+});
