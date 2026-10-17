@@ -78,6 +78,9 @@ export interface DemoProgress {
   rateTotal: number;
   marked: number;
   markTotal: number;
+  bonusActive: boolean;
+  bonusVoted: number;
+  bonusTotal: number;
   expiresAt: string;
 }
 

@@ -118,7 +118,17 @@ describe('Demo round', () => {
 
     expect(await progress()).toMatchObject({
       phase: 'submission', written: 0, writeTotal: 4, rated: 0, rateTotal: 0, marked: 0, markTotal: 4,
+      bonusActive: false, bonusVoted: 0, bonusTotal: 1,
     });
+
+    // The optional bonus round: switch it on, vote in the bots' category
+    await agent.post('/api/admin/bonus-active/toggle');
+    const { categories } = (await agent.get('/api/bonus')).body;
+    await agent.post('/api/bonus/vote').send({
+      categoryId: categories[0].id,
+      votes: ['Jordan', 'Morgan', 'Casey'].map((name, i) => ({ rank: i + 1, nomineeId: id(name) })),
+    });
+    expect(await progress()).toMatchObject({ bonusActive: true, bonusVoted: 1 });
 
     await predict(agent, id('Jordan'), 'Jordan opens a bakery');
     const toRate: { id: number }[] = (await agent.get('/api/predictions/to-rate')).body;

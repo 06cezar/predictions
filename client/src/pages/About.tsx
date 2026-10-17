@@ -162,10 +162,13 @@ export function About({ loggedIn, onLogin }: Props) {
             <p className="text-white/60">Run a demo round as the admin: four bots, a guide, and a button to skip ahead in time.</p>
           </div>
         </div>
-        <p className="text-xs text-white/40">
-          Extras the admin can switch on: a bonus round where everyone votes for things like "most likely
-          to move abroad", and anonymous or named predictions.
-        </p>
+        <div className="card space-y-1 text-sm">
+          <p className="font-medium">🎖️ Bonus round <span className="text-white/40 font-normal">(optional, for extra laughs... or not 🙂)</span></p>
+          <p className="text-white/60">
+            The admin adds silly categories like "most likely to move abroad" and everyone ranks their top 3.
+            Winners get bonus points, and a category can even cost points if the admin is feeling mean.
+          </p>
+        </div>
       </section>
 
       <section className="space-y-2 mb-10">

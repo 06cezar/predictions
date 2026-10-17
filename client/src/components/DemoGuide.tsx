@@ -17,6 +17,8 @@ interface Step {
   locked?: boolean;
   to?: string;
   skip?: true;
+  /** Nice to try, but the guide doesn't wait for it. */
+  optional?: true;
 }
 
 const COLLAPSED_KEY = 'demo-guide-collapsed';
@@ -55,6 +57,18 @@ function buildSteps(p: DemoProgress, settingsSeen: boolean): Step[] {
       done: p.marked >= p.markTotal || done,
       locked: submission,
       to: '/reveal',
+    },
+    {
+      title: 'Bonus round',
+      detail: p.bonusTotal > 0 && p.bonusVoted >= p.bonusTotal
+        ? 'Voted. Winners get bonus points'
+        : p.bonusActive
+          ? 'Vote on silly categories like "most likely to become famous"'
+          : 'Optional, for extra laughs (or not 🙂): switch it on in Admin → Bonus, then vote',
+      done: p.bonusTotal > 0 && p.bonusVoted >= p.bonusTotal,
+      locked: done,
+      to: p.bonusActive ? '/bonus' : '/admin?tab=bonus',
+      optional: true,
     },
     {
       title: 'Skip to the results',
@@ -100,7 +114,7 @@ export function DemoGuide({ gameId, onLogin }: Props) {
   if (!progress) return null;
 
   const steps = buildSteps(progress, settingsSeen);
-  const currentIndex = steps.findIndex(s => !s.done && !s.locked);
+  const currentIndex = steps.findIndex(s => !s.done && !s.locked && !s.optional);
   const current = steps[currentIndex];
   // Skipping ahead is always allowed, even before finishing this phase's steps
   const canSkip = steps.some(s => s.skip && !s.done && !s.locked);
@@ -168,7 +182,8 @@ export function DemoGuide({ gameId, onLogin }: Props) {
           <ol className="mt-3 space-y-1.5">
             {steps.map((step, i) => {
               const isCurrent = i === currentIndex;
-              const marker = step.done ? '✓' : step.skip ? '⏭' : String(steps.slice(0, i + 1).filter(s => !s.skip).length);
+              const marker = step.done ? '✓' : step.skip ? '⏭' : step.optional ? '★'
+                : String(steps.slice(0, i + 1).filter(s => !s.skip && !s.optional).length);
               return (
                 <li
                   key={step.title}

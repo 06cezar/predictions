@@ -223,6 +223,10 @@ export function demoProgress(game: Game, userId: number) {
   const toRate = g.predictions.filter(p => p.authorId !== userId && p.targetId !== userId && myTargets.has(p.targetId));
   const myRatings = new Set(g.allRatings.filter(r => r.userId === userId).map(r => r.predictionId));
   const aboutMe = g.predictions.filter(p => p.targetId === userId);
+  const categories = db.select({ id: bonusCategories.id }).from(bonusCategories)
+    .where(eq(bonusCategories.gameId, game.id)).all().map(c => c.id);
+  const votedIn = new Set(db.select({ categoryId: bonusVotes.categoryId }).from(bonusVotes)
+    .where(eq(bonusVotes.voterId, userId)).all().map(v => v.categoryId));
   return {
     phase: game.currentPhase,
     written: myTargets.size,
@@ -231,6 +235,9 @@ export function demoProgress(game: Game, userId: number) {
     rateTotal: toRate.length,
     marked: aboutMe.filter(p => g.outcome(p.id)?.happened != null).length,
     markTotal: aboutMe.length,
+    bonusActive: game.bonusActive,
+    bonusVoted: categories.filter(id => votedIn.has(id)).length,
+    bonusTotal: categories.length,
     expiresAt: demoExpiresAt(game),
   };
 }
