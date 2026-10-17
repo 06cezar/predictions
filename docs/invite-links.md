@@ -1,6 +1,25 @@
-# Invite Links
+# Tokens, invite links and join codes
 
-## What is this?
+There are no passwords: each player has a **token**, and logging in means typing it. Tokens are
+unique across all games, so a token also tells the server which game the player is in.
+
+## Ways into a game
+
+| Way | Who starts it | Uses |
+|---|---|---|
+| **Join code** (`/game/K7QX2M`) | The admin shares the game's code or link | Many people, while open joining is on and the game is in submission |
+| **Invite link** (`/join/<code>`) | The admin generates a link per person | One person; works even when open joining is off |
+| **Added by the admin** | The admin types a name (and optionally a token) | The admin hands over the token |
+| **New game** | Anyone, from the start page | The creator becomes the game's admin |
+
+In every case the new player may pick their own token or get a generated one. Everything below
+about token conflicts applies to all of them: they all go through `claimToken()` in
+[`server/services/tokens.ts`](../server/services/tokens.ts).
+
+The rest of this page describes invite links, where the design started, and the token-conflict
+problem every way in shares.
+
+## What is an invite link?
 
 Instead of the admin manually creating accounts and handing out tokens, the admin can generate a
 one-use invite link and send it to the new user. The new user opens the link, picks their own name
@@ -85,6 +104,20 @@ of conflict. Any subsequent attempt to use it - via invite join or admin create-
 
 ---
 
+## Across games
+
+With many games on one deployment, the person typing a taken token may be a stranger from
+another game. The same rule protects everyone:
+
+- **New game, join code, invite link:** a taken token is always rotated and blocked, and the
+  owner's game admins are notified.
+- **An admin adding a player:** if the token belongs to someone in the admin's own game, the
+  admin is just told it's in use (they can already see their players' tokens). If it belongs to
+  someone in another game, it's rotated like above. Answering "already in use" there would let
+  anyone create a game and test whether a token works somewhere else.
+
+---
+
 ## Why one-use links?
 
 A link that can be used multiple times would allow anyone who gets hold of it to create as many
@@ -114,6 +147,7 @@ accounts as they want. One-use means one link = one new user.
 | Column | Type | Description |
 |---|---|---|
 | `id` | integer PK | auto-increment |
+| `game_id` | FK → games | the game the link joins |
 | `code` | text UNIQUE | random 12-char code (nanoid), used in the URL |
 | `created_by` | FK → users | admin who generated the link |
 | `used_by` | FK → users | user who registered (null if unused) |
@@ -128,8 +162,8 @@ accounts as they want. One-use means one link = one new user.
 | `token` | text UNIQUE | token that can never be used again |
 | `created_at` | text | ISO timestamp of when it was blocked |
 
-Populated automatically whenever a token conflict occurs. Checked by both the invite join flow
-and the admin create-user flow.
+Populated automatically whenever a token conflict occurs, in any game. Checked by every way
+into a game and by token generation.
 
 ### API endpoints
 
@@ -140,13 +174,18 @@ and the admin create-user flow.
 | `DELETE` | `/api/invite/:id` | Admin | Revoke an unused link |
 | `GET` | `/api/invite/join/:code` | Public | Check if a link is valid |
 | `POST` | `/api/invite/join/:code` | Public | Register through a link |
+| `POST` | `/api/games` | Public | Create a game and become its admin |
+| `GET` | `/api/games/join/:code` | Public | Which game a join code belongs to |
+| `POST` | `/api/games/join/:code` | Public | Join a game as a new player |
+| `POST` | `/api/admin/join-code/regenerate` | Admin | Retire the game's join code and issue a new one |
 
 ### Token auto-generation
 
-Format: `adjective-noun-NN` (e.g. `swift-lion-42`, `calm-fox-18`).
-On conflict, the old user's new token is generated in a loop until a unique one is found
-(max 100 attempts, then falls back to `user-{nanoid8}`).
+Format: `adjective-noun-NNNN` (e.g. `swift-lion-4821`), about 1.3 million combinations.
+Tokens are generated in a loop until one is free in every game and not blocked (max 100
+attempts, then falls back to `user-{nanoid8}`).
 
 ### Client route
 
-`/join/:code` - accessible only when not logged in. Logged-in users are redirected to `/`.
+`/join/:code` (invite link) and `/game/:code` (join code) are accessible only when not logged in.
+Logged-in users are redirected to `/`.
