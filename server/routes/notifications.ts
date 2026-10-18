@@ -41,7 +41,7 @@ router.get('/', requireAuth, (req, res) => {
       }
 
       if (n.type === 'outcome_marked') {
-        let targetName = meta?.targetName ?? 'Someone';
+        const targetName = meta?.targetName ?? 'Someone';
         const happened = meta?.happened;
         if (happened === true) {
           message = `${targetName} confirmed your prediction ✅`;

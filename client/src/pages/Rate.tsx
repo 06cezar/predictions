@@ -37,7 +37,7 @@ export function Rate() {
     const fresh = await api.predictions.toRate();
     setPredictions(prev =>
       prev.map(p => {
-        const updated = fresh.find((f: any) => f.id === p.id);
+        const updated = fresh.find(f => f.id === p.id);
         return updated ? { ...p, avgRating: updated.avgRating } : p;
       }),
     );

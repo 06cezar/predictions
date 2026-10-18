@@ -214,7 +214,7 @@ describe('Demo round', () => {
       }
       await agent.post('/api/demo/skip');
       const board = (await agent.get('/api/leaderboard')).body;
-      const star = (await agent.get('/api/leaderboard/star-of-the-show')).body;
+      const star = (await agent.get('/api/leaderboard/hall-of-fame')).body.starOfTheShow;
       return { board: board.map((e: any) => [e.rank, e.name, e.score, e.weightedScore]), star };
     }
 

@@ -13,6 +13,7 @@
     "build": "cd client && npm run build && cd .. && tsc -p tsconfig.server.json",
     "start": "node dist/server/server/index.js",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tests/tsconfig.json && cd client && tsc --noEmit",
+    "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",

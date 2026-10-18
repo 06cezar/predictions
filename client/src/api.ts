@@ -56,6 +56,14 @@ export interface Settings {
   bonusActive: boolean;
 }
 
+/** Rating bands below the threshold: a prediction that came true scores 5, 4, 3 or 2 points in them, 1 above. */
+export interface ScoringTiers {
+  threshold: number;
+  tier1: number;
+  tier2: number;
+  tier3: number;
+}
+
 /** What every player of a game sees. */
 export interface PublicSettings extends Pick<
   Settings,
@@ -70,6 +78,7 @@ export interface PublicSettings extends Pick<
 > {
   gameName: string;
   demoExpiresAt: string | null;
+  scoringTiers: ScoringTiers;
 }
 
 /** Response of creating, joining or starting a demo game: you are logged in. */
@@ -99,8 +108,118 @@ export interface LeaderboardEntry {
   id: number;
   name: string;
   rank: number;
+  /** Predictions that came true. */
   score: number;
+  /** The ranking: points for predictions that came true, plus bonus points. */
   weightedScore: number;
+  bonusPoints: number;
+}
+
+/** A Hall of Fame card about one prediction; the author is null in anonymous games. */
+export interface PredictionAward {
+  text: string;
+  authorName: string | null;
+  targetName: string;
+}
+
+export interface HallOfFame {
+  mostCourageous: (PredictionAward & { avg: number }) | null;
+  biggestMiss: (PredictionAward & { avg: number }) | null;
+  mostControversial: (PredictionAward & { avg: number; stdDev: number; individualRatings: number[] }) | null;
+  mostRevised: (PredictionAward & { editCount: number; history: string[] }) | null;
+  lastMinute: (PredictionAward & { updatedAt: string }) | null;
+  firstToSubmit: { names: string[]; tied: boolean } | null;
+  starOfTheShow: { name: string; count: number }[];
+  theJoker: { name: string; count: number }[];
+  bestFriends: { userA: string; userB: string }[];
+}
+
+export interface AppNotification {
+  id: number;
+  type: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface BonusVote {
+  rank: number;
+  nomineeId: number;
+}
+
+export interface BonusCategory {
+  id: number;
+  name: string;
+  points: number;
+  myVotes: BonusVote[];
+  /** Vote points per player id; only once the game is done, or for admins. */
+  tally?: Record<string, number>;
+  winners?: number[];
+}
+
+export interface InviteLink {
+  id: number;
+  code: string;
+  createdBy: number;
+  createdByName: string | null;
+  usedBy: number | null;
+  usedByName: string | null;
+  usedAt: string | null;
+  createdAt: string;
+}
+
+/** A player as admins see them, login token included. */
+export interface Player {
+  id: number;
+  name: string;
+  token: string;
+  isAdmin: boolean;
+  createdAt: string;
+}
+
+/** A prediction as admins see it, with its edit history. */
+export interface AdminPrediction {
+  id: number;
+  author: { id: number; name?: string };
+  target: { id: number; name?: string };
+  currentText: string;
+  createdAt: string;
+  updatedAt: string;
+  editCount: number;
+  forgivenEdits: number;
+  history: { id: number; oldText: string; editedAt: string }[];
+  avgRating: number | null;
+  ratingCount: number;
+  isAboutMe: boolean;
+}
+
+/** How far one player is through writing, rating or marking outcomes. */
+export interface PlayerProgress {
+  id: number;
+  name: string;
+  written: number;
+  expected: number;
+  complete: boolean;
+}
+
+export interface AdminStats {
+  submissionCount: number;
+  ratingCount: number;
+  avgRating: number | null;
+  lowRatedCount: number;
+  completedUsers: number;
+  totalUsers: number;
+  userProgress: PlayerProgress[];
+  completedRaters: number;
+  ratingProgress: PlayerProgress[];
+  markedPredictions: number;
+  outcomesProgress: PlayerProgress[];
+  currentPhase: Settings['currentPhase'];
+}
+
+/** The message of something thrown, for showing to the user. */
+export function errorMessage(err: unknown) {
+  return err instanceof Error ? err.message : String(err);
 }
 
 /** Fired after every successful change, so views like the demo guide can refresh. */
@@ -188,87 +307,35 @@ export const api = {
   leaderboard: {
     get: () => request<LeaderboardEntry[]>('/api/leaderboard'),
     preview: () => request<LeaderboardEntry[]>('/api/leaderboard/preview'),
-    mostCourageous: () =>
-      request<{ text: string; authorName: string; targetName: string; avg: number } | null>(
-        '/api/leaderboard/most-courageous',
-      ),
-    biggestMiss: () =>
-      request<{ text: string; authorName: string; targetName: string; avg: number } | null>(
-        '/api/leaderboard/biggest-miss',
-      ),
-    mostControversial: () =>
-      request<{
-        text: string;
-        authorName: string;
-        targetName: string;
-        avg: number;
-        stdDev: number;
-        individualRatings: number[];
-      } | null>('/api/leaderboard/most-controversial'),
-    mostRevised: () =>
-      request<{
-        text: string;
-        authorName: string | null;
-        targetName: string;
-        editCount: number;
-        history: string[];
-      } | null>('/api/leaderboard/most-revised'),
-    bestFriends: () => request<{ userA: string; userB: string }[]>('/api/leaderboard/best-friends'),
-    starOfTheShow: () => request<{ name: string; count: number }[]>('/api/leaderboard/star-of-the-show'),
-    theJoker: () => request<{ name: string; count: number }[]>('/api/leaderboard/the-joker'),
-    lastMinute: () =>
-      request<{ text: string; authorName: string | null; targetName: string; updatedAt: string } | null>(
-        '/api/leaderboard/last-minute',
-      ),
-    firstToSubmit: () => request<{ names: string[]; tied: boolean } | null>('/api/leaderboard/first-to-submit'),
+    hallOfFame: () => request<HallOfFame>('/api/leaderboard/hall-of-fame'),
   },
   notifications: {
-    get: () =>
-      request<{
-        unread: number;
-        items: { id: number; type: string; message: string; read: boolean; createdAt: string }[];
-      }>('/api/notifications'),
+    get: () => request<{ unread: number; items: AppNotification[] }>('/api/notifications'),
     readAll: () => request('/api/notifications/read-all', { method: 'POST' }),
     dismiss: (id: number) => request(`/api/notifications/dismiss/${id}`, { method: 'POST' }),
   },
   bonus: {
     get: () =>
       request<{
-        categories: Array<{
-          id: number;
-          name: string;
-          points: number;
-          myVotes: Array<{ rank: number; nomineeId: number }>;
-          tally?: Record<string, number>;
-          winners?: number[];
-        }>;
-        users: Array<{ id: number; name: string }>;
-        phase: string;
+        categories: BonusCategory[];
+        users: { id: number; name: string }[];
+        phase: Settings['currentPhase'];
         bonusActive: boolean;
       }>('/api/bonus'),
-    vote: (categoryId: number, votes: Array<{ rank: number; nomineeId: number }>) =>
+    vote: (categoryId: number, votes: BonusVote[]) =>
       request('/api/bonus/vote', { method: 'POST', body: JSON.stringify({ categoryId, votes }) }),
     createCategory: (name: string, points: number) =>
-      request('/api/bonus/categories', { method: 'POST', body: JSON.stringify({ name, points }) }),
+      request<Pick<BonusCategory, 'id' | 'name' | 'points'>>('/api/bonus/categories', {
+        method: 'POST',
+        body: JSON.stringify({ name, points }),
+      }),
     updateCategory: (id: number, data: { name?: string; points?: number }) =>
       request(`/api/bonus/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     deleteCategory: (id: number) => request(`/api/bonus/categories/${id}`, { method: 'DELETE' }),
   },
   invite: {
-    list: () =>
-      request<
-        Array<{
-          id: number;
-          code: string;
-          createdBy: number;
-          createdByName: string;
-          usedBy: number | null;
-          usedByName: string | null;
-          usedAt: string | null;
-          createdAt: string;
-        }>
-      >('/api/invite'),
-    create: () => request<{ id: number; code: string; createdAt: string }>('/api/invite', { method: 'POST' }),
+    list: () => request<InviteLink[]>('/api/invite'),
+    create: () => request<InviteLink>('/api/invite', { method: 'POST' }),
     revoke: (id: number) => request(`/api/invite/${id}`, { method: 'DELETE' }),
     getLink: (code: string) => request<{ valid: boolean; code: string }>(`/api/invite/join/${code}`),
     join: (code: string, name: string, token?: string) =>
@@ -278,19 +345,19 @@ export const api = {
       }),
   },
   admin: {
-    users: () => request<any[]>('/api/admin/users'),
+    users: () => request<Player[]>('/api/admin/users'),
     createUser: (name: string, token?: string) =>
-      request('/api/admin/users', {
+      request<Player>('/api/admin/users', {
         method: 'POST',
         body: JSON.stringify({ name, token }),
       }),
     updateUser: (id: number, data: { name?: string; regenerateToken?: boolean }) =>
-      request(`/api/admin/users/${id}`, {
+      request<Player>(`/api/admin/users/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
     deleteUser: (id: number) => request(`/api/admin/users/${id}`, { method: 'DELETE' }),
-    predictions: () => request<any[]>('/api/admin/predictions'),
+    predictions: () => request<AdminPrediction[]>('/api/admin/predictions'),
     deletePrediction: (id: number) => request(`/api/admin/predictions/${id}`, { method: 'DELETE' }),
     forgiveEdit: (id: number) =>
       request<{ forgivenEdits: number; editCount: number }>(`/api/admin/predictions/${id}/forgive-edit`, {
@@ -300,15 +367,13 @@ export const api = {
       request<{ forgivenEdits: number; editCount: number }>(`/api/admin/predictions/${id}/unforgive-edit`, {
         method: 'POST',
       }),
-    stats: () => request<any>('/api/admin/stats'),
+    stats: () => request<AdminStats>('/api/admin/stats'),
     settings: () => request<Settings>('/api/admin/settings'),
     updateSettings: (data: Partial<Settings>) =>
       request('/api/admin/settings', {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
-    advancePhase: () => request('/api/admin/phase/advance', { method: 'POST' }),
-    reversePhase: () => request('/api/admin/phase/reverse', { method: 'POST' }),
     setPhase: (phase: string) =>
       request<Pick<Settings, 'submissionDeadline' | 'revealDeadline'> & { newPhase: Settings['currentPhase'] }>(
         '/api/admin/phase/set',

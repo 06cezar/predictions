@@ -110,7 +110,7 @@ export const notifications = sqliteTable('notifications', {
   userId: integer('user_id')
     .notNull()
     .references(() => users.id),
-  type: text('type').notNull(), // 'prediction_about_you' | 'outcome_marked'
+  type: text('type').notNull(), // 'prediction_about_you' | 'outcome_marked' | 'phase_changed' | 'token_conflict'
   authorId: integer('author_id').references(() => users.id),
   meta: text('meta'), // JSON string for extra data
   read: integer('read', { mode: 'boolean' }).notNull().default(false),

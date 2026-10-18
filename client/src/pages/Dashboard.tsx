@@ -1,24 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-import { api, User, UserRow, PublicSettings } from '../api';
+import { api, AppNotification, User, UserRow, PublicSettings } from '../api';
 import { Countdown } from '../components/Countdown';
 import { PhaseBadge } from '../components/PhaseBadge';
 import { UserRow as UserRowComponent } from '../components/UserRow';
 
 interface Props {
   user: User;
-  onLogout: () => void;
 }
 
-type Notification = { id: number; type: string; message: string; read: boolean; createdAt: string };
-
-export function Dashboard({ user, onLogout }: Props) {
+export function Dashboard({ user }: Props) {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [settings, setSettings] = useState<PublicSettings | null>(null);
   const [me, setMe] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [notifs, setNotifs] = useState<Notification[]>([]);
+  const [notifs, setNotifs] = useState<AppNotification[]>([]);
 
   useEffect(() => {
     Promise.all([api.users.list(), api.settings.get(), api.users.me(), api.notifications.get()])
@@ -140,8 +137,8 @@ export function Dashboard({ user, onLogout }: Props) {
         </div>
       ) : (
         <div className="space-y-2 stagger">
-          {users.map((u, i) => (
-            <UserRowComponent key={u.id} user={u} index={i} />
+          {users.map(u => (
+            <UserRowComponent key={u.id} user={u} />
           ))}
         </div>
       )}

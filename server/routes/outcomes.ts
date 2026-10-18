@@ -34,30 +34,16 @@ router.post('/', requireAuth, (req, res) => {
   if (!pred) return res.status(404).json({ error: 'Prediction not found' });
   if (pred.targetId !== me.id) return res.status(403).json({ error: 'Only the target can mark outcomes' });
 
-  const existing = db
-    .select()
-    .from(outcomes)
-    .where(eq(outcomes.predictionId, parseInt(prediction_id)))
-    .get();
-
   const happenedVal = happened === null ? null : happened === true || happened === 'true';
+  db.insert(outcomes)
+    .values({ predictionId: pred.id, happened: happenedVal, markedBy: me.id })
+    .onConflictDoUpdate({
+      target: outcomes.predictionId,
+      set: { happened: happenedVal, markedBy: me.id, markedAt: new Date().toISOString() },
+    })
+    .run();
 
-  if (existing) {
-    db.update(outcomes)
-      .set({ happened: happenedVal as boolean | null, markedBy: me.id, markedAt: new Date().toISOString() })
-      .where(eq(outcomes.predictionId, parseInt(prediction_id)))
-      .run();
-  } else {
-    db.insert(outcomes)
-      .values({
-        predictionId: parseInt(prediction_id),
-        happened: happenedVal as boolean | null,
-        markedBy: me.id,
-      })
-      .run();
-  }
-
-  // Delete existing outcome_marked notification for this prediction, then insert new one
+  // The author gets one notification per prediction, saying how it was last marked
   const existingNotifs = db
     .select({ id: notifications.id, meta: notifications.meta })
     .from(notifications)

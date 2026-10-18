@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { markDemoSettingsSeen } from '../../demoGuide';
-import { api, Settings } from '../../api';
+import { api, Settings, errorMessage } from '../../api';
 import { useCopied } from '../../hooks/useCopied';
 import { SettingsUpdate, ToggleRow, toLocalInput } from './shared';
 
@@ -159,8 +159,8 @@ function GameSection({ settings, onUpdate, onChanged }: Props) {
     try {
       const { joinCode } = await api.admin.regenerateJoinCode();
       onChanged({ joinCode });
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     }
     setRegenerateConfirm(false);
   };
@@ -220,8 +220,8 @@ function PhaseControl({ settings, onChanged }: Pick<Props, 'settings' | 'onChang
       // A deadline that had already passed for the new phase is cleared by the server
       onChanged({ currentPhase: newPhase, submissionDeadline, revealDeadline });
       setConfirming(null);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     }
   };
 
@@ -312,8 +312,8 @@ function DangerZone() {
     try {
       await api.admin.resetGame();
       window.location.reload();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     }
   };
 

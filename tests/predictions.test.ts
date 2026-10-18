@@ -60,7 +60,7 @@ describe('Predictions routes', () => {
   });
 
   it('/api/predictions/about-me returns 403 during submission phase', async () => {
-    const alice = createUser(db, 'Alice', 'token-alice');
+    createUser(db, 'Alice', 'token-alice');
     // Phase is submission by default
     const agent = request.agent(app);
     await loginAs(agent, 'token-alice');
@@ -159,7 +159,7 @@ describe('Predictions routes', () => {
   });
 
   it('POST /api/predictions returns 403 after submission deadline (phase != submission)', async () => {
-    const alice = createUser(db, 'Alice', 'token-alice');
+    createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
     setPhase(db, 'reveal');
 
@@ -172,7 +172,7 @@ describe('Predictions routes', () => {
   });
 
   it('POST /api/predictions allowed with adminOverride even after submission phase', async () => {
-    const alice = createUser(db, 'Alice', 'token-alice');
+    createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
     setPhase(db, 'reveal', { adminOverride: true });
 
@@ -214,7 +214,7 @@ describe('Predictions routes', () => {
   it('PUT /api/predictions/:id returns 403 if not the author', async () => {
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
-    const charlie = createUser(db, 'Charlie', 'token-charlie');
+    createUser(db, 'Charlie', 'token-charlie');
 
     // Alice wrote a prediction about bob
     const pred = createPrediction(db, alice.id, bob.id, 'Original text');

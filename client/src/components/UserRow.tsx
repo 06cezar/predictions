@@ -5,10 +5,9 @@ const AVATAR_COLORS = ['bg-orange', 'bg-violet', 'bg-amber/80', 'bg-cyan-500', '
 
 interface Props {
   user: UserRowType;
-  index?: number;
 }
 
-export function UserRow({ user, index }: Props) {
+export function UserRow({ user }: Props) {
   const navigate = useNavigate();
   const color = AVATAR_COLORS[user.id % AVATAR_COLORS.length];
   const initials = user.name

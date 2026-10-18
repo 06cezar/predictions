@@ -24,6 +24,13 @@ function parsePoints(value: unknown): number | null {
 }
 const BAD_POINTS = 'points must be a whole number from 1 to 100';
 
+type BonusVote = { rank: number; nomineeId: number };
+
+function isVote(value: unknown): value is BonusVote {
+  const vote = value as Partial<BonusVote> | null;
+  return Number.isInteger(vote?.rank) && Number.isInteger(vote?.nomineeId);
+}
+
 // GET /api/bonus — get categories + my votes + tally (tally only at done or for admin)
 router.get('/', requireAuth, (req, res) => {
   const { user: me, game } = res.locals;
@@ -77,7 +84,7 @@ router.post('/vote', requireAuth, (req, res) => {
   if (!categoryId || !Array.isArray(votes)) {
     return res.status(400).json({ error: 'categoryId and votes required' });
   }
-  if (!votes.every((v: any) => Number.isInteger(v?.rank) && Number.isInteger(v?.nomineeId))) {
+  if (!votes.every(isVote)) {
     return res.status(400).json({ error: 'Each vote needs a rank and a nomineeId' });
   }
 
@@ -91,16 +98,16 @@ router.post('/vote', requireAuth, (req, res) => {
 
   // Validate: one vote per rank 1..required, no duplicates, no self-vote
   if (votes.length !== required) return res.status(400).json({ error: `Must submit exactly ${required} votes` });
-  const ranks = votes.map((v: any) => v.rank).sort();
+  const ranks = votes.map((v: BonusVote) => v.rank).sort();
   if (JSON.stringify(ranks) !== JSON.stringify([1, 2, 3].slice(0, required))) {
     return res.status(400).json({ error: `Must rank places 1 to ${required}` });
   }
-  const nomineeIds = votes.map((v: any) => v.nomineeId);
+  const nomineeIds = votes.map((v: BonusVote) => v.nomineeId);
   if (new Set(nomineeIds).size !== required)
     return res.status(400).json({ error: 'Cannot vote for same person twice' });
   if (nomineeIds.includes(me.id)) return res.status(400).json({ error: 'Cannot vote for yourself' });
 
-  // Verify all nominees are players of this game
+  // Nominees from another game answer like unknown ids
   for (const nid of nomineeIds) {
     const u = db
       .select({ id: users.id })
@@ -110,7 +117,7 @@ router.post('/vote', requireAuth, (req, res) => {
     if (!u) return res.status(400).json({ error: `User ${nid} not found` });
   }
 
-  // Replace votes
+  // A new ballot replaces the voter's previous one in this category
   db.delete(bonusVotes)
     .where(and(eq(bonusVotes.categoryId, categoryId), eq(bonusVotes.voterId, me.id)))
     .run();

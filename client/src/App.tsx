@@ -49,7 +49,7 @@ function App() {
         <Route path="/game/:code" element={user ? <Navigate to="/" /> : <JoinGame onLogin={loadMe} />} />
         {user ? (
           <>
-            <Route path="/" element={<Dashboard user={user} onLogout={() => setUser(null)} />} />
+            <Route path="/" element={<Dashboard user={user} />} />
             <Route path="/predict/:userId" element={<Predict />} />
             <Route path="/rate" element={<Rate />} />
             <Route path="/reveal" element={<Reveal />} />

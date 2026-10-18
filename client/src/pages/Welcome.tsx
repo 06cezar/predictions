@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api, JoinedGame } from '../api';
+import { api, JoinedGame, errorMessage } from '../api';
 import { TokenReveal } from '../components/TokenReveal';
 
 interface Props {
@@ -34,8 +34,8 @@ export function Welcome({ onLogin }: Props) {
     setError('');
     try {
       await action();
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+    } catch (err) {
+      setError(errorMessage(err) || 'Something went wrong');
     } finally {
       setBusy(false);
     }

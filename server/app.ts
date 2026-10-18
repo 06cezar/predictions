@@ -16,6 +16,17 @@ import inviteRoutes from './routes/invite';
 import gameRoutes from './routes/games';
 import demoRoutes from './routes/demo';
 
+/** At most `max` requests per client address every `minutes`. */
+function limit(minutes: number, max: number, error: string) {
+  return rateLimit({
+    windowMs: minutes * 60 * 1000,
+    max,
+    message: { error },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+}
+
 export function createApp() {
   const app = express();
 
@@ -25,48 +36,12 @@ export function createApp() {
   // Trust proxy (Fly.io) so rate limiting uses real client IP
   app.set('trust proxy', 1);
 
-  // Rate limiting
-  app.use(
-    '/api/auth',
-    rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 20,
-      message: { error: 'Too many login attempts, please try again later.' },
-      standardHeaders: true,
-      legacyHeaders: false,
-    }),
-  );
-  app.use(
-    '/api',
-    rateLimit({
-      windowMs: 60 * 1000, // 1 minute
-      max: 200,
-      message: { error: 'Too many requests, please slow down.' },
-      standardHeaders: true,
-      legacyHeaders: false,
-    }),
-  );
+  // Rate limits per client address
+  app.use('/api/auth', limit(15, 20, 'Too many login attempts, please try again later.'));
+  app.use('/api', limit(1, 200, 'Too many requests, please slow down.'));
   // Anyone can create games and join with a code, so cap how often one address can
-  app.post(
-    ['/api/games', '/api/demo'],
-    rateLimit({
-      windowMs: 60 * 60 * 1000, // 1 hour
-      max: 10,
-      message: { error: 'Too many new games from this address, please try again later.' },
-      standardHeaders: true,
-      legacyHeaders: false,
-    }),
-  );
-  app.post(
-    '/api/games/join/:code',
-    rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 20,
-      message: { error: 'Too many join attempts, please try again later.' },
-      standardHeaders: true,
-      legacyHeaders: false,
-    }),
-  );
+  app.post(['/api/games', '/api/demo'], limit(60, 10, 'Too many new games from this address, please try again later.'));
+  app.post('/api/games/join/:code', limit(15, 20, 'Too many join attempts, please try again later.'));
 
   const isProduction = process.env.NODE_ENV === 'production';
   if (isProduction && !process.env.SESSION_SECRET) {
@@ -86,6 +61,8 @@ export function createApp() {
     },
   };
   if (process.env.NODE_ENV !== 'test') {
+    // Loaded only here, so tests never open sessions.db (the package has no type definitions)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const SQLiteStore = require('connect-sqlite3')(session);
     sessionOptions.store = new SQLiteStore({ db: 'sessions.db', dir: DATA_DIR });
   }
@@ -111,7 +88,7 @@ export function createApp() {
   });
 
   // Last resort: log the error, answer without internals
-  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+  app.use((err: Error & { type?: string }, req: Request, res: Response, _next: NextFunction) => {
     if (err?.type === 'entity.parse.failed') {
       return res.status(400).json({ error: 'Malformed JSON' });
     }

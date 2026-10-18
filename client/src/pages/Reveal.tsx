@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { api, Prediction } from '../api';
+import { api, Prediction, errorMessage } from '../api';
 import { PredictionCard } from '../components/PredictionCard';
 
 export function Reveal() {
@@ -21,7 +21,7 @@ export function Reveal() {
           setDeadlinePassed(true);
         }
       })
-      .catch(err => setError(err.message))
+      .catch(err => setError(errorMessage(err)))
       .finally(() => setLoading(false));
   }, []);
 
@@ -39,8 +39,8 @@ export function Reveal() {
   const handleOutcome = async (id: number, happened: boolean | null) => {
     try {
       await api.outcomes.mark(id, happened);
-    } catch (err: any) {
-      console.error(err.message);
+    } catch (err) {
+      console.error(err);
     }
   };
 

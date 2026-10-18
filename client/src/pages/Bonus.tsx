@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { api, User } from '../api';
+import { api, User, errorMessage } from '../api';
 
 type BonusUser = { id: number; name: string };
 type Category = {
@@ -44,7 +44,7 @@ export function Bonus({ user }: Props) {
         setDrafts(initDrafts);
       })
       .catch(err => {
-        if (err.message?.includes('available')) setNotAvailable(true);
+        if (errorMessage(err).includes('available')) setNotAvailable(true);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -79,8 +79,8 @@ export function Bonus({ user }: Props) {
       setCategories(prev => prev.map(c => (c.id === catId ? { ...c, myVotes: votes } : c)));
       setSaved(prev => ({ ...prev, [catId]: true }));
       setTimeout(() => setSaved(prev => ({ ...prev, [catId]: false })), 2000);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     } finally {
       setSaving(prev => ({ ...prev, [catId]: false }));
     }

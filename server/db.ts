@@ -21,7 +21,7 @@ export type Db = typeof _db;
 // they always use the current _db instance (important for test injection).
 export const db = new Proxy({} as Db, {
   get(_target, prop) {
-    return (_db as any)[prop];
+    return Reflect.get(_db, prop);
   },
 });
 

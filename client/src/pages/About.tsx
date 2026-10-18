@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api } from '../api';
+import { api, errorMessage } from '../api';
 
 interface Props {
   loggedIn: boolean;
@@ -76,8 +76,8 @@ export function About({ loggedIn, onLogin }: Props) {
       await api.demo.start();
       await onLogin();
       navigate('/');
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     } finally {
       setBusy(false);
     }

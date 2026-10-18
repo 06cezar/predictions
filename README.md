@@ -90,8 +90,9 @@ predictions about each other both came true) and The Joker (the player nobody co
 | Database | SQLite (better-sqlite3, WAL mode) with Drizzle ORM, versioned migrations |
 | Sessions | express-session with a SQLite session store |
 | Security | express-rate-limit, hardened cookies, input validation (details below) |
-| Testing | Vitest and Supertest: 270+ tests against in-memory SQLite |
-| Delivery | Multi-stage Docker image on Fly.io with a persistent volume; GitHub Actions CI (typecheck, test, build) |
+| Testing | Vitest and Supertest: 260+ tests against in-memory SQLite |
+| Code quality | ESLint (typescript-eslint, React hooks rules) and Prettier, both checked in CI |
+| Delivery | Multi-stage Docker image on Fly.io with a persistent volume; GitHub Actions CI (typecheck, lint, formatting, test, build) |
 
 ## Security and reliability
 
@@ -154,6 +155,7 @@ server/
     snapshot.ts        a game's data, loaded with one query per table
     scoring.ts         leaderboard scoring and bonus tallies
     awards.ts          the nine Hall of Fame awards as pure functions
+    exports.ts         CSV exports (formula-safe cells)
     phases.ts          the single place a game changes phase (and the demo's skip)
     demo.ts            demo content, deterministic bots, progress, expiry
   migrate.ts         versioned schema migrations (PRAGMA user_version)
@@ -164,9 +166,9 @@ scripts/             seed and reset utilities
 
 - **Many games, one database.** Players, predictions, bonus categories and invite links carry a
   `game_id`; everything else hangs off those.
-- **One snapshot, pure functions.** Scoring and awards load a game with one query per table and
-  compute results in memory. The API and the CSV exports share these functions, so they always
-  agree.
+- **One snapshot, pure functions.** Prediction lists, scoring, awards and exports load a game with
+  one query per table and compute results in memory. The API and the CSV exports share these
+  functions, so they always agree, and the whole Hall of Fame comes back in one request.
 - **One way to change phase.** Admin buttons, deadlines and the demo's skip all go through
   `changePhase`, which also sends notifications and lets demo bots act.
 - **Single-process SQLite.** WAL mode on a Fly.io volume is plenty at this scale and keeps hosting
@@ -177,8 +179,10 @@ More detail: [database and migrations](docs/database.md) · [tokens, invites and
 ## Testing
 
 ```bash
-npm test             # 270+ API tests, about 2 seconds
+npm test             # 260+ API tests, about 2 seconds
 npm run typecheck    # server, tests and client
+npm run lint         # ESLint over server, tests and client
+npm run format       # Prettier (CI runs format:check)
 ```
 
 The tests go through the HTTP API (Supertest) against a fresh in-memory database each time. They
@@ -188,7 +192,7 @@ award, input validation and error responses. Three suites stand out:
 - **Migrations:** a database with the original March 2026 schema is upgraded and checked.
 - **Demo round:** two rounds played alike end identically.
 
-CI runs the type checks, the tests and a production build on every push.
+CI runs the type checks, ESLint, a Prettier check, the tests and a production build on every push.
 
 ## Running locally
 

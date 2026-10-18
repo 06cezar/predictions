@@ -35,23 +35,11 @@ router.post('/', requireAuth, (req, res) => {
   if (pred.authorId === me.id) return res.status(403).json({ error: 'Cannot rate your own prediction' });
   if (pred.targetId === me.id) return res.status(403).json({ error: 'Cannot rate a prediction about yourself' });
 
-  // Upsert
-  const existing = db
-    .select()
-    .from(ratings)
-    .where(and(eq(ratings.predictionId, parseInt(prediction_id)), eq(ratings.userId, me.id)))
-    .get();
-
-  if (existing) {
-    db.update(ratings)
-      .set({ score: s })
-      .where(and(eq(ratings.predictionId, parseInt(prediction_id)), eq(ratings.userId, me.id)))
-      .run();
-  } else {
-    db.insert(ratings)
-      .values({ predictionId: parseInt(prediction_id), userId: me.id, score: s })
-      .run();
-  }
+  // Rating again replaces your earlier rating
+  db.insert(ratings)
+    .values({ predictionId: pred.id, userId: me.id, score: s })
+    .onConflictDoUpdate({ target: [ratings.predictionId, ratings.userId], set: { score: s } })
+    .run();
 
   res.json({ success: true });
 });

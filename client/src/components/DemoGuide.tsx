@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { api, API_MUTATED, DemoProgress } from '../api';
+import { api, API_MUTATED, DemoProgress, errorMessage } from '../api';
 import { DEMO_GUIDE_CHANGED, demoSettingsSeen, loadFlag, saveFlag } from '../demoGuide';
 
 interface Props {
@@ -157,8 +157,8 @@ export function DemoGuide({ gameId, onLogin }: Props) {
     try {
       const { newPhase } = await api.demo.skip();
       navigate(newPhase === 'reveal' ? '/reveal' : '/leaderboard');
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -170,8 +170,8 @@ export function DemoGuide({ gameId, onLogin }: Props) {
       await api.demo.start();
       await onLogin();
       navigate('/');
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
       setBusy(false);
     }
   };

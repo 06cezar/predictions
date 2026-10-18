@@ -468,7 +468,7 @@ describe('Leaderboard scoring rules', () => {
   it('no outcome marked → 0 points', async () => {
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
-    const charlie = createUser(db, 'Charlie', 'token-charlie');
+    createUser(db, 'Charlie', 'token-charlie');
 
     setPhase(db, 'done');
     createPrediction(db, alice.id, bob.id, 'No outcome');
@@ -577,7 +577,7 @@ describe('Leaderboard scoring rules', () => {
   });
 
   it('forgive via admin endpoint works end-to-end', async () => {
-    const admin = createUser(db, 'Admin', 'token-admin', true);
+    createUser(db, 'Admin', 'token-admin', true);
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
     const charlie = createUser(db, 'Charlie', 'token-charlie');
@@ -608,7 +608,7 @@ describe('Leaderboard scoring rules', () => {
   });
 
   it('forgive multiple times via endpoint increments correctly', async () => {
-    const admin = createUser(db, 'Admin', 'token-admin', true);
+    createUser(db, 'Admin', 'token-admin', true);
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
     const charlie = createUser(db, 'Charlie', 'token-charlie');
@@ -719,7 +719,7 @@ describe('Leaderboard scoring rules', () => {
   // ── Forgive + Unforgive combined tests ──────────────────────────────────
 
   it('forgive then unforgive restores original penalty', async () => {
-    const admin = createUser(db, 'Admin', 'token-admin', true);
+    createUser(db, 'Admin', 'token-admin', true);
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
     const charlie = createUser(db, 'Charlie', 'token-charlie');
@@ -749,7 +749,7 @@ describe('Leaderboard scoring rules', () => {
   });
 
   it('forgive all then unforgive one restores one penalty', async () => {
-    const admin = createUser(db, 'Admin', 'token-admin', true);
+    createUser(db, 'Admin', 'token-admin', true);
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
     const charlie = createUser(db, 'Charlie', 'token-charlie');
@@ -783,7 +783,7 @@ describe('Leaderboard scoring rules', () => {
   });
 
   it('unforgive on zero forgiven → 400', async () => {
-    const admin = createUser(db, 'Admin', 'token-admin', true);
+    createUser(db, 'Admin', 'token-admin', true);
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
     const pred = createPrediction(db, alice.id, bob.id, 'No forgives');
@@ -797,7 +797,7 @@ describe('Leaderboard scoring rules', () => {
   });
 
   it('unforgive on prediction with no edits → 400', async () => {
-    const admin = createUser(db, 'Admin', 'token-admin', true);
+    createUser(db, 'Admin', 'token-admin', true);
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
     const pred = createPrediction(db, alice.id, bob.id, 'Never edited');
@@ -810,7 +810,7 @@ describe('Leaderboard scoring rules', () => {
   });
 
   it('forgive-unforgive-forgive cycle keeps score consistent', async () => {
-    const admin = createUser(db, 'Admin', 'token-admin', true);
+    createUser(db, 'Admin', 'token-admin', true);
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
     const charlie = createUser(db, 'Charlie', 'token-charlie');
@@ -856,7 +856,7 @@ describe('Leaderboard scoring rules', () => {
   });
 
   it('multiple predictions: forgive on one does not affect other', async () => {
-    const admin = createUser(db, 'Admin', 'token-admin', true);
+    createUser(db, 'Admin', 'token-admin', true);
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
     const charlie = createUser(db, 'Charlie', 'token-charlie');

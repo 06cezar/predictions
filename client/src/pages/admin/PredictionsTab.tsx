@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api, Settings } from '../../api';
+import { api, AdminPrediction, Settings, errorMessage } from '../../api';
 import { parseServerTime } from '../../time';
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
 }
 
 export function PredictionsTab({ phase, onChanged }: Props) {
-  const [predictions, setPredictions] = useState<any[]>([]);
+  const [predictions, setPredictions] = useState<AdminPrediction[]>([]);
   const [meId, setMeId] = useState<number | null>(null);
   const [showAboutMe, setShowAboutMe] = useState(false);
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
@@ -35,8 +35,8 @@ export function PredictionsTab({ phase, onChanged }: Props) {
       await api.admin.deletePrediction(id);
       setPredictions(prev => prev.filter(p => p.id !== id));
       onChanged();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     }
   };
 
@@ -44,8 +44,8 @@ export function PredictionsTab({ phase, onChanged }: Props) {
     try {
       const result = undo ? await api.admin.unforgiveEdit(id) : await api.admin.forgiveEdit(id);
       setForgiven(id, result.forgivenEdits);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     }
   };
 
@@ -139,7 +139,7 @@ export function PredictionsTab({ phase, onChanged }: Props) {
             )}
             {expanded === p.id && p.history && (
               <div className="border-t border-white/10 pt-3 space-y-2">
-                {p.history.map((h: any) => (
+                {p.history.map(h => (
                   <div key={h.id} className="text-xs text-white/40 bg-white/5 rounded-lg p-3">
                     <p className="text-white/60 mb-1">
                       {parseServerTime(h.editedAt).toLocaleString(undefined, { hour12: false })}

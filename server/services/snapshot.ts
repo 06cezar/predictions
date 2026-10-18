@@ -97,3 +97,9 @@ export function avgRating(g: GameSnapshot, predictionId: number): number | null 
   const scores = g.ratings(predictionId);
   return scores.length > 0 ? mean(scores) : null;
 }
+
+/** The average rating as players see it: a whole percent, or null if nobody rated it. */
+export function roundedAvgRating(g: GameSnapshot, predictionId: number): number | null {
+  const avg = avgRating(g, predictionId);
+  return avg === null ? null : Math.round(avg);
+}

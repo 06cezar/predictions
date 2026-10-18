@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { api, Prediction, PublicSettings } from '../api';
+import { api, Prediction, PublicSettings, errorMessage } from '../api';
 import { parseServerTime } from '../time';
 
 interface UserInfo {
@@ -59,8 +59,8 @@ export function Predict() {
         setSaved(false);
         navigate('/');
       }, 1500);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(errorMessage(err));
     } finally {
       setSaving(false);
     }

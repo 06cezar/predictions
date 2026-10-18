@@ -15,7 +15,7 @@ describe('Ratings routes', () => {
   it('POST /api/ratings creates a rating', async () => {
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
-    const charlie = createUser(db, 'Charlie', 'token-charlie');
+    createUser(db, 'Charlie', 'token-charlie');
 
     const pred = createPrediction(db, alice.id, bob.id, 'Bob will succeed');
 
@@ -62,7 +62,7 @@ describe('Ratings routes', () => {
   it('Score of 101 → 400 Bad Request', async () => {
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
-    const charlie = createUser(db, 'Charlie', 'token-charlie');
+    createUser(db, 'Charlie', 'token-charlie');
 
     const pred = createPrediction(db, alice.id, bob.id, 'Bob will succeed');
 
@@ -80,7 +80,7 @@ describe('Ratings routes', () => {
   it('Score of -1 → 400 Bad Request', async () => {
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
-    const charlie = createUser(db, 'Charlie', 'token-charlie');
+    createUser(db, 'Charlie', 'token-charlie');
 
     const pred = createPrediction(db, alice.id, bob.id, 'Bob will succeed');
 
@@ -98,7 +98,7 @@ describe('Ratings routes', () => {
   it('Score of 0 is valid', async () => {
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
-    const charlie = createUser(db, 'Charlie', 'token-charlie');
+    createUser(db, 'Charlie', 'token-charlie');
 
     const pred = createPrediction(db, alice.id, bob.id, 'Bob will succeed');
 
@@ -116,7 +116,7 @@ describe('Ratings routes', () => {
   it('Score of 100 is valid', async () => {
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
-    const charlie = createUser(db, 'Charlie', 'token-charlie');
+    createUser(db, 'Charlie', 'token-charlie');
 
     const pred = createPrediction(db, alice.id, bob.id, 'Bob will succeed');
 
@@ -172,7 +172,7 @@ describe('Ratings routes', () => {
   it('Cannot rate during reveal phase → 403', async () => {
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
-    const charlie = createUser(db, 'Charlie', 'token-charlie');
+    createUser(db, 'Charlie', 'token-charlie');
     const pred = createPrediction(db, alice.id, bob.id, 'Bob will succeed');
     setPhase(db, 'reveal');
 
@@ -186,7 +186,7 @@ describe('Ratings routes', () => {
   it('Cannot rate during done phase → 403', async () => {
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
-    const charlie = createUser(db, 'Charlie', 'token-charlie');
+    createUser(db, 'Charlie', 'token-charlie');
     const pred = createPrediction(db, alice.id, bob.id, 'Bob will succeed');
     setPhase(db, 'done');
 
@@ -203,7 +203,7 @@ describe('Ratings routes', () => {
   });
 
   it('POST /api/ratings with missing fields → 400', async () => {
-    const alice = createUser(db, 'Alice', 'token-alice');
+    createUser(db, 'Alice', 'token-alice');
 
     const agent = request.agent(app);
     await loginAs(agent, 'token-alice');
@@ -213,7 +213,7 @@ describe('Ratings routes', () => {
   });
 
   it('Rating a non-existent prediction → 404', async () => {
-    const alice = createUser(db, 'Alice', 'token-alice');
+    createUser(db, 'Alice', 'token-alice');
 
     const agent = request.agent(app);
     await loginAs(agent, 'token-alice');

@@ -201,10 +201,9 @@ describe('Edge cases', () => {
       setPhase(db, 'done');
 
       const admin = await as('token-zed');
-      const last = (await admin.get('/api/leaderboard/last-minute')).body;
-      expect(last).toMatchObject({ text: 'Zed adopts a cat', updatedAt: '2026-10-17T20:00:00.000Z' });
-      const first = (await admin.get('/api/leaderboard/first-to-submit')).body;
-      expect(first.names).toEqual(['Zed']);
+      const { lastMinute, firstToSubmit } = (await admin.get('/api/leaderboard/hall-of-fame')).body;
+      expect(lastMinute).toMatchObject({ text: 'Zed adopts a cat', updatedAt: '2026-10-17T20:00:00.000Z' });
+      expect(firstToSubmit.names).toEqual(['Zed']);
     });
   });
 });

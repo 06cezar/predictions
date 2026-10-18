@@ -23,8 +23,8 @@ describe('Users routes', () => {
   });
 
   it('GET /api/users returns list without tokens', async () => {
-    const alice = createUser(db, 'Alice', 'token-alice');
-    const bob = createUser(db, 'Bob', 'token-bob');
+    createUser(db, 'Alice', 'token-alice');
+    createUser(db, 'Bob', 'token-bob');
 
     const agent = request.agent(app);
     await loginAs(agent, 'token-alice');

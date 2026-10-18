@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { api, Settings } from '../api';
+import { api, AdminStats, Settings, errorMessage } from '../api';
 import { UsersTab } from './admin/UsersTab';
 import { PredictionsTab } from './admin/PredictionsTab';
 import { SettingsTab } from './admin/SettingsTab';
@@ -20,7 +20,7 @@ export function Admin() {
   const requestedTab = searchParams.get('tab') as Tab | null;
   const [tab, setTab] = useState<Tab>(requestedTab && TABS.includes(requestedTab) ? requestedTab : 'users');
   const [settings, setSettings] = useState<Settings | null>(null);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refreshStats = () => {
@@ -50,8 +50,8 @@ export function Admin() {
     applyChanges(changes);
     try {
       await api.admin.updateSettings(changes);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     }
   };
 

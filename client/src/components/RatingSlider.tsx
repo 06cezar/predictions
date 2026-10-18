@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api } from '../api';
+import { api, errorMessage } from '../api';
 
 interface Props {
   predictionId: number;
@@ -22,8 +22,8 @@ export function RatingSlider({ predictionId, initialScore, avgRating, onRate }: 
       setSaved(true);
       onRate?.(score);
       setTimeout(() => setSaved(false), 2000);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e) {
+      setError(errorMessage(e));
     } finally {
       setSaving(false);
     }

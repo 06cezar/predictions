@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent, ReactNode } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { api, JoinedGame } from '../api';
+import { api, JoinedGame, errorMessage } from '../api';
 import { TokenReveal } from '../components/TokenReveal';
 
 interface Props {
@@ -35,7 +35,7 @@ export function JoinGame({ onLogin }: Props) {
     api.games
       .lookup(code)
       .then(setGame)
-      .catch((err: any) => setLookupError(err.message || 'No game with that code'));
+      .catch(err => setLookupError(errorMessage(err) || 'No game with that code'));
   }, [code]);
 
   const join = async (e: FormEvent) => {
@@ -44,8 +44,8 @@ export function JoinGame({ onLogin }: Props) {
     setError('');
     try {
       setJoined(await api.games.join(code, name.trim(), token.trim() || undefined));
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+    } catch (err) {
+      setError(errorMessage(err) || 'Something went wrong');
     } finally {
       setBusy(false);
     }

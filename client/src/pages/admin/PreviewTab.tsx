@@ -1,41 +1,57 @@
 import { useState } from 'react';
-import { api } from '../../api';
+import { api, errorMessage, HallOfFame, LeaderboardEntry } from '../../api';
 
-const AWARDS = [
-  { key: 'courageous', emoji: '🦁', label: 'Most Courageous', load: api.leaderboard.mostCourageous },
-  { key: 'miss', emoji: '💨', label: 'Biggest Miss', load: api.leaderboard.biggestMiss },
-  { key: 'controversial', emoji: '🔥', label: 'Most Controversial', load: api.leaderboard.mostControversial },
-  { key: 'revised', emoji: '🔄', label: "Can't Make Up Their Mind", load: api.leaderboard.mostRevised },
-  { key: 'bestFriends', emoji: '🤝', label: 'Best Friends', load: api.leaderboard.bestFriends },
-  { key: 'star', emoji: '⭐', label: 'Star of the Show', load: api.leaderboard.starOfTheShow },
-  { key: 'joker', emoji: '🃏', label: 'The Joker', load: api.leaderboard.theJoker },
-  { key: 'lastMinute', emoji: '⚡', label: 'Last Minute', load: api.leaderboard.lastMinute },
-  { key: 'first', emoji: '🌅', label: 'First to Submit', load: api.leaderboard.firstToSubmit },
-] as const;
+const MEDALS = ['🥇', '🥈', '🥉'];
+const RANK_COLORS = ['text-amber', 'text-white/70', 'text-orange/70'];
+
+/** One line per award for the compact preview: who or what won, and a short detail. */
+function awardRows(h: HallOfFame) {
+  const names = (winners: { name: string }[]) => winners.map(w => w.name).join(', ');
+  const edits = (n: number) => `${n} edit${n !== 1 ? 's' : ''}`;
+  return [
+    {
+      emoji: '🦁',
+      label: 'Most Courageous',
+      winner: h.mostCourageous?.text,
+      detail: h.mostCourageous && `${h.mostCourageous.avg}% avg`,
+    },
+    {
+      emoji: '💨',
+      label: 'Biggest Miss',
+      winner: h.biggestMiss?.text,
+      detail: h.biggestMiss && `${h.biggestMiss.avg}% avg`,
+    },
+    {
+      emoji: '🔥',
+      label: 'Most Controversial',
+      winner: h.mostControversial?.text,
+      detail: h.mostControversial && `${h.mostControversial.avg}% avg`,
+    },
+    {
+      emoji: '🔄',
+      label: "Can't Make Up Their Mind",
+      winner: h.mostRevised?.text,
+      detail: h.mostRevised && edits(h.mostRevised.editCount),
+    },
+    { emoji: '🤝', label: 'Best Friends', winner: h.bestFriends.map(p => `${p.userA} & ${p.userB}`).join(', ') },
+    { emoji: '⭐', label: 'Star of the Show', winner: names(h.starOfTheShow) },
+    { emoji: '🃏', label: 'The Joker', winner: names(h.theJoker) },
+    { emoji: '⚡', label: 'Last Minute', winner: h.lastMinute?.text },
+    { emoji: '🌅', label: 'First to Submit', winner: h.firstToSubmit?.names.join(', ') },
+  ];
+}
 
 /** Admin-only previews of the leaderboard and Hall of Fame before the game is done. */
 export function PreviewTab() {
-  const [board, setBoard] = useState<any[] | null>(null);
-  const [hof, setHof] = useState<Record<string, any> | null>(null);
+  const [board, setBoard] = useState<LeaderboardEntry[] | null>(null);
+  const [hof, setHof] = useState<HallOfFame | null>(null);
 
-  const loadBoard = async () => {
+  const load = async <T,>(fetch: () => Promise<T>, set: (value: T) => void) => {
     try {
-      setBoard((await api.leaderboard.preview()) as any[]);
-    } catch (err: any) {
-      alert(err.message);
+      set(await fetch());
+    } catch (err) {
+      alert(errorMessage(err));
     }
-  };
-
-  const loadHof = async () => {
-    const results = await Promise.allSettled(AWARDS.map(a => (a.load as () => Promise<unknown>)()));
-    setHof(
-      Object.fromEntries(
-        AWARDS.map((a, i) => {
-          const r = results[i];
-          return [a.key, r.status === 'fulfilled' ? r.value : null];
-        }),
-      ),
-    );
   };
 
   return (
@@ -45,7 +61,7 @@ export function PreviewTab() {
         <p className="text-xs text-white/40">
           Current scores based on outcomes marked so far. Does not affect the real leaderboard.
         </p>
-        <button onClick={loadBoard} className="btn-primary w-full">
+        <button onClick={() => load(api.leaderboard.preview, setBoard)} className="btn-primary w-full">
           🔄 Calculate Scores
         </button>
       </div>
@@ -55,12 +71,12 @@ export function PreviewTab() {
           {board.length === 0 ? (
             <div className="card text-center py-8 text-white/40">No scores yet - no outcomes marked.</div>
           ) : (
-            board.map((u: any) => (
+            board.map(u => (
               <div key={u.id} className="card flex items-center gap-4">
                 <div
-                  className={`font-display text-2xl font-bold w-8 text-center ${u.rank === 1 ? 'text-amber' : u.rank === 2 ? 'text-white/70' : u.rank === 3 ? 'text-orange/70' : 'text-white/30'}`}
+                  className={`font-display text-2xl font-bold w-8 text-center ${RANK_COLORS[u.rank - 1] ?? 'text-white/30'}`}
                 >
-                  {u.rank === 1 ? '🥇' : u.rank === 2 ? '🥈' : u.rank === 3 ? '🥉' : `#${u.rank}`}
+                  {MEDALS[u.rank - 1] ?? `#${u.rank}`}
                 </div>
                 <div className="flex-1">
                   <p className="font-medium">{u.name}</p>
@@ -81,46 +97,33 @@ export function PreviewTab() {
       <div className="card space-y-3">
         <h3 className="font-medium">Hall of Fame Preview</h3>
         <p className="text-xs text-white/40">Preview all Hall of Fame cards based on current outcomes.</p>
-        <button onClick={loadHof} className="btn-primary w-full">
+        <button onClick={() => load(api.leaderboard.hallOfFame, setHof)} className="btn-primary w-full">
           🏆 Preview Hall of Fame
         </button>
       </div>
 
       {hof && (
         <div className="space-y-2">
-          {AWARDS.map(({ key, emoji, label }) => {
-            const val = hof[key];
-            if (!val || (Array.isArray(val) && val.length === 0))
-              return (
-                <div key={key} className="card flex items-center gap-3 opacity-40">
-                  <span className="text-xl">{emoji}</span>
-                  <div>
-                    <p className="font-medium text-sm">{label}</p>
-                    <p className="text-xs text-white/40">No data yet</p>
-                  </div>
-                </div>
-              );
-            const names = Array.isArray(val)
-              ? val.map((v: any) => v.name || (v.userA && v.userB ? `${v.userA} & ${v.userB}` : '')).join(', ')
-              : val.names?.join(', ') || val.name || val.text || '';
-            const detail = Array.isArray(val)
-              ? null
-              : val.avg != null
-                ? `${val.avg}% avg`
-                : val.editCount != null
-                  ? `${val.editCount} edit${val.editCount !== 1 ? 's' : ''}`
-                  : null;
-            return (
-              <div key={key} className="card flex items-center gap-3">
+          {awardRows(hof).map(({ emoji, label, winner, detail }) =>
+            winner ? (
+              <div key={label} className="card flex items-center gap-3">
                 <span className="text-xl">{emoji}</span>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm">{label}</p>
-                  <p className="text-xs text-white/60 truncate">{names}</p>
+                  <p className="text-xs text-white/60 truncate">{winner}</p>
                 </div>
                 {detail && <span className="text-xs text-amber flex-shrink-0">{detail}</span>}
               </div>
-            );
-          })}
+            ) : (
+              <div key={label} className="card flex items-center gap-3 opacity-40">
+                <span className="text-xl">{emoji}</span>
+                <div>
+                  <p className="font-medium text-sm">{label}</p>
+                  <p className="text-xs text-white/40">No data yet</p>
+                </div>
+              </div>
+            ),
+          )}
         </div>
       )}
     </div>

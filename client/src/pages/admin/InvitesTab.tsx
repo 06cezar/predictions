@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api } from '../../api';
+import { api, errorMessage } from '../../api';
 import { useCopied } from '../../hooks/useCopied';
 import { parseServerTime } from '../../time';
 
@@ -22,8 +22,8 @@ export function InvitesTab() {
     try {
       const link = (await api.invite.create()) as InviteLink;
       setLinks(prev => [link, ...prev]);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     }
   };
 
@@ -32,8 +32,8 @@ export function InvitesTab() {
     try {
       await api.invite.revoke(id);
       setLinks(prev => prev.filter(l => l.id !== id));
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     }
   };
 

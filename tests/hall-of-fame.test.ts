@@ -13,19 +13,19 @@ import {
   setPhase,
 } from './helpers';
 
-const HOF_ENDPOINTS = [
-  'most-courageous',
-  'most-controversial',
-  'biggest-miss',
-  'star-of-the-show',
-  'best-friends',
-  'most-revised',
-  'the-joker',
-  'last-minute',
-  'first-to-submit',
+const AWARDS = [
+  'mostCourageous',
+  'biggestMiss',
+  'mostControversial',
+  'mostRevised',
+  'lastMinute',
+  'firstToSubmit',
+  'starOfTheShow',
+  'theJoker',
+  'bestFriends',
 ];
 
-describe('Hall of Fame routes', () => {
+describe('Hall of Fame', () => {
   let app: ReturnType<typeof createTestApp>;
   let db: ReturnType<typeof setupTestDb>['db'];
 
@@ -96,32 +96,33 @@ describe('Hall of Fame routes', () => {
     return agent.get(path);
   }
 
-  const getAs = (token: string, endpoint: string) => fetchAs(token, `/api/leaderboard/${endpoint}`);
+  const hallOfFame = (token: string) => fetchAs(token, '/api/leaderboard/hall-of-fame');
+  const award = async (token: string, name: string) => (await hallOfFame(token)).body[name];
 
   describe('access control', () => {
-    it.each(HOF_ENDPOINTS)('%s requires auth', async endpoint => {
-      const res = await request(app).get(`/api/leaderboard/${endpoint}`);
+    it('requires auth', async () => {
+      const res = await request(app).get('/api/leaderboard/hall-of-fame');
       expect(res.status).toBe(401);
     });
 
-    it.each(HOF_ENDPOINTS)('%s is hidden from players before the game is done', async endpoint => {
+    it('is hidden from players before the game is done', async () => {
       seedGame();
       setPhase(db, 'reveal');
-      const res = await getAs('token-ana', endpoint);
-      expect(res.status).toBe(403);
+      expect((await hallOfFame('token-ana')).status).toBe(403);
     });
 
-    it.each(HOF_ENDPOINTS)('%s is visible to admins before the game is done', async endpoint => {
+    it('is visible to admins before the game is done, with every award', async () => {
       seedGame();
       setPhase(db, 'reveal');
-      const res = await getAs('token-zed', endpoint);
+      const res = await hallOfFame('token-zed');
       expect(res.status).toBe(200);
+      expect(Object.keys(res.body).sort()).toEqual([...AWARDS].sort());
     });
 
     it('preview leaderboard is admin-only', async () => {
       seedGame();
-      expect((await getAs('token-ana', 'preview')).status).toBe(403);
-      expect((await getAs('token-zed', 'preview')).status).toBe(200);
+      expect((await fetchAs('token-ana', '/api/leaderboard/preview')).status).toBe(403);
+      expect((await fetchAs('token-zed', '/api/leaderboard/preview')).status).toBe(200);
     });
   });
 
@@ -132,19 +133,19 @@ describe('Hall of Fame routes', () => {
     });
 
     it('most-courageous: lowest-rated prediction that came true', async () => {
-      const res = await getAs('token-ana', 'most-courageous');
-      expect(res.body).toEqual({ text: 'Bob moves abroad', authorName: null, targetName: 'Bob', avg: 20 });
+      const body = await award('token-ana', 'mostCourageous');
+      expect(body).toEqual({ text: 'Bob moves abroad', authorName: null, targetName: 'Bob', avg: 20 });
     });
 
     it('reveals author names when anonymous mode is off', async () => {
       db.update(schema.games).set({ anonymousPredictions: false }).run();
-      const res = await getAs('token-ana', 'most-courageous');
-      expect(res.body.authorName).toBe('Ana');
+      const body = await award('token-ana', 'mostCourageous');
+      expect(body.authorName).toBe('Ana');
     });
 
     it('most-controversial: highest rating spread', async () => {
-      const res = await getAs('token-ana', 'most-controversial');
-      expect(res.body).toEqual({
+      const body = await award('token-ana', 'mostControversial');
+      expect(body).toEqual({
         text: 'Cat learns piano',
         authorName: null,
         targetName: 'Cat',
@@ -155,23 +156,23 @@ describe('Hall of Fame routes', () => {
     });
 
     it('biggest-miss: highest-rated prediction that did not happen', async () => {
-      const res = await getAs('token-ana', 'biggest-miss');
-      expect(res.body).toEqual({ text: 'Bob adopts a cat', authorName: null, targetName: 'Bob', avg: 90 });
+      const body = await award('token-ana', 'biggestMiss');
+      expect(body).toEqual({ text: 'Bob adopts a cat', authorName: null, targetName: 'Bob', avg: 90 });
     });
 
     it('star-of-the-show: most predictions came true, ties broken by lowest rating', async () => {
-      const res = await getAs('token-ana', 'star-of-the-show');
-      expect(res.body).toEqual([{ name: 'Bob', count: 1 }]);
+      const body = await award('token-ana', 'starOfTheShow');
+      expect(body).toEqual([{ name: 'Bob', count: 1 }]);
     });
 
     it('best-friends: pairs whose predictions about each other both came true', async () => {
-      const res = await getAs('token-ana', 'best-friends');
-      expect(res.body).toEqual([{ userA: 'Ana', userB: 'Bob' }]);
+      const body = await award('token-ana', 'bestFriends');
+      expect(body).toEqual([{ userA: 'Ana', userB: 'Bob' }]);
     });
 
     it('most-revised: prediction with the most edits, with its history', async () => {
-      const res = await getAs('token-ana', 'most-revised');
-      expect(res.body).toEqual({
+      const body = await award('token-ana', 'mostRevised');
+      expect(body).toEqual({
         text: 'Cat learns piano',
         authorName: null,
         targetName: 'Cat',
@@ -181,13 +182,13 @@ describe('Hall of Fame routes', () => {
     });
 
     it('the-joker: fewest predictions about them came true', async () => {
-      const res = await getAs('token-ana', 'the-joker');
-      expect(res.body).toEqual([{ name: 'Dan', count: 0 }]);
+      const body = await award('token-ana', 'theJoker');
+      expect(body).toEqual([{ name: 'Dan', count: 0 }]);
     });
 
     it('last-minute: most recently updated prediction', async () => {
-      const res = await getAs('token-ana', 'last-minute');
-      expect(res.body).toEqual({
+      const body = await award('token-ana', 'lastMinute');
+      expect(body).toEqual({
         text: 'Dan quits his job',
         authorName: null,
         targetName: 'Dan',
@@ -196,15 +197,15 @@ describe('Hall of Fame routes', () => {
     });
 
     it('first-to-submit: author who finished writing earliest', async () => {
-      const res = await getAs('token-ana', 'first-to-submit');
-      expect(res.body).toEqual({ names: ['Dan'], tied: false });
+      const body = await award('token-ana', 'firstToSubmit');
+      expect(body).toEqual({ names: ['Dan'], tied: false });
     });
 
     it('first-to-submit: reports ties', async () => {
       const preds = db.select().from(schema.predictions).all();
       for (const p of preds) setUpdatedAt(p.id, '2026-04-01T10:00:00.000Z');
-      const res = await getAs('token-ana', 'first-to-submit');
-      expect(res.body).toEqual({ names: ['Ana', 'Bob', 'Cat', 'Dan'], tied: true });
+      const body = await award('token-ana', 'firstToSubmit');
+      expect(body).toEqual({ names: ['Ana', 'Bob', 'Cat', 'Dan'], tied: true });
     });
   });
 
@@ -245,6 +246,15 @@ describe('Hall of Fame routes', () => {
       const res = await fetchAs('token-ana', '/api/admin/export/hof.csv');
       expect(res.status).toBe(403);
     });
+
+    it('players can download the leaderboard once the game is done', async () => {
+      const res = await fetchAs('token-ana', '/api/leaderboard/export.csv');
+      expect(res.status).toBe(200);
+      expect(res.text.split('\n').slice(0, 2)).toEqual(['Rank,Name,True Predictions,Weighted Score', '1,"Ana",1,4']);
+
+      setPhase(db, 'reveal');
+      expect((await fetchAs('token-ana', '/api/leaderboard/export.csv')).status).toBe(403);
+    });
   });
 
   describe('empty game', () => {
@@ -253,20 +263,20 @@ describe('Hall of Fame routes', () => {
       setPhase(db, 'done');
     });
 
-    it.each([
-      ['most-courageous', null],
-      ['most-controversial', null],
-      ['biggest-miss', null],
-      ['star-of-the-show', []],
-      ['best-friends', []],
-      ['most-revised', null],
-      ['the-joker', []],
-      ['last-minute', null],
-      ['first-to-submit', null],
-    ])('%s returns %j', async (endpoint, expected) => {
-      const res = await getAs('token-ana', endpoint);
+    it('has no winners', async () => {
+      const res = await hallOfFame('token-ana');
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(expected);
+      expect(res.body).toEqual({
+        mostCourageous: null,
+        biggestMiss: null,
+        mostControversial: null,
+        mostRevised: null,
+        lastMinute: null,
+        firstToSubmit: null,
+        starOfTheShow: [],
+        theJoker: [],
+        bestFriends: [],
+      });
     });
   });
 });

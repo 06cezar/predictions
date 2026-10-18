@@ -27,8 +27,8 @@ describe('Leaderboard route', () => {
   });
 
   it('GET /api/leaderboard returns ranked list', async () => {
-    const alice = createUser(db, 'Alice', 'token-alice');
-    const bob = createUser(db, 'Bob', 'token-bob');
+    createUser(db, 'Alice', 'token-alice');
+    createUser(db, 'Bob', 'token-bob');
     setPhase(db, 'done');
 
     const agent = request.agent(app);

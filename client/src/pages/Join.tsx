@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '../api';
+import { api, errorMessage } from '../api';
 import { TokenReveal } from '../components/TokenReveal';
 
 interface Props {
@@ -25,9 +25,9 @@ export function Join({ onLogin }: Props) {
     api.invite
       .getLink(code)
       .then(() => setLinkValid(true))
-      .catch((err: any) => {
+      .catch(err => {
         setLinkValid(false);
-        setLinkError(err.message || 'Invalid invite link');
+        setLinkError(errorMessage(err) || 'Invalid invite link');
       });
   }, [code]);
 
@@ -42,8 +42,8 @@ export function Join({ onLogin }: Props) {
       await api.auth.login(result.token);
       // Show the token before entering: it's the only way back in later
       setJoined({ name: result.name, token: result.token });
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+    } catch (err) {
+      setError(errorMessage(err) || 'Something went wrong');
     } finally {
       setLoading(false);
     }

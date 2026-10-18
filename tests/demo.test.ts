@@ -87,7 +87,7 @@ describe('Demo games', () => {
     await agent.post('/api/admin/phase/advance');
     const board = (await agent.get('/api/leaderboard')).body;
     expect(board).toHaveLength(5);
-    expect((await agent.get('/api/leaderboard/most-courageous')).body).not.toBeNull();
+    expect((await agent.get('/api/leaderboard/hall-of-fame')).body.mostCourageous).not.toBeNull();
   });
 });
 

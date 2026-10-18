@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react';
-import { api, Settings } from '../../api';
+import { api, AdminStats, Player, Settings, errorMessage } from '../../api';
 import { useCopied } from '../../hooks/useCopied';
 
 type ProgressMode = 'submission' | 'rating' | 'outcomes';
 
 interface Props {
   settings: Settings;
-  stats: any;
+  stats: AdminStats | null;
   /** Players were added or removed, so progress stats are stale. */
   onChanged: () => void;
 }
 
 export function UsersTab({ settings, stats, onChanged }: Props) {
-  const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [adminUsers, setAdminUsers] = useState<Player[]>([]);
   const [newUserName, setNewUserName] = useState('');
   const [newUserToken, setNewUserToken] = useState('');
   const [editingUser, setEditingUser] = useState<number | null>(null);
@@ -33,17 +33,17 @@ export function UsersTab({ settings, stats, onChanged }: Props) {
     if (!newUserName.trim()) return;
     if (tokenMode === 'custom' && !customToken.trim()) return;
     try {
-      const user = (await api.admin.createUser(
+      const user = await api.admin.createUser(
         newUserName.trim(),
         tokenMode === 'custom' ? customToken.trim() : undefined,
-      )) as any;
+      );
       setAdminUsers(prev => [...prev, user]);
       setNewUserToken(user.token);
       setNewUserName('');
       setCustomToken('');
       onChanged();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     }
   };
 
@@ -53,31 +53,31 @@ export function UsersTab({ settings, stats, onChanged }: Props) {
       await api.admin.deleteUser(id);
       setAdminUsers(prev => prev.filter(u => u.id !== id));
       onChanged();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     }
   };
 
   const handleRenameUser = async (id: number) => {
     if (!editName.trim()) return;
     try {
-      const updated = (await api.admin.updateUser(id, { name: editName.trim() })) as any;
+      const updated = await api.admin.updateUser(id, { name: editName.trim() });
       setAdminUsers(prev => prev.map(u => (u.id === id ? { ...u, name: updated.name } : u)));
       setEditingUser(null);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     }
   };
 
   const handleRegenerateToken = async (id: number) => {
     if (!confirm('Regenerate token? The user will need the new token to log in.')) return;
     try {
-      const updated = (await api.admin.updateUser(id, { regenerateToken: true })) as any;
+      const updated = await api.admin.updateUser(id, { regenerateToken: true });
       setAdminUsers(prev => prev.map(u => (u.id === id ? { ...u, token: updated.token } : u)));
       setNewUserToken(updated.token);
       setEditingUser(null);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     }
   };
 
@@ -263,10 +263,10 @@ function ProgressBar({ label, done, total, unit }: { label: string; done: number
   );
 }
 
-function PlayerProgress({ stats, mode, userId }: { stats: any; mode: ProgressMode; userId: number }) {
+function PlayerProgress({ stats, mode, userId }: { stats: AdminStats; mode: ProgressMode; userId: number }) {
   const rows =
     mode === 'submission' ? stats.userProgress : mode === 'rating' ? stats.ratingProgress : stats.outcomesProgress;
-  const p = rows?.find((x: any) => x.id === userId);
+  const p = rows.find(x => x.id === userId);
   if (!p || p.expected === 0) return null;
   return p.complete ? (
     <span className="text-xs text-green-400 font-normal">✓ Done</span>

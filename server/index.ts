@@ -1,4 +1,5 @@
 import path from 'path';
+import express from 'express';
 import { initDb } from './db';
 import { startPhaseScheduler } from './phase-scheduler';
 import { createApp } from './app';
@@ -6,21 +7,18 @@ import { seedAdminFromEnv } from './services/games';
 
 const PORT = parseInt(process.env.PORT || '3011');
 
-// Init DB
-initDb();
+initDb(); // runs any pending migrations
 seedAdminFromEnv();
 
 const app = createApp();
 
-// Serve static files in production
+// In production the same server also serves the built React app (in development Vite does)
 if (process.env.NODE_ENV === 'production') {
-  app.use(require('express').static(path.join(process.cwd(), 'client/dist')));
-  app.get('*', (req: any, res: any) => {
-    res.sendFile(path.join(process.cwd(), 'client/dist/index.html'));
-  });
+  const clientDir = path.join(process.cwd(), 'client/dist');
+  app.use(express.static(clientDir));
+  app.get('*', (req, res) => res.sendFile(path.join(clientDir, 'index.html')));
 }
 
-// Start phase scheduler
 startPhaseScheduler();
 
 app.listen(PORT, () => {

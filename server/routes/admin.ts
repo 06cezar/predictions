@@ -24,12 +24,10 @@ import {
   clearGameData,
   newJoinCode,
 } from '../services/games';
-import { loadSnapshot, Prediction } from '../services/snapshot';
-import { calcScores } from '../services/scoring';
+import { avgRating, loadSnapshot, mean, roundedAvgRating } from '../services/snapshot';
+import { hallOfFameCsv, predictionsCsv, scoresCsv, sendCsv } from '../services/exports';
 import { changePhase } from '../services/phases';
 import { claimToken, generateUniqueToken } from '../services/tokens';
-import * as awards from '../services/awards';
-import { toIso } from '../time';
 
 const router = Router();
 
@@ -143,7 +141,7 @@ router.get('/predictions', (req, res) => {
         editCount: history.length,
         forgivenEdits: p.forgivenEdits ?? 0,
         history,
-        avgRating: scores.length > 0 ? Math.round(scores.reduce((s, r) => s + r, 0) / scores.length) : null,
+        avgRating: roundedAvgRating(g, p.id),
         ratingCount: scores.length,
         isAboutMe: p.targetId === me.id,
       };
@@ -197,15 +195,11 @@ router.get('/stats', (req, res) => {
   const allRatings = g.allRatings;
   const allUsers = g.users;
 
-  const avgRating =
-    allRatings.length > 0 ? Math.round(allRatings.reduce((sum, r) => sum + r.score, 0) / allRatings.length) : null;
-
-  // Count predictions with avg rating below threshold
-  let lowRatedCount = 0;
-  for (const p of allPredictions) {
-    const scores = g.ratings(p.id);
-    if (scores.length > 0 && scores.reduce((s, r) => s + r, 0) / scores.length < game.ratingThreshold) lowRatedCount++;
-  }
+  const overallAvg = allRatings.length > 0 ? Math.round(mean(allRatings.map(r => r.score))) : null;
+  const lowRatedCount = allPredictions.filter(p => {
+    const avg = avgRating(g, p.id);
+    return avg !== null && avg < game.ratingThreshold;
+  }).length;
 
   const total = allUsers.length;
 
@@ -245,7 +239,7 @@ router.get('/stats', (req, res) => {
   res.json({
     submissionCount: allPredictions.length,
     ratingCount: allRatings.length,
-    avgRating,
+    avgRating: overallAvg,
     lowRatedCount,
     completedUsers,
     totalUsers: total,
@@ -397,114 +391,18 @@ router.post('/predictions/:id/unforgive-edit', (req, res) => {
   res.json({ success: true, forgivenEdits: newForgiven, editCount: editCountOf(pred.id) });
 });
 
-/**
- * One quoted CSV cell. Text that starts like a formula (=, +, -, @) gets a
- * leading ' so a spreadsheet shows it instead of running it: names and
- * predictions are written by players.
- */
-function csvCell(v: any) {
-  const text = String(v ?? '');
-  const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
-  return `"${safe.replace(/"/g, '""')}"`;
-}
-
-function sendCsv(res: import('express').Response, filename: string, csv: string) {
-  res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  res.send(csv);
-}
-
-/** Hall of Fame as CSV, using the same award rules as the in-app Hall of Fame. */
 router.get('/export/hof.csv', (req, res) => {
   const { game } = res.locals;
-  const g = loadSnapshot(game.id);
-  const anon = game.anonymousPredictions;
-  const name = (id: number) => g.userName(id) ?? '';
-  const author = (p: Prediction) => (anon ? '?' : name(p.authorId));
-  const about = (p: Prediction, detail: string) => `About ${name(p.targetId)} - ${detail} - ${p.currentText}`;
-  const names = (winners: { name: string }[]) => winners.map(w => w.name).join(', ');
-
-  const rows: string[][] = [];
-
-  const courageous = awards.mostCourageous(g);
-  if (courageous) {
-    rows.push([
-      'Most Courageous',
-      author(courageous.prediction),
-      about(courageous.prediction, `avg ${Math.round(courageous.avg)}%`),
-    ]);
-  }
-
-  const miss = awards.biggestMiss(g);
-  if (miss) {
-    rows.push(['Biggest Miss', author(miss.prediction), about(miss.prediction, `avg ${Math.round(miss.avg)}%`)]);
-  }
-
-  const controversial = awards.mostControversial(g);
-  if (controversial) {
-    const detail = `avg ${Math.round(controversial.avg)}%, spread ${Math.round(controversial.stdDev)}`;
-    rows.push(['Most Controversial', author(controversial.prediction), about(controversial.prediction, detail)]);
-  }
-
-  const revised = awards.mostRevised(g);
-  if (revised) {
-    rows.push([
-      "Can't Make Up Their Mind",
-      author(revised.prediction),
-      about(revised.prediction, `${revised.history.length} edit${revised.history.length !== 1 ? 's' : ''}`),
-    ]);
-  }
-
-  const stars = awards.starOfTheShow(g);
-  if (stars.length > 0) rows.push(['Star of the Show', names(stars), `${stars[0].count} true predictions`]);
-
-  const jokers = awards.theJoker(g);
-  if (jokers.length > 0) rows.push(['The Joker', names(jokers), `${jokers[0].count} true predictions`]);
-
-  const friends = awards.bestFriends(g);
-  if (friends.length > 0) rows.push(['Best Friends', friends.map(p => `${p.userA} & ${p.userB}`).join(', '), '']);
-
-  const latest = awards.lastMinute(g);
-  if (latest) rows.push(['Last Minute', author(latest), about(latest, toIso(latest.updatedAt))]);
-
-  const first = awards.firstToSubmit(g);
-  if (first) rows.push(['First to Submit', first.names.join(', '), first.at]);
-
-  sendCsv(res, 'hall-of-fame.csv', ['Category,Winner,Detail', ...rows.map(r => r.map(csvCell).join(','))].join('\n'));
+  sendCsv(res, 'hall-of-fame.csv', hallOfFameCsv(game, loadSnapshot(game.id)));
 });
 
 router.get('/export/predictions.csv', (req, res) => {
-  const g = loadSnapshot(res.locals.game.id);
-
-  const rows = g.predictions.map(p => {
-    const outcome = g.outcome(p.id);
-    const scores = g.ratings(p.id);
-    const avgRating = scores.length > 0 ? Math.round(scores.reduce((s, r) => s + r, 0) / scores.length) : null;
-
-    return [
-      p.id,
-      csvCell(g.userName(p.authorId)),
-      csvCell(g.userName(p.targetId)),
-      csvCell(p.currentText),
-      avgRating ?? '',
-      scores.length,
-      g.history(p.id).length,
-      outcome?.happened == null ? '' : String(outcome.happened),
-    ].join(',');
-  });
-
-  sendCsv(
-    res,
-    'predictions.csv',
-    ['ID,Author,Target,Text,Avg Rating,Rating Count,Edit Count,Outcome', ...rows].join('\n'),
-  );
+  sendCsv(res, 'predictions.csv', predictionsCsv(loadSnapshot(res.locals.game.id)));
 });
 
 router.get('/export/scores.csv', (req, res) => {
   const { game } = res.locals;
-  const scores = calcScores(game.id, loadSnapshot(game.id), game.ratingThreshold);
-  const rows = scores.map(u => [u.rank, csvCell(u.name), u.score, u.weightedScore].join(','));
-  sendCsv(res, 'scores.csv', ['Rank,Name,True Predictions,Weighted Score', ...rows].join('\n'));
+  sendCsv(res, 'scores.csv', scoresCsv(game, loadSnapshot(game.id)));
 });
 
 /** Everything in this game as JSON (the raw database file would include every game). */

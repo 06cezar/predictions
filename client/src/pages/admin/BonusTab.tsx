@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api, Settings } from '../../api';
+import { api, BonusCategory, Settings, errorMessage } from '../../api';
 import { Toggle } from './shared';
 
 interface Props {
@@ -8,8 +8,8 @@ interface Props {
 }
 
 export function BonusTab({ settings, onChanged }: Props) {
-  const [categories, setCategories] = useState<any[]>([]);
-  const [players, setPlayers] = useState<any[]>([]);
+  const [categories, setCategories] = useState<BonusCategory[]>([]);
+  const [players, setPlayers] = useState<{ id: number; name: string }[]>([]);
   const [newName, setNewName] = useState('');
   const [newPoints, setNewPoints] = useState(5);
   const [editing, setEditing] = useState<number | null>(null);
@@ -30,20 +30,20 @@ export function BonusTab({ settings, onChanged }: Props) {
     try {
       const result = await api.admin.toggleBonusActive();
       onChanged({ bonusActive: result.bonusActive });
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     }
   };
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
     try {
-      const cat = (await api.bonus.createCategory(newName.trim(), newPoints)) as any;
+      const cat = await api.bonus.createCategory(newName.trim(), newPoints);
       setCategories(prev => [...prev, { ...cat, myVotes: [], tally: undefined, winners: [] }]);
       setNewName('');
       setNewPoints(5);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     }
   };
 
@@ -52,8 +52,8 @@ export function BonusTab({ settings, onChanged }: Props) {
       await api.bonus.updateCategory(id, { name: editName.trim(), points: editPoints });
       setCategories(prev => prev.map(c => (c.id === id ? { ...c, name: editName.trim(), points: editPoints } : c)));
       setEditing(null);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     }
   };
 
@@ -62,8 +62,8 @@ export function BonusTab({ settings, onChanged }: Props) {
     try {
       await api.bonus.deleteCategory(id);
       setCategories(prev => prev.filter(c => c.id !== id));
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err));
     }
   };
 
@@ -119,7 +119,7 @@ export function BonusTab({ settings, onChanged }: Props) {
                   .map(([id, pts]) => ({
                     id: parseInt(id),
                     pts,
-                    name: players.find((u: any) => u.id === parseInt(id))?.name ?? '?',
+                    name: players.find(u => u.id === parseInt(id))?.name ?? '?',
                   }))
                   .sort((a, b) => b.pts - a.pts)
               : [];
