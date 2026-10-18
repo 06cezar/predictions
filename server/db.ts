@@ -5,14 +5,11 @@ import path from 'path';
 import { migrate } from './migrate';
 
 /** Where SQLite files live. Production mounts a Fly.io volume at /data. */
-export const DATA_DIR = process.env.DATA_DIR
-  ?? (process.env.NODE_ENV === 'production' ? '/data' : process.cwd());
+export const DATA_DIR = process.env.DATA_DIR ?? (process.env.NODE_ENV === 'production' ? '/data' : process.cwd());
 
 // Tests inject their own in-memory DB via setDb(), so never open a file there:
 // parallel test workers racing to create predictions.db cause SQLITE_BUSY.
-const sqlite = new Database(
-  process.env.NODE_ENV === 'test' ? ':memory:' : path.join(DATA_DIR, 'predictions.db'),
-);
+const sqlite = new Database(process.env.NODE_ENV === 'test' ? ':memory:' : path.join(DATA_DIR, 'predictions.db'));
 sqlite.pragma('journal_mode = WAL');
 sqlite.pragma('foreign_keys = ON');
 

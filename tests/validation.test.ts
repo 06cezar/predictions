@@ -89,7 +89,9 @@ describe('Input validation and error responses', () => {
 
     it('when joining with an invite link', async () => {
       const admin = createUser(db, 'Admin', 'token-admin', true);
-      db.insert(schema.inviteLinks).values({ gameId: DEFAULT_GAME_ID, code: 'invite-code1', createdBy: admin.id }).run();
+      db.insert(schema.inviteLinks)
+        .values({ gameId: DEFAULT_GAME_ID, code: 'invite-code1', createdBy: admin.id })
+        .run();
       const res = await request(app).post('/api/invite/join/invite-code1').send({ name: long });
       expect(res.body.name).toHaveLength(40);
     });
@@ -103,13 +105,23 @@ describe('Input validation and error responses', () => {
       createUser(db, 'Bob', 'token-bob');
       createUser(db, 'Cleo', 'token-cleo');
       setPhase(db, 'submission', { bonusActive: true });
-      categoryId = db.insert(schema.bonusCategories).values({ gameId: DEFAULT_GAME_ID, name: 'Most likely to travel' }).returning().get().id;
+      categoryId = db
+        .insert(schema.bonusCategories)
+        .values({ gameId: DEFAULT_GAME_ID, name: 'Most likely to travel' })
+        .returning()
+        .get().id;
     });
 
     async function vote(nominees: string[]) {
       const agent = request.agent(app);
       await loginAs(agent, 'token-ana');
-      const ids = Object.fromEntries(db.select().from(schema.users).all().map(u => [u.name, u.id]));
+      const ids = Object.fromEntries(
+        db
+          .select()
+          .from(schema.users)
+          .all()
+          .map(u => [u.name, u.id]),
+      );
       return agent.post('/api/bonus/vote').send({
         categoryId,
         votes: nominees.map((name, i) => ({ rank: i + 1, nomineeId: ids[name] })),

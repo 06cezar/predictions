@@ -1,13 +1,21 @@
 import { eq, inArray } from 'drizzle-orm';
 import { db } from '../db';
 import {
-  games, users, predictions, predictionHistory, ratings, outcomes, notifications,
-  bonusCategories, bonusVotes, inviteLinks,
+  games,
+  users,
+  predictions,
+  predictionHistory,
+  ratings,
+  outcomes,
+  notifications,
+  bonusCategories,
+  bonusVotes,
+  inviteLinks,
 } from '../schema';
 import { randomJoinCode } from '../random';
 
 export const PHASES = ['submission', 'reveal', 'done'] as const;
-export type Phase = typeof PHASES[number];
+export type Phase = (typeof PHASES)[number];
 export type Game = typeof games.$inferSelect;
 export type GameChanges = Partial<Omit<typeof games.$inferInsert, 'id' | 'createdAt'>>;
 
@@ -39,7 +47,11 @@ export function newJoinCode(): string {
 }
 
 export function createGame(values: { name: string } & GameChanges): Game {
-  return db.insert(games).values({ joinCode: newJoinCode(), ...values }).returning().get();
+  return db
+    .insert(games)
+    .values({ joinCode: newJoinCode(), ...values })
+    .returning()
+    .get();
 }
 
 /** Can players still write and edit predictions? Admin override keeps it open. */
@@ -54,19 +66,28 @@ export function isSubmissionOpen(game: Game) {
 
 const gamePredictionIds = (gameId: number) =>
   db.select({ id: predictions.id }).from(predictions).where(eq(predictions.gameId, gameId));
-const gameUserIds = (gameId: number) =>
-  db.select({ id: users.id }).from(users).where(eq(users.gameId, gameId));
+const gameUserIds = (gameId: number) => db.select({ id: users.id }).from(users).where(eq(users.gameId, gameId));
 const gameCategoryIds = (gameId: number) =>
   db.select({ id: bonusCategories.id }).from(bonusCategories).where(eq(bonusCategories.gameId, gameId));
 
 /** Wipe a game's predictions, ratings, outcomes, bonus round and notifications, keeping its players. */
 export function clearGameData(gameId: number) {
-  db.delete(bonusVotes).where(inArray(bonusVotes.categoryId, gameCategoryIds(gameId))).run();
+  db.delete(bonusVotes)
+    .where(inArray(bonusVotes.categoryId, gameCategoryIds(gameId)))
+    .run();
   db.delete(bonusCategories).where(eq(bonusCategories.gameId, gameId)).run();
-  db.delete(notifications).where(inArray(notifications.userId, gameUserIds(gameId))).run();
-  db.delete(outcomes).where(inArray(outcomes.predictionId, gamePredictionIds(gameId))).run();
-  db.delete(ratings).where(inArray(ratings.predictionId, gamePredictionIds(gameId))).run();
-  db.delete(predictionHistory).where(inArray(predictionHistory.predictionId, gamePredictionIds(gameId))).run();
+  db.delete(notifications)
+    .where(inArray(notifications.userId, gameUserIds(gameId)))
+    .run();
+  db.delete(outcomes)
+    .where(inArray(outcomes.predictionId, gamePredictionIds(gameId)))
+    .run();
+  db.delete(ratings)
+    .where(inArray(ratings.predictionId, gamePredictionIds(gameId)))
+    .run();
+  db.delete(predictionHistory)
+    .where(inArray(predictionHistory.predictionId, gamePredictionIds(gameId)))
+    .run();
   db.delete(predictions).where(eq(predictions.gameId, gameId)).run();
 }
 

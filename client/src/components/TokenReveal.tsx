@@ -42,13 +42,15 @@ export function TokenReveal({ title, token, joinCode, onContinue }: Props) {
           <CopyField label="Join code" value={joinCode} />
           <CopyField label="Invite link" value={joinLink} />
           <p className="text-white/40 text-xs">
-            Anyone with the code can join while the game is in the submission phase.
-            You can turn this off or change the code in Admin → Settings.
+            Anyone with the code can join while the game is in the submission phase. You can turn this off or change the
+            code in Admin → Settings.
           </p>
         </>
       )}
 
-      <button onClick={onContinue} className="btn-primary w-full py-3">Enter the game →</button>
+      <button onClick={onContinue} className="btn-primary w-full py-3">
+        Enter the game →
+      </button>
     </div>
   );
 }

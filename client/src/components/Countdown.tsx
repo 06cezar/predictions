@@ -8,7 +8,7 @@ interface Props {
 }
 
 function formatTime(ms: number) {
-  if (ms <= 0) return { display: 'Time\'s up!', warning: null };
+  if (ms <= 0) return { display: "Time's up!", warning: null };
 
   const totalSeconds = Math.floor(ms / 1000);
   const days = Math.floor(totalSeconds / 86400);

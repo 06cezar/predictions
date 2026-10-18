@@ -28,19 +28,42 @@ export function loadSnapshot(gameId: number): GameSnapshot {
   const inGame = eq(predictions.gameId, gameId);
   const allUsers = db.select().from(users).where(eq(users.gameId, gameId)).all();
   const allPredictions = db.select().from(predictions).where(inGame).all();
-  const allOutcomes = db.select(getTableColumns(outcomes)).from(outcomes)
-    .innerJoin(predictions, eq(predictions.id, outcomes.predictionId)).where(inGame).orderBy(outcomes.id).all();
-  const allRatings = db.select(getTableColumns(ratings)).from(ratings)
-    .innerJoin(predictions, eq(predictions.id, ratings.predictionId)).where(inGame).orderBy(ratings.id).all();
-  const allHistory = db.select(getTableColumns(predictionHistory)).from(predictionHistory)
-    .innerJoin(predictions, eq(predictions.id, predictionHistory.predictionId)).where(inGame).orderBy(predictionHistory.id).all();
+  const allOutcomes = db
+    .select(getTableColumns(outcomes))
+    .from(outcomes)
+    .innerJoin(predictions, eq(predictions.id, outcomes.predictionId))
+    .where(inGame)
+    .orderBy(outcomes.id)
+    .all();
+  const allRatings = db
+    .select(getTableColumns(ratings))
+    .from(ratings)
+    .innerJoin(predictions, eq(predictions.id, ratings.predictionId))
+    .where(inGame)
+    .orderBy(ratings.id)
+    .all();
+  const allHistory = db
+    .select(getTableColumns(predictionHistory))
+    .from(predictionHistory)
+    .innerJoin(predictions, eq(predictions.id, predictionHistory.predictionId))
+    .where(inGame)
+    .orderBy(predictionHistory.id)
+    .all();
   const names = new Map(allUsers.map(u => [u.id, u.name]));
   const outcomeByPrediction = new Map<number, Outcome>();
   for (const o of allOutcomes) {
     if (!outcomeByPrediction.has(o.predictionId)) outcomeByPrediction.set(o.predictionId, o);
   }
-  const ratingsByPrediction = groupBy(allRatings, r => r.predictionId, r => r.score);
-  const historyByPrediction = groupBy(allHistory, h => h.predictionId, h => h.oldText);
+  const ratingsByPrediction = groupBy(
+    allRatings,
+    r => r.predictionId,
+    r => r.score,
+  );
+  const historyByPrediction = groupBy(
+    allHistory,
+    h => h.predictionId,
+    h => h.oldText,
+  );
 
   return {
     users: allUsers,

@@ -26,14 +26,21 @@ router.get('/', requireAdmin, (req, res) => {
 // POST /api/invite — admin: generate a new invite link
 router.post('/', requireAdmin, (req, res) => {
   const { user: me, game } = res.locals;
-  const link = db.insert(inviteLinks).values({ gameId: game.id, code: nanoid(12), createdBy: me.id }).returning().get();
+  const link = db
+    .insert(inviteLinks)
+    .values({ gameId: game.id, code: nanoid(12), createdBy: me.id })
+    .returning()
+    .get();
   res.json(link);
 });
 
 // DELETE /api/invite/:id — admin: revoke (delete) an invite link
 router.delete('/:id', requireAdmin, (req, res) => {
-  const link = db.select().from(inviteLinks)
-    .where(and(eq(inviteLinks.id, parseInt(req.params.id)), eq(inviteLinks.gameId, res.locals.game.id))).get();
+  const link = db
+    .select()
+    .from(inviteLinks)
+    .where(and(eq(inviteLinks.id, parseInt(req.params.id)), eq(inviteLinks.gameId, res.locals.game.id)))
+    .get();
   if (!link) return res.status(404).json({ error: 'Invite link not found' });
   if (link.usedBy) return res.status(400).json({ error: 'Cannot revoke a used invite link' });
   db.delete(inviteLinks).where(eq(inviteLinks.id, link.id)).run();

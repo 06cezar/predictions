@@ -1,7 +1,16 @@
 import { db } from '../server/db';
 import {
-  users, predictions, predictionHistory, ratings, outcomes, notifications,
-  bonusCategories, bonusVotes, inviteLinks, blockedTokens, games,
+  users,
+  predictions,
+  predictionHistory,
+  ratings,
+  outcomes,
+  notifications,
+  bonusCategories,
+  bonusVotes,
+  inviteLinks,
+  blockedTokens,
+  games,
 } from '../server/schema';
 
 /** Delete every row in every game, children before parents (foreign keys are on). */

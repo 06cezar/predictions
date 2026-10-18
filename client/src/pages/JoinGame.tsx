@@ -32,7 +32,10 @@ export function JoinGame({ onLogin }: Props) {
   const [joined, setJoined] = useState<JoinedGame | null>(null);
 
   useEffect(() => {
-    api.games.lookup(code).then(setGame).catch((err: any) => setLookupError(err.message || 'No game with that code'));
+    api.games
+      .lookup(code)
+      .then(setGame)
+      .catch((err: any) => setLookupError(err.message || 'No game with that code'));
   }, [code]);
 
   const join = async (e: FormEvent) => {
@@ -54,12 +57,17 @@ export function JoinGame({ onLogin }: Props) {
   };
 
   if (!game && !lookupError) {
-    return <Shell><p className="font-display text-2xl text-white/30 text-center">Finding game...</p></Shell>;
+    return (
+      <Shell>
+        <p className="font-display text-2xl text-white/30 text-center">Finding game...</p>
+      </Shell>
+    );
   }
 
-  const closedReason = lookupError
-    || (game && !game.openJoin && 'This game is invite-only. Ask its admin for a token.')
-    || (game && game.currentPhase !== 'submission' && 'This game has already started. Ask its admin to add you.');
+  const closedReason =
+    lookupError ||
+    (game && !game.openJoin && 'This game is invite-only. Ask its admin for a token.') ||
+    (game && game.currentPhase !== 'submission' && 'This game has already started. Ask its admin to add you.');
 
   return (
     <Shell>
@@ -77,14 +85,30 @@ export function JoinGame({ onLogin }: Props) {
       ) : (
         <form onSubmit={join} className="card space-y-5">
           <div>
-            <label className="block text-sm text-white/60 mb-2">Your name <span className="text-orange">*</span></label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Alex" className="input" maxLength={40} autoFocus autoComplete="off" />
+            <label className="block text-sm text-white/60 mb-2">
+              Your name <span className="text-orange">*</span>
+            </label>
+            <input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="e.g. Alex"
+              className="input"
+              maxLength={40}
+              autoFocus
+              autoComplete="off"
+            />
           </div>
           <div>
             <label className="block text-sm text-white/60 mb-2">
               Token <span className="text-white/30">(optional, generated if empty)</span>
             </label>
-            <input value={token} onChange={e => setToken(e.target.value)} placeholder="e.g. brave-owl-4821" className="input" autoComplete="off" />
+            <input
+              value={token}
+              onChange={e => setToken(e.target.value)}
+              placeholder="e.g. brave-owl-4821"
+              className="input"
+              autoComplete="off"
+            />
           </div>
           {error && <p className="text-orange text-sm text-center">{error}</p>}
           <button type="submit" disabled={busy || !name.trim()} className="btn-primary w-full text-base py-3">
@@ -95,7 +119,10 @@ export function JoinGame({ onLogin }: Props) {
 
       {!joined && (
         <p className="text-center text-white/30 text-sm">
-          Already have a token? <Link to="/login" className="text-amber hover:text-amber/80 transition-colors">Log in here</Link>
+          Already have a token?{' '}
+          <Link to="/login" className="text-amber hover:text-amber/80 transition-colors">
+            Log in here
+          </Link>
         </p>
       )}
     </Shell>

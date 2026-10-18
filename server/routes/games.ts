@@ -19,9 +19,11 @@ router.post('/', (req, res) => {
   if (!claim.ok) return res.status(409).json({ error: claim.error });
 
   const game = createGame({ name: gameName });
-  const admin = db.insert(users)
+  const admin = db
+    .insert(users)
     .values({ gameId: game.id, name: playerName, token: claim.token, isAdmin: true })
-    .returning().get();
+    .returning()
+    .get();
   logIn(req, admin);
 
   res.json({

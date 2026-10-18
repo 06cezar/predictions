@@ -16,8 +16,8 @@ interface Props {
 
 const PHASE_BUTTONS = [
   { id: 'submission', label: 'Submission', emoji: '✍️', color: 'bg-amber/20 border-amber/40 text-amber' },
-  { id: 'reveal',     label: 'Reveal',     emoji: '👁️', color: 'bg-violet/20 border-violet/40 text-[#a99eff]' },
-  { id: 'done',       label: 'Done',       emoji: '🏁', color: 'bg-orange/20 border-orange/40 text-orange' },
+  { id: 'reveal', label: 'Reveal', emoji: '👁️', color: 'bg-violet/20 border-violet/40 text-[#a99eff]' },
+  { id: 'done', label: 'Done', emoji: '🏁', color: 'bg-orange/20 border-orange/40 text-orange' },
 ] as const;
 
 export function SettingsTab({ settings, onUpdate, onChanged }: Props) {
@@ -51,10 +51,12 @@ export function SettingsTab({ settings, onUpdate, onChanged }: Props) {
 
       <div className="card space-y-4">
         <h3 className="font-medium">Deadlines</h3>
-        {([
-          ['submissionDeadline', 'Submission Deadline'],
-          ['revealDeadline', 'Reveal Deadline'],
-        ] as const).map(([key, label]) => (
+        {(
+          [
+            ['submissionDeadline', 'Submission Deadline'],
+            ['revealDeadline', 'Reveal Deadline'],
+          ] as const
+        ).map(([key, label]) => (
           <div key={key}>
             <label className="block text-sm text-white/60 mb-2">{label}</label>
             <input
@@ -73,7 +75,9 @@ export function SettingsTab({ settings, onUpdate, onChanged }: Props) {
           <label className="block text-sm font-medium mb-0.5">
             Rating Threshold: <span className="text-orange font-semibold">{threshold}%</span>
           </label>
-          <p className="text-xs text-white/40 mb-2">Predictions rated above this are considered "likely" - lower ratings score more points</p>
+          <p className="text-xs text-white/40 mb-2">
+            Predictions rated above this are considered "likely" - lower ratings score more points
+          </p>
           <input
             type="range"
             min={0}
@@ -98,9 +102,11 @@ export function SettingsTab({ settings, onUpdate, onChanged }: Props) {
         />
         <ToggleRow
           title="Anonymous Predictions"
-          description={settings.anonymousPredictions
-            ? 'Hide who wrote each prediction across all phases'
-            : 'Author names are visible across all phases'}
+          description={
+            settings.anonymousPredictions
+              ? 'Hide who wrote each prediction across all phases'
+              : 'Author names are visible across all phases'
+          }
           on={settings.anonymousPredictions}
           onClick={() => onUpdate({ anonymousPredictions: !settings.anonymousPredictions })}
           color="bg-violet"
@@ -113,7 +119,11 @@ export function SettingsTab({ settings, onUpdate, onChanged }: Props) {
         <h3 className="font-medium">Export Data</h3>
         <p className="text-xs text-white/40">Download this game's data.</p>
         <div className="flex gap-2">
-          <a href="/api/admin/export/predictions.csv" download className="btn-secondary flex-1 text-center text-sm py-2">
+          <a
+            href="/api/admin/export/predictions.csv"
+            download
+            className="btn-secondary flex-1 text-center text-sm py-2"
+          >
             📋 Predictions
           </a>
           <a href="/api/admin/export/scores.csv" download className="btn-secondary flex-1 text-center text-sm py-2">
@@ -142,11 +152,16 @@ function GameSection({ settings, onUpdate, onChanged }: Props) {
   };
 
   const regenerate = async () => {
-    if (!regenerateConfirm) { setRegenerateConfirm(true); return; }
+    if (!regenerateConfirm) {
+      setRegenerateConfirm(true);
+      return;
+    }
     try {
       const { joinCode } = await api.admin.regenerateJoinCode();
       onChanged({ joinCode });
-    } catch (err: any) { alert(err.message); }
+    } catch (err: any) {
+      alert(err.message);
+    }
     setRegenerateConfirm(false);
   };
 
@@ -183,9 +198,11 @@ function GameSection({ settings, onUpdate, onChanged }: Props) {
       </div>
       <ToggleRow
         title="Open joining"
-        description={settings.openJoin
-          ? 'Anyone with the code can join while the game is in submission'
-          : 'Invite-only: add players yourself or send one-use invite links'}
+        description={
+          settings.openJoin
+            ? 'Anyone with the code can join while the game is in submission'
+            : 'Invite-only: add players yourself or send one-use invite links'
+        }
         on={settings.openJoin}
         onClick={() => onUpdate({ openJoin: !settings.openJoin })}
       />
@@ -203,7 +220,9 @@ function PhaseControl({ settings, onChanged }: Pick<Props, 'settings' | 'onChang
       // A deadline that had already passed for the new phase is cleared by the server
       onChanged({ currentPhase: newPhase, submissionDeadline, revealDeadline });
       setConfirming(null);
-    } catch (err: any) { alert(err.message); }
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   const choose = (phase: Phase) => {
@@ -214,7 +233,10 @@ function PhaseControl({ settings, onChanged }: Pick<Props, 'settings' | 'onChang
       return;
     }
     setBonusDoneWarning(false);
-    if (confirming !== phase) { setConfirming(phase); return; }
+    if (confirming !== phase) {
+      setConfirming(phase);
+      return;
+    }
     setPhase(phase);
   };
 
@@ -232,17 +254,20 @@ function PhaseControl({ settings, onChanged }: Pick<Props, 'settings' | 'onChang
               onBlur={() => setConfirming(null)}
               disabled={isActive}
               className={`relative flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all font-medium text-sm
-                ${isActive
-                  ? `${color} scale-105 shadow-lg cursor-default`
-                  : isConfirming
-                    ? 'bg-white/20 border-white/40 text-white animate-pulse'
-                    : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white/70 hover:border-white/20'
+                ${
+                  isActive
+                    ? `${color} scale-105 shadow-lg cursor-default`
+                    : isConfirming
+                      ? 'bg-white/20 border-white/40 text-white animate-pulse'
+                      : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white/70 hover:border-white/20'
                 }`}
             >
               <span className="text-2xl">{emoji}</span>
               <span>{isConfirming ? 'Confirm?' : label}</span>
               {isActive && (
-                <span className="absolute -top-2 -right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center text-navy text-xs font-bold">✓</span>
+                <span className="absolute -top-2 -right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center text-navy text-xs font-bold">
+                  ✓
+                </span>
               )}
             </button>
           );
@@ -254,7 +279,10 @@ function PhaseControl({ settings, onChanged }: Pick<Props, 'settings' | 'onChang
           <p className="text-xs text-white/50">Bonus round is not active. Do you want to go to Done without it?</p>
           <div className="flex gap-2 pt-1">
             <button
-              onClick={() => { setBonusDoneWarning(false); setPhase('done'); }}
+              onClick={() => {
+                setBonusDoneWarning(false);
+                setPhase('done');
+              }}
               className="px-3 py-1.5 rounded-lg text-xs font-medium bg-orange/20 text-orange hover:bg-orange/30 transition-colors"
             >
               Skip bonus → Done
@@ -277,22 +305,32 @@ function DangerZone() {
   const [confirm, setConfirm] = useState(false);
 
   const reset = async () => {
-    if (!confirm) { setConfirm(true); return; }
+    if (!confirm) {
+      setConfirm(true);
+      return;
+    }
     try {
       await api.admin.resetGame();
       window.location.reload();
-    } catch (err: any) { alert(err.message); }
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   return (
     <div className="card border border-red-500/20 space-y-3">
       <h3 className="font-medium text-red-400">Danger Zone</h3>
-      <p className="text-xs text-white/40">Reset the game - all predictions, ratings and outcomes will be deleted. Users are kept. Phase resets to submission.</p>
+      <p className="text-xs text-white/40">
+        Reset the game - all predictions, ratings and outcomes will be deleted. Users are kept. Phase resets to
+        submission.
+      </p>
       <button
         onClick={reset}
         onBlur={() => setConfirm(false)}
         className={`w-full py-2.5 rounded-xl font-medium text-sm transition-all ${
-          confirm ? 'bg-red-500 text-white animate-pulse' : 'bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20'
+          confirm
+            ? 'bg-red-500 text-white animate-pulse'
+            : 'bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20'
         }`}
       >
         {confirm ? '⚠️ Click again to confirm reset' : '🗑️ Reset Game'}

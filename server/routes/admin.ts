@@ -1,9 +1,29 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { users, predictions, predictionHistory, ratings, outcomes, notifications, bonusCategories, bonusVotes, inviteLinks } from '../schema';
+import {
+  users,
+  predictions,
+  predictionHistory,
+  ratings,
+  outcomes,
+  notifications,
+  bonusCategories,
+  bonusVotes,
+  inviteLinks,
+} from '../schema';
 import { eq, and, inArray, getTableColumns } from 'drizzle-orm';
 import { requireAdmin } from '../auth';
-import { Game, GameChanges, PHASES, Phase, cleanName, getGame, updateGame, clearGameData, newJoinCode } from '../services/games';
+import {
+  Game,
+  GameChanges,
+  PHASES,
+  Phase,
+  cleanName,
+  getGame,
+  updateGame,
+  clearGameData,
+  newJoinCode,
+} from '../services/games';
 import { loadSnapshot, Prediction } from '../services/snapshot';
 import { calcScores } from '../services/scoring';
 import { changePhase } from '../services/phases';
@@ -18,12 +38,20 @@ router.use(requireAdmin);
 
 /** A player of this game, or undefined (also for players of other games). */
 function findPlayer(game: Game, id: number) {
-  return db.select().from(users).where(and(eq(users.id, id), eq(users.gameId, game.id))).get();
+  return db
+    .select()
+    .from(users)
+    .where(and(eq(users.id, id), eq(users.gameId, game.id)))
+    .get();
 }
 
 /** A prediction of this game, or undefined (also for predictions of other games). */
 function findPrediction(game: Game, id: number) {
-  return db.select().from(predictions).where(and(eq(predictions.id, id), eq(predictions.gameId, game.id))).get();
+  return db
+    .select()
+    .from(predictions)
+    .where(and(eq(predictions.id, id), eq(predictions.gameId, game.id)))
+    .get();
 }
 
 router.get('/users', (req, res) => {
@@ -64,8 +92,11 @@ router.delete('/users/:id', (req, res) => {
   const id = player.id;
 
   // Predictions by or about this player, and everything hanging off them
-  const predIds = db.select({ id: predictions.id }).from(predictions)
-    .where(eq(predictions.authorId, id)).all()
+  const predIds = db
+    .select({ id: predictions.id })
+    .from(predictions)
+    .where(eq(predictions.authorId, id))
+    .all()
     .concat(db.select({ id: predictions.id }).from(predictions).where(eq(predictions.targetId, id)).all())
     .map(p => p.id);
   if (predIds.length > 0) {
@@ -90,31 +121,34 @@ router.delete('/users/:id', (req, res) => {
 router.get('/predictions', (req, res) => {
   const { user: me, game } = res.locals;
   const g = loadSnapshot(game.id);
-  const historyRows = db.select(getTableColumns(predictionHistory))
+  const historyRows = db
+    .select(getTableColumns(predictionHistory))
     .from(predictionHistory)
     .innerJoin(predictions, eq(predictions.id, predictionHistory.predictionId))
     .where(eq(predictions.gameId, game.id))
     .all();
   const player = (id: number) => ({ id, name: g.userName(id) });
 
-  res.json(g.predictions.map(p => {
-    const scores = g.ratings(p.id);
-    const history = historyRows.filter(h => h.predictionId === p.id);
-    return {
-      id: p.id,
-      author: player(p.authorId),
-      target: player(p.targetId),
-      currentText: p.currentText,
-      createdAt: p.createdAt,
-      updatedAt: p.updatedAt,
-      editCount: history.length,
-      forgivenEdits: p.forgivenEdits ?? 0,
-      history,
-      avgRating: scores.length > 0 ? Math.round(scores.reduce((s, r) => s + r, 0) / scores.length) : null,
-      ratingCount: scores.length,
-      isAboutMe: p.targetId === me.id,
-    };
-  }));
+  res.json(
+    g.predictions.map(p => {
+      const scores = g.ratings(p.id);
+      const history = historyRows.filter(h => h.predictionId === p.id);
+      return {
+        id: p.id,
+        author: player(p.authorId),
+        target: player(p.targetId),
+        currentText: p.currentText,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+        editCount: history.length,
+        forgivenEdits: p.forgivenEdits ?? 0,
+        history,
+        avgRating: scores.length > 0 ? Math.round(scores.reduce((s, r) => s + r, 0) / scores.length) : null,
+        ratingCount: scores.length,
+        isAboutMe: p.targetId === me.id,
+      };
+    }),
+  );
 });
 
 router.delete('/predictions/:id', (req, res) => {
@@ -129,14 +163,27 @@ router.delete('/predictions/:id', (req, res) => {
 
   // Remove prediction_about_you notification for target
   db.delete(notifications)
-    .where(and(eq(notifications.userId, pred.targetId), eq(notifications.type, 'prediction_about_you'), eq(notifications.authorId, pred.authorId)))
+    .where(
+      and(
+        eq(notifications.userId, pred.targetId),
+        eq(notifications.type, 'prediction_about_you'),
+        eq(notifications.authorId, pred.authorId),
+      ),
+    )
     .run();
   // Remove outcome_marked notification for author (match by predictionId in meta)
-  const outcomeNotifs = db.select({ id: notifications.id, meta: notifications.meta })
+  const outcomeNotifs = db
+    .select({ id: notifications.id, meta: notifications.meta })
     .from(notifications)
     .where(and(eq(notifications.userId, pred.authorId), eq(notifications.type, 'outcome_marked')))
     .all()
-    .filter(n => { try { return JSON.parse(n.meta ?? '{}').predictionId === id; } catch { return false; } });
+    .filter(n => {
+      try {
+        return JSON.parse(n.meta ?? '{}').predictionId === id;
+      } catch {
+        return false;
+      }
+    });
   for (const n of outcomeNotifs) {
     db.delete(notifications).where(eq(notifications.id, n.id)).run();
   }
@@ -150,9 +197,8 @@ router.get('/stats', (req, res) => {
   const allRatings = g.allRatings;
   const allUsers = g.users;
 
-  const avgRating = allRatings.length > 0
-    ? Math.round(allRatings.reduce((sum, r) => sum + r.score, 0) / allRatings.length)
-    : null;
+  const avgRating =
+    allRatings.length > 0 ? Math.round(allRatings.reduce((sum, r) => sum + r.score, 0) / allRatings.length) : null;
 
   // Count predictions with avg rating below threshold
   let lowRatedCount = 0;
@@ -174,10 +220,8 @@ router.get('/stats', (req, res) => {
   // Rating progress: match the same logic as /to-rate endpoint
   const ratingProgress = allUsers.map(u => {
     const myTargetIds = new Set(allPredictions.filter(p => p.authorId === u.id).map(p => p.targetId));
-    const rateable = allPredictions.filter(p =>
-      p.authorId !== u.id &&
-      p.targetId !== u.id &&
-      myTargetIds.has(p.targetId)
+    const rateable = allPredictions.filter(
+      p => p.authorId !== u.id && p.targetId !== u.id && myTargetIds.has(p.targetId),
     ).length;
     const given = allRatings.filter(r => r.userId === u.id).length;
     return { id: u.id, name: u.name, written: given, expected: rateable, complete: rateable > 0 && given >= rateable };
@@ -188,7 +232,13 @@ router.get('/stats', (req, res) => {
   const outcomesProgress = allUsers.map(u => {
     const aboutUser = allPredictions.filter(p => p.targetId === u.id);
     const marked = aboutUser.filter(p => g.outcome(p.id)?.happened != null).length;
-    return { id: u.id, name: u.name, written: marked, expected: aboutUser.length, complete: aboutUser.length > 0 && marked >= aboutUser.length };
+    return {
+      id: u.id,
+      name: u.name,
+      written: marked,
+      expected: aboutUser.length,
+      complete: aboutUser.length > 0 && marked >= aboutUser.length,
+    };
   });
   const markedPredictions = g.outcomes.filter(o => o.happened !== null).length;
 
@@ -212,7 +262,13 @@ router.get('/settings', (req, res) => {
   res.json(res.locals.game);
 });
 
-const BOOLEAN_SETTINGS = ['openJoin', 'autoAdvancePhase', 'adminOverride', 'anonymousPredictions', 'bonusActive'] as const;
+const BOOLEAN_SETTINGS = [
+  'openJoin',
+  'autoAdvancePhase',
+  'adminOverride',
+  'anonymousPredictions',
+  'bonusActive',
+] as const;
 const DEADLINES = ['submissionDeadline', 'revealDeadline'] as const;
 
 // The phase is not a setting: it changes only through /phase/*, so notifications
@@ -364,7 +420,7 @@ router.get('/export/hof.csv', (req, res) => {
   const g = loadSnapshot(game.id);
   const anon = game.anonymousPredictions;
   const name = (id: number) => g.userName(id) ?? '';
-  const author = (p: Prediction) => anon ? '?' : name(p.authorId);
+  const author = (p: Prediction) => (anon ? '?' : name(p.authorId));
   const about = (p: Prediction, detail: string) => `About ${name(p.targetId)} - ${detail} - ${p.currentText}`;
   const names = (winners: { name: string }[]) => winners.map(w => w.name).join(', ');
 
@@ -372,7 +428,11 @@ router.get('/export/hof.csv', (req, res) => {
 
   const courageous = awards.mostCourageous(g);
   if (courageous) {
-    rows.push(['Most Courageous', author(courageous.prediction), about(courageous.prediction, `avg ${Math.round(courageous.avg)}%`)]);
+    rows.push([
+      'Most Courageous',
+      author(courageous.prediction),
+      about(courageous.prediction, `avg ${Math.round(courageous.avg)}%`),
+    ]);
   }
 
   const miss = awards.biggestMiss(g);
@@ -388,7 +448,11 @@ router.get('/export/hof.csv', (req, res) => {
 
   const revised = awards.mostRevised(g);
   if (revised) {
-    rows.push(["Can't Make Up Their Mind", author(revised.prediction), about(revised.prediction, `${revised.history.length} edit${revised.history.length !== 1 ? 's' : ''}`)]);
+    rows.push([
+      "Can't Make Up Their Mind",
+      author(revised.prediction),
+      about(revised.prediction, `${revised.history.length} edit${revised.history.length !== 1 ? 's' : ''}`),
+    ]);
   }
 
   const stars = awards.starOfTheShow(g);
@@ -415,9 +479,7 @@ router.get('/export/predictions.csv', (req, res) => {
   const rows = g.predictions.map(p => {
     const outcome = g.outcome(p.id);
     const scores = g.ratings(p.id);
-    const avgRating = scores.length > 0
-      ? Math.round(scores.reduce((s, r) => s + r, 0) / scores.length)
-      : null;
+    const avgRating = scores.length > 0 ? Math.round(scores.reduce((s, r) => s + r, 0) / scores.length) : null;
 
     return [
       p.id,
@@ -431,7 +493,11 @@ router.get('/export/predictions.csv', (req, res) => {
     ].join(',');
   });
 
-  sendCsv(res, 'predictions.csv', ['ID,Author,Target,Text,Avg Rating,Rating Count,Edit Count,Outcome', ...rows].join('\n'));
+  sendCsv(
+    res,
+    'predictions.csv',
+    ['ID,Author,Target,Text,Avg Rating,Rating Count,Edit Count,Outcome', ...rows].join('\n'),
+  );
 });
 
 router.get('/export/scores.csv', (req, res) => {
@@ -458,9 +524,10 @@ router.get('/export/game.json', (req, res) => {
     ratings: g.allRatings,
     outcomes: g.outcomes,
     bonusCategories: categories,
-    bonusVotes: categoryIds.length > 0
-      ? db.select().from(bonusVotes).where(inArray(bonusVotes.categoryId, categoryIds)).all()
-      : [],
+    bonusVotes:
+      categoryIds.length > 0
+        ? db.select().from(bonusVotes).where(inArray(bonusVotes.categoryId, categoryIds)).all()
+        : [],
     inviteLinks: db.select().from(inviteLinks).where(eq(inviteLinks.gameId, game.id)).all(),
   });
 });
@@ -468,7 +535,12 @@ router.get('/export/game.json', (req, res) => {
 router.post('/reset', (req, res) => {
   const { game } = res.locals;
   clearGameData(game.id);
-  updateGame(game.id, { currentPhase: 'submission', submissionDeadline: null, revealDeadline: null, bonusActive: false });
+  updateGame(game.id, {
+    currentPhase: 'submission',
+    submissionDeadline: null,
+    revealDeadline: null,
+    bonusActive: false,
+  });
   res.json({ success: true });
 });
 

@@ -49,7 +49,11 @@ describe('Demo games', () => {
     const second = await startDemo();
     expect(first.res.body.game.id).not.toBe(second.res.body.game.id);
 
-    const tokens = db.select({ token: schema.users.token }).from(schema.users).all().map(u => u.token);
+    const tokens = db
+      .select({ token: schema.users.token })
+      .from(schema.users)
+      .all()
+      .map(u => u.token);
     expect(new Set(tokens).size).toBe(tokens.length);
   });
 
@@ -92,7 +96,13 @@ describe('Scheduled tasks', () => {
   const now = new Date('2026-10-17T12:00:00.000Z');
   const sqliteTime = (d: Date) => d.toISOString().replace('T', ' ').slice(0, 19);
   const hoursAgo = (h: number) => sqliteTime(new Date(now.getTime() - h * 3600_000));
-  const gameIds = () => db.select({ id: schema.games.id }).from(schema.games).all().map(g => g.id).sort((a, b) => a - b);
+  const gameIds = () =>
+    db
+      .select({ id: schema.games.id })
+      .from(schema.games)
+      .all()
+      .map(g => g.id)
+      .sort((a, b) => a - b);
 
   beforeEach(() => {
     ({ db } = setupTestDb());
@@ -116,7 +126,10 @@ describe('Scheduled tasks', () => {
   it('advances only games whose deadline has passed', () => {
     setPhase(db, 'submission', { submissionDeadline: '2026-10-17T11:00:00.000Z' });
     const later = createGame(db, 'Later', { submissionDeadline: '2026-10-18T11:00:00.000Z' });
-    const manual = createGame(db, 'Manual', { submissionDeadline: '2026-10-17T11:00:00.000Z', autoAdvancePhase: false });
+    const manual = createGame(db, 'Manual', {
+      submissionDeadline: '2026-10-17T11:00:00.000Z',
+      autoAdvancePhase: false,
+    });
     createUser(db, 'P', 'token-p');
 
     runScheduledTasks(now);

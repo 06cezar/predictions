@@ -11,10 +11,12 @@ export function notifyAllUsersPhaseChange(gameId: number, phase: string) {
     .run();
 
   for (const u of gameUserIds.all()) {
-    db.insert(notifications).values({
-      userId: u.id,
-      type: 'phase_changed',
-      meta: JSON.stringify({ phase }),
-    }).run();
+    db.insert(notifications)
+      .values({
+        userId: u.id,
+        type: 'phase_changed',
+        meta: JSON.stringify({ phase }),
+      })
+      .run();
   }
 }

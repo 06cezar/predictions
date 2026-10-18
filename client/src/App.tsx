@@ -21,7 +21,11 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   // The server keeps the session; after any login, ask it who we are (and in which game).
-  const loadMe = () => api.users.me().then(setUser).catch(() => setUser(null));
+  const loadMe = () =>
+    api.users
+      .me()
+      .then(setUser)
+      .catch(() => setUser(null));
 
   useEffect(() => {
     loadMe().finally(() => setLoading(false));
@@ -39,16 +43,10 @@ function App() {
     <BrowserRouter>
       {user?.game?.isDemo && <DemoGuide key={user.game.id} gameId={user.game.id} onLogin={loadMe} />}
       <Routes>
-        <Route path="/login" element={
-          user ? <Navigate to="/" /> : <Welcome onLogin={loadMe} />
-        } />
-        <Route path="/join/:code" element={
-          user ? <Navigate to="/" /> : <Join onLogin={loadMe} />
-        } />
+        <Route path="/login" element={user ? <Navigate to="/" /> : <Welcome onLogin={loadMe} />} />
+        <Route path="/join/:code" element={user ? <Navigate to="/" /> : <Join onLogin={loadMe} />} />
         <Route path="/about" element={<About loggedIn={!!user} onLogin={loadMe} />} />
-        <Route path="/game/:code" element={
-          user ? <Navigate to="/" /> : <JoinGame onLogin={loadMe} />
-        } />
+        <Route path="/game/:code" element={user ? <Navigate to="/" /> : <JoinGame onLogin={loadMe} />} />
         {user ? (
           <>
             <Route path="/" element={<Dashboard user={user} onLogout={() => setUser(null)} />} />

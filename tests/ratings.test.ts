@@ -1,14 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
-import {
-  setupTestDb,
-  createUser,
-  createPrediction,
-  createRating,
-  createTestApp,
-  loginAs,
-  setPhase,
-} from './helpers';
+import { setupTestDb, createUser, createPrediction, createRating, createTestApp, loginAs, setPhase } from './helpers';
 
 describe('Ratings routes', () => {
   let app: ReturnType<typeof createTestApp>;

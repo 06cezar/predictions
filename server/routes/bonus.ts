@@ -10,7 +10,11 @@ const router = Router();
 
 /** A bonus category of this game, or undefined (also for other games' categories). */
 function findCategory(game: Game, id: number) {
-  return db.select().from(bonusCategories).where(and(eq(bonusCategories.id, id), eq(bonusCategories.gameId, game.id))).get();
+  return db
+    .select()
+    .from(bonusCategories)
+    .where(and(eq(bonusCategories.id, id), eq(bonusCategories.gameId, game.id)))
+    .get();
 }
 
 /** Points for a category: a whole number from 1 to 100, or null if invalid. */
@@ -33,7 +37,9 @@ router.get('/', requireAuth, (req, res) => {
   const showTally = game.currentPhase === 'done' || me.isAdmin;
 
   const categories = allCats.map(cat => {
-    const myVotes = db.select().from(bonusVotes)
+    const myVotes = db
+      .select()
+      .from(bonusVotes)
       .where(and(eq(bonusVotes.categoryId, cat.id), eq(bonusVotes.voterId, me.id)))
       .all()
       .sort((a, b) => a.rank - b.rank);
@@ -90,18 +96,24 @@ router.post('/vote', requireAuth, (req, res) => {
     return res.status(400).json({ error: `Must rank places 1 to ${required}` });
   }
   const nomineeIds = votes.map((v: any) => v.nomineeId);
-  if (new Set(nomineeIds).size !== required) return res.status(400).json({ error: 'Cannot vote for same person twice' });
+  if (new Set(nomineeIds).size !== required)
+    return res.status(400).json({ error: 'Cannot vote for same person twice' });
   if (nomineeIds.includes(me.id)) return res.status(400).json({ error: 'Cannot vote for yourself' });
-
 
   // Verify all nominees are players of this game
   for (const nid of nomineeIds) {
-    const u = db.select({ id: users.id }).from(users).where(and(eq(users.id, nid), eq(users.gameId, game.id))).get();
+    const u = db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.id, nid), eq(users.gameId, game.id)))
+      .get();
     if (!u) return res.status(400).json({ error: `User ${nid} not found` });
   }
 
   // Replace votes
-  db.delete(bonusVotes).where(and(eq(bonusVotes.categoryId, categoryId), eq(bonusVotes.voterId, me.id))).run();
+  db.delete(bonusVotes)
+    .where(and(eq(bonusVotes.categoryId, categoryId), eq(bonusVotes.voterId, me.id)))
+    .run();
   for (const v of votes) {
     db.insert(bonusVotes).values({ categoryId, voterId: me.id, nomineeId: v.nomineeId, rank: v.rank }).run();
   }
@@ -115,9 +127,11 @@ router.post('/categories', requireAdmin, (req, res) => {
   if (typeof name !== 'string' || !name.trim()) return res.status(400).json({ error: 'name required' });
   const pts = points === undefined || points === '' ? 5 : parsePoints(points);
   if (pts === null) return res.status(400).json({ error: BAD_POINTS });
-  const cat = db.insert(bonusCategories)
+  const cat = db
+    .insert(bonusCategories)
     .values({ gameId: res.locals.game.id, name: name.trim(), points: pts })
-    .returning().get();
+    .returning()
+    .get();
   res.json(cat);
 });
 

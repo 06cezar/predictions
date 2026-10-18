@@ -19,12 +19,16 @@ wipeAllData();
 
 const game = createGame({ name: process.env.ADMIN_GAME_NAME || 'Predictions', openJoin: false, ratingThreshold: 40 });
 
-const admin = db.insert(users).values({
-  gameId: game.id,
-  name: process.env.ADMIN_NAME || 'Admin',
-  token,
-  isAdmin: true,
-}).returning().get();
+const admin = db
+  .insert(users)
+  .values({
+    gameId: game.id,
+    name: process.env.ADMIN_NAME || 'Admin',
+    token,
+    isAdmin: true,
+  })
+  .returning()
+  .get();
 
 console.log('✅ Database reset complete.');
 console.log(`🎲 Game: ${game.name} (join code ${game.joinCode})`);

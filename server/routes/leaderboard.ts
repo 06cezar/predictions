@@ -56,12 +56,14 @@ hallOfFame('/most-courageous', (g, game) => {
 
 hallOfFame('/most-controversial', (g, game) => {
   const award = awards.mostControversial(g);
-  return award && {
-    ...describe(award.prediction, g, game),
-    avg: Math.round(award.avg),
-    stdDev: Math.round(award.stdDev),
-    individualRatings: award.scores,
-  };
+  return (
+    award && {
+      ...describe(award.prediction, g, game),
+      avg: Math.round(award.avg),
+      stdDev: Math.round(award.stdDev),
+      individualRatings: award.scores,
+    }
+  );
 });
 
 hallOfFame('/biggest-miss', (g, game) => {
@@ -69,23 +71,22 @@ hallOfFame('/biggest-miss', (g, game) => {
   return award && { ...describe(award.prediction, g, game), avg: Math.round(award.avg) };
 });
 
-hallOfFame('/star-of-the-show', g =>
-  awards.starOfTheShow(g).map(w => ({ name: w.name, count: w.count })));
+hallOfFame('/star-of-the-show', g => awards.starOfTheShow(g).map(w => ({ name: w.name, count: w.count })));
 
-hallOfFame('/best-friends', g =>
-  awards.bestFriends(g).map(p => ({ userA: p.userA, userB: p.userB })));
+hallOfFame('/best-friends', g => awards.bestFriends(g).map(p => ({ userA: p.userA, userB: p.userB })));
 
 hallOfFame('/most-revised', (g, game) => {
   const award = awards.mostRevised(g);
-  return award && {
-    ...describe(award.prediction, g, game),
-    editCount: award.history.length,
-    history: award.history,
-  };
+  return (
+    award && {
+      ...describe(award.prediction, g, game),
+      editCount: award.history.length,
+      history: award.history,
+    }
+  );
 });
 
-hallOfFame('/the-joker', g =>
-  awards.theJoker(g).map(w => ({ name: w.name, count: w.count })));
+hallOfFame('/the-joker', g => awards.theJoker(g).map(w => ({ name: w.name, count: w.count })));
 
 hallOfFame('/last-minute', (g, game) => {
   const latest = awards.lastMinute(g);

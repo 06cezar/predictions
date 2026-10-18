@@ -1,12 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
-import {
-  setupTestDb,
-  createUser,
-  createPrediction,
-  createTestApp,
-  loginAs,
-} from './helpers';
+import { setupTestDb, createUser, createPrediction, createTestApp, loginAs } from './helpers';
 import { eq } from 'drizzle-orm';
 import * as schema from '../server/schema';
 

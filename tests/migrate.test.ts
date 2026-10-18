@@ -70,8 +70,13 @@ const columns = (sqlite: Database.Database, table: string) =>
   (sqlite.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).map(c => c.name);
 
 const tables = (sqlite: Database.Database) =>
-  (sqlite.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`).all() as { name: string }[])
-    .map(t => t.name).sort();
+  (
+    sqlite.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`).all() as {
+      name: string;
+    }[]
+  )
+    .map(t => t.name)
+    .sort();
 
 describe('migrate()', () => {
   it('builds the full schema on an empty database', () => {
@@ -79,10 +84,20 @@ describe('migrate()', () => {
     migrate(sqlite);
 
     expect(sqlite.pragma('user_version', { simple: true })).toBe(SCHEMA_VERSION);
-    expect(tables(sqlite)).toEqual(expect.arrayContaining([
-      'users', 'predictions', 'prediction_history', 'ratings', 'outcomes',
-      'notifications', 'bonus_categories', 'bonus_votes', 'blocked_tokens', 'invite_links',
-    ]));
+    expect(tables(sqlite)).toEqual(
+      expect.arrayContaining([
+        'users',
+        'predictions',
+        'prediction_history',
+        'ratings',
+        'outcomes',
+        'notifications',
+        'bonus_categories',
+        'bonus_votes',
+        'blocked_tokens',
+        'invite_links',
+      ]),
+    );
   });
 
   it('upgrades an unversioned March 2026 database without losing data', () => {
@@ -113,16 +128,18 @@ describe('migrate()', () => {
     const sqlite = legacyDb();
     migrate(sqlite, { legacyGameName: 'The Originals' });
 
-    expect(sqlite.prepare('SELECT * FROM games').all()).toEqual([expect.objectContaining({
-      id: 1,
-      name: 'The Originals',
-      open_join: 0,
-      is_demo: 0,
-      current_phase: 'reveal',
-      submission_deadline: '2026-04-16T20:43:00.000Z',
-      rating_threshold: 40,
-      join_code: expect.stringMatching(/^[A-Z2-9]{6}$/),
-    })]);
+    expect(sqlite.prepare('SELECT * FROM games').all()).toEqual([
+      expect.objectContaining({
+        id: 1,
+        name: 'The Originals',
+        open_join: 0,
+        is_demo: 0,
+        current_phase: 'reveal',
+        submission_deadline: '2026-04-16T20:43:00.000Z',
+        rating_threshold: 40,
+        join_code: expect.stringMatching(/^[A-Z2-9]{6}$/),
+      }),
+    ]);
     expect(sqlite.prepare('SELECT DISTINCT game_id FROM users').all()).toEqual([{ game_id: 1 }]);
     expect(sqlite.prepare('SELECT DISTINCT game_id FROM predictions').all()).toEqual([{ game_id: 1 }]);
     expect(tables(sqlite)).not.toContain('settings');
@@ -137,10 +154,13 @@ describe('migrate()', () => {
       { id: 1, author_id: 1, target_id: 2 },
       { id: 2, author_id: 2, target_id: 1 },
     ]);
-    expect(() => sqlite.prepare(`INSERT INTO users (game_id, name, token) VALUES (99, 'X', 'x')`).run())
-      .toThrow(/FOREIGN KEY/);
+    expect(() => sqlite.prepare(`INSERT INTO users (game_id, name, token) VALUES (99, 'X', 'x')`).run()).toThrow(
+      /FOREIGN KEY/,
+    );
     // AUTOINCREMENT keeps counting after the copied rows
-    const { lastInsertRowid } = sqlite.prepare(`INSERT INTO users (game_id, name, token) VALUES (1, 'Cid', 'cid')`).run();
+    const { lastInsertRowid } = sqlite
+      .prepare(`INSERT INTO users (game_id, name, token) VALUES (1, 'Cid', 'cid')`)
+      .run();
     expect(lastInsertRowid).toBe(3);
   });
 

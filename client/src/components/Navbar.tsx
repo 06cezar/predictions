@@ -15,11 +15,21 @@ export function Navbar({ user, onLogout }: Props) {
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
-    api.settings.get().then(s => { setPhase(s.currentPhase); setBonusActive(s.bonusActive); }).catch(() => {});
+    api.settings
+      .get()
+      .then(s => {
+        setPhase(s.currentPhase);
+        setBonusActive(s.bonusActive);
+      })
+      .catch(() => {});
   }, [location.pathname]);
 
   useEffect(() => {
-    const fetch = () => api.notifications.get().then(n => setUnread(n.unread)).catch(() => {});
+    const fetch = () =>
+      api.notifications
+        .get()
+        .then(n => setUnread(n.unread))
+        .catch(() => {});
     fetch();
     const interval = setInterval(fetch, 30000);
     return () => clearInterval(interval);
@@ -52,9 +62,13 @@ export function Navbar({ user, onLogout }: Props) {
         const active = location.pathname === to;
         const isHome = to === '/';
         return (
-          <Link key={to} to={to}
+          <Link
+            key={to}
+            to={to}
             className={`relative flex flex-col items-center gap-0.5 px-2.5 sm:px-3.5 py-1.5 rounded-2xl transition-all text-[10px] sm:text-xs font-medium ${
-              active ? 'bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]' : 'text-white/40 hover:text-white/75 hover:bg-white/5'
+              active
+                ? 'bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]'
+                : 'text-white/40 hover:text-white/75 hover:bg-white/5'
             }`}
           >
             <span className={`text-base transition-transform ${active ? 'scale-110' : ''}`}>{icon}</span>
@@ -72,7 +86,8 @@ export function Navbar({ user, onLogout }: Props) {
           </Link>
         );
       })}
-      <button onClick={handleLogout}
+      <button
+        onClick={handleLogout}
         className="flex flex-col items-center gap-0.5 px-2.5 sm:px-3.5 py-1.5 rounded-2xl text-[10px] sm:text-xs font-medium text-white/30 hover:text-white/60 hover:bg-white/5 transition-all"
       >
         <span className="text-base">🚪</span>

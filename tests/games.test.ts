@@ -29,7 +29,9 @@ describe('Creating and joining games', () => {
     });
 
     it('lets the creator pick their own token', async () => {
-      const res = await request(app).post('/api/games').send({ gameName: 'G', playerName: 'Ana', token: 'my-own-token' });
+      const res = await request(app)
+        .post('/api/games')
+        .send({ gameName: 'G', playerName: 'Ana', token: 'my-own-token' });
       expect(res.body.token).toBe('my-own-token');
       const login = await request(app).post('/api/auth/login').send({ token: 'my-own-token' });
       expect(login.body.user).toMatchObject({ name: 'Ana', isAdmin: true });

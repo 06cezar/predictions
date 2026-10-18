@@ -24,7 +24,7 @@ router.get('/me', requireAuth, (req, res) => {
       predictionsWritten: myPredictions.length,
       totalTargets,
       predictionsReceived: predictionsAboutMe.length,
-    }
+    },
   });
 });
 
@@ -37,7 +37,9 @@ router.get('/', requireAuth, (req, res) => {
   const result = allUsers
     .filter(u => u.id !== me.id)
     .map(u => {
-      const pred = db.select().from(predictions)
+      const pred = db
+        .select()
+        .from(predictions)
         .where(and(eq(predictions.authorId, me.id), eq(predictions.targetId, u.id)))
         .get();
 

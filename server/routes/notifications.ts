@@ -9,7 +9,9 @@ const router = Router();
 router.get('/', requireAuth, (req, res) => {
   const { user: me, game } = res.locals;
 
-  const items = db.select().from(notifications)
+  const items = db
+    .select()
+    .from(notifications)
     .where(and(eq(notifications.userId, me.id), ne(notifications.dismissed, true)))
     .all()
     .sort((a, b) => b.id - a.id)
@@ -20,13 +22,10 @@ router.get('/', requireAuth, (req, res) => {
       if (n.type === 'prediction_about_you') {
         let authorName: string | null = null;
         if (!game.anonymousPredictions && n.authorId) {
-          const author = db.select({ name: users.name }).from(users)
-            .where(eq(users.id, n.authorId)).get();
+          const author = db.select({ name: users.name }).from(users).where(eq(users.id, n.authorId)).get();
           authorName = author?.name ?? null;
         }
-        message = authorName
-          ? `${authorName} wrote a prediction about you`
-          : 'Someone wrote a prediction about you';
+        message = authorName ? `${authorName} wrote a prediction about you` : 'Someone wrote a prediction about you';
       }
 
       if (n.type === 'phase_changed') {

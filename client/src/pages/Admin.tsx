@@ -9,7 +9,7 @@ import { PreviewTab } from './admin/PreviewTab';
 import { InvitesTab } from './admin/InvitesTab';
 
 const TABS = ['users', 'predictions', 'settings', 'bonus', 'preview', 'invites'] as const;
-type Tab = typeof TABS[number];
+type Tab = (typeof TABS)[number];
 
 /**
  * Admin panel for the player's own game. Holds what several tabs share (the
@@ -24,19 +24,24 @@ export function Admin() {
   const [loading, setLoading] = useState(true);
 
   const refreshStats = () => {
-    api.admin.stats().then(setStats).catch(() => {});
+    api.admin
+      .stats()
+      .then(setStats)
+      .catch(() => {});
   };
 
   useEffect(() => {
-    Promise.allSettled([api.admin.settings(), api.admin.stats()]).then(([s, st]) => {
-      if (s.status === 'fulfilled') setSettings(s.value);
-      if (st.status === 'fulfilled') setStats(st.value);
-    }).finally(() => setLoading(false));
+    Promise.allSettled([api.admin.settings(), api.admin.stats()])
+      .then(([s, st]) => {
+        if (s.status === 'fulfilled') setSettings(s.value);
+        if (st.status === 'fulfilled') setStats(st.value);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   /** Reflect changes the server already made. */
   const applyChanges = (changes: Partial<Settings>) => {
-    setSettings(prev => prev ? { ...prev, ...changes } : prev);
+    setSettings(prev => (prev ? { ...prev, ...changes } : prev));
     if (changes.currentPhase) refreshStats();
   };
 
@@ -45,16 +50,30 @@ export function Admin() {
     applyChanges(changes);
     try {
       await api.admin.updateSettings(changes);
-    } catch (err: any) { alert(err.message); }
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><p className="text-white/50">Loading...</p></div>;
-  if (!settings) return <div className="min-h-screen flex items-center justify-center"><p className="text-white/50">Could not load the admin panel.</p></div>;
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-white/50">Loading...</p>
+      </div>
+    );
+  if (!settings)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-white/50">Could not load the admin panel.</p>
+      </div>
+    );
 
   return (
     <div className="min-h-screen p-4 pb-24 max-w-4xl mx-auto">
       <div className="flex items-center gap-4 py-6 mb-6">
-        <Link to="/" className="btn-ghost text-sm px-3">← Back</Link>
+        <Link to="/" className="btn-ghost text-sm px-3">
+          ← Back
+        </Link>
         <div>
           <h1 className="font-display text-2xl font-bold">{settings.name} · Admin</h1>
           {stats && (

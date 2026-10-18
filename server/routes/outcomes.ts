@@ -26,43 +26,63 @@ router.post('/', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'happened must be true, false or null' });
   }
 
-  const pred = db.select().from(predictions)
-    .where(and(eq(predictions.id, parseInt(prediction_id)), eq(predictions.gameId, game.id))).get();
+  const pred = db
+    .select()
+    .from(predictions)
+    .where(and(eq(predictions.id, parseInt(prediction_id)), eq(predictions.gameId, game.id)))
+    .get();
   if (!pred) return res.status(404).json({ error: 'Prediction not found' });
   if (pred.targetId !== me.id) return res.status(403).json({ error: 'Only the target can mark outcomes' });
 
-  const existing = db.select().from(outcomes).where(eq(outcomes.predictionId, parseInt(prediction_id))).get();
+  const existing = db
+    .select()
+    .from(outcomes)
+    .where(eq(outcomes.predictionId, parseInt(prediction_id)))
+    .get();
 
   const happenedVal = happened === null ? null : happened === true || happened === 'true';
 
   if (existing) {
-    db.update(outcomes).set({ happened: happenedVal as boolean | null, markedBy: me.id, markedAt: new Date().toISOString() })
-      .where(eq(outcomes.predictionId, parseInt(prediction_id))).run();
+    db.update(outcomes)
+      .set({ happened: happenedVal as boolean | null, markedBy: me.id, markedAt: new Date().toISOString() })
+      .where(eq(outcomes.predictionId, parseInt(prediction_id)))
+      .run();
   } else {
-    db.insert(outcomes).values({
-      predictionId: parseInt(prediction_id),
-      happened: happenedVal as boolean | null,
-      markedBy: me.id,
-    }).run();
+    db.insert(outcomes)
+      .values({
+        predictionId: parseInt(prediction_id),
+        happened: happenedVal as boolean | null,
+        markedBy: me.id,
+      })
+      .run();
   }
 
   // Delete existing outcome_marked notification for this prediction, then insert new one
-  const existingNotifs = db.select({ id: notifications.id, meta: notifications.meta })
+  const existingNotifs = db
+    .select({ id: notifications.id, meta: notifications.meta })
     .from(notifications)
     .where(and(eq(notifications.userId, pred.authorId), eq(notifications.type, 'outcome_marked')))
     .all()
-    .filter(n => { try { return JSON.parse(n.meta ?? '{}').predictionId === pred.id; } catch { return false; } });
+    .filter(n => {
+      try {
+        return JSON.parse(n.meta ?? '{}').predictionId === pred.id;
+      } catch {
+        return false;
+      }
+    });
   for (const n of existingNotifs) {
     db.delete(notifications).where(eq(notifications.id, n.id)).run();
   }
   if (happenedVal !== null) {
     const target = db.select({ name: users.name }).from(users).where(eq(users.id, me.id)).get();
-    db.insert(notifications).values({
-      userId: pred.authorId,
-      type: 'outcome_marked',
-      authorId: me.id,
-      meta: JSON.stringify({ targetName: target?.name ?? 'Someone', happened: happenedVal, predictionId: pred.id }),
-    }).run();
+    db.insert(notifications)
+      .values({
+        userId: pred.authorId,
+        type: 'outcome_marked',
+        authorId: me.id,
+        meta: JSON.stringify({ targetName: target?.name ?? 'Someone', happened: happenedVal, predictionId: pred.id }),
+      })
+      .run();
   }
 
   res.json({ success: true });

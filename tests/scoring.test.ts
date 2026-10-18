@@ -143,7 +143,9 @@ describe('Leaderboard scoring rules', () => {
     const pred = createPrediction(db, alice.id, bob.id, 'Original');
     // 5 edits → penalty 2.5, bonus=1.0 → would be -1.5 but min is 0.5
     for (let i = 0; i < 5; i++) {
-      db.insert(schema.predictionHistory).values({ predictionId: pred.id, oldText: `v${i}` }).run();
+      db.insert(schema.predictionHistory)
+        .values({ predictionId: pred.id, oldText: `v${i}` })
+        .run();
     }
     createRating(db, pred.id, charlie.id, 75); // bonus=1.0
     createOutcome(db, pred.id, true, bob.id);
@@ -226,7 +228,7 @@ describe('Leaderboard scoring rules', () => {
     const res = await agent.get('/api/leaderboard');
 
     const aliceEntry = res.body.find((e: any) => e.name === 'Alice');
-    expect(aliceEntry.score).toBe(2);         // 2 happened
+    expect(aliceEntry.score).toBe(2); // 2 happened
     expect(aliceEntry.weightedScore).toBe(6.0); // 5.0 + 1.0
   });
 
@@ -429,7 +431,9 @@ describe('Leaderboard scoring rules', () => {
     setPhase(db, 'done');
     const pred = createPrediction(db, alice.id, bob.id, 'Triple edited');
     for (let i = 0; i < 3; i++) {
-      db.insert(schema.predictionHistory).values({ predictionId: pred.id, oldText: `v${i}` }).run();
+      db.insert(schema.predictionHistory)
+        .values({ predictionId: pred.id, oldText: `v${i}` })
+        .run();
     }
     createRating(db, pred.id, charlie.id, 30); // bonus=3.0
     createOutcome(db, pred.id, true, bob.id);
@@ -488,7 +492,9 @@ describe('Leaderboard scoring rules', () => {
     setPhase(db, 'done');
     const pred = createPrediction(db, alice.id, bob.id, 'Triple edit partial forgive');
     for (let i = 0; i < 3; i++) {
-      db.insert(schema.predictionHistory).values({ predictionId: pred.id, oldText: `v${i}` }).run();
+      db.insert(schema.predictionHistory)
+        .values({ predictionId: pred.id, oldText: `v${i}` })
+        .run();
     }
     db.update(schema.predictions).set({ forgivenEdits: 2 }).where(eq(schema.predictions.id, pred.id)).run();
     createRating(db, pred.id, charlie.id, 30); // bonus=3.0
@@ -510,7 +516,9 @@ describe('Leaderboard scoring rules', () => {
     setPhase(db, 'done');
     const pred = createPrediction(db, alice.id, bob.id, 'All forgiven');
     for (let i = 0; i < 3; i++) {
-      db.insert(schema.predictionHistory).values({ predictionId: pred.id, oldText: `v${i}` }).run();
+      db.insert(schema.predictionHistory)
+        .values({ predictionId: pred.id, oldText: `v${i}` })
+        .run();
     }
     db.update(schema.predictions).set({ forgivenEdits: 3 }).where(eq(schema.predictions.id, pred.id)).run();
     createRating(db, pred.id, charlie.id, 5); // bonus=5.0
@@ -552,7 +560,9 @@ describe('Leaderboard scoring rules', () => {
     setPhase(db, 'done');
     const pred = createPrediction(db, alice.id, bob.id, 'Heavy edits');
     for (let i = 0; i < 10; i++) {
-      db.insert(schema.predictionHistory).values({ predictionId: pred.id, oldText: `v${i}` }).run();
+      db.insert(schema.predictionHistory)
+        .values({ predictionId: pred.id, oldText: `v${i}` })
+        .run();
     }
     // Forgive 5, leaving 5 penalized → penalty 2.5, bonus=1.0 → max(0.5, 1.0-2.5) = 0.5
     db.update(schema.predictions).set({ forgivenEdits: 5 }).where(eq(schema.predictions.id, pred.id)).run();
@@ -606,7 +616,9 @@ describe('Leaderboard scoring rules', () => {
     setPhase(db, 'done');
     const pred = createPrediction(db, alice.id, bob.id, 'Multi forgive');
     for (let i = 0; i < 3; i++) {
-      db.insert(schema.predictionHistory).values({ predictionId: pred.id, oldText: `v${i}` }).run();
+      db.insert(schema.predictionHistory)
+        .values({ predictionId: pred.id, oldText: `v${i}` })
+        .run();
     }
     createRating(db, pred.id, charlie.id, 30); // bonus=3.0
     createOutcome(db, pred.id, true, bob.id);

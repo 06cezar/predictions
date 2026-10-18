@@ -67,11 +67,12 @@ function buildSteps(p: DemoProgress, settingsSeen: boolean): Step[] {
     },
     {
       title: 'Bonus round',
-      detail: p.bonusTotal > 0 && p.bonusVoted >= p.bonusTotal
-        ? 'Voted. Winners get bonus points'
-        : p.bonusActive
-          ? 'Vote on silly categories like "most likely to become famous"'
-          : 'Optional, for extra laughs (or not 🙂): switch it on in Admin → Bonus, then vote',
+      detail:
+        p.bonusTotal > 0 && p.bonusVoted >= p.bonusTotal
+          ? 'Voted. Winners get bonus points'
+          : p.bonusActive
+            ? 'Vote on silly categories like "most likely to become famous"'
+            : 'Optional, for extra laughs (or not 🙂): switch it on in Admin → Bonus, then vote',
       done: p.bonusTotal > 0 && p.bonusVoted >= p.bonusTotal,
       locked: done,
       to: p.bonusActive ? '/bonus' : '/admin?tab=bonus',
@@ -104,7 +105,10 @@ export function DemoGuide({ gameId, onLogin }: Props) {
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(() => {
-    api.demo.progress().then(setProgress).catch(() => {});
+    api.demo
+      .progress()
+      .then(setProgress)
+      .catch(() => {});
     setSettingsSeen(demoSettingsSeen(gameId));
   }, [gameId]);
 
@@ -142,7 +146,12 @@ export function DemoGuide({ gameId, onLogin }: Props) {
   const skip = async () => {
     if (progress.phase === 'reveal' && progress.marked < progress.markTotal) {
       const left = progress.markTotal - progress.marked;
-      if (!confirm(`You haven't marked ${left} prediction${left === 1 ? '' : 's'} about you yet. Unmarked ones count as not happened. Skip anyway?`)) return;
+      if (
+        !confirm(
+          `You haven't marked ${left} prediction${left === 1 ? '' : 's'} about you yet. Unmarked ones count as not happened. Skip anyway?`,
+        )
+      )
+        return;
     }
     setBusy(true);
     try {
@@ -167,7 +176,11 @@ export function DemoGuide({ gameId, onLogin }: Props) {
     }
   };
 
-  const until = new Date(progress.expiresAt).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  const until = new Date(progress.expiresAt).toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
 
   return (
     <div className="max-w-2xl mx-auto px-4 pt-4">
@@ -178,12 +191,15 @@ export function DemoGuide({ gameId, onLogin }: Props) {
             <span className="text-white/50"> · you're the admin, the other four are bots</span>
             {collapsed && current && (
               <span className="block text-white/70 truncate">
-                Next: {current.title}{current.detail && !current.skip ? ` (${current.detail})` : ''}
+                Next: {current.title}
+                {current.detail && !current.skip ? ` (${current.detail})` : ''}
               </span>
             )}
           </p>
           {collapsed && canSkip && (
-            <button onClick={skip} disabled={busy} className="btn-primary text-xs px-3 py-1.5 whitespace-nowrap">⏭ Skip</button>
+            <button onClick={skip} disabled={busy} className="btn-primary text-xs px-3 py-1.5 whitespace-nowrap">
+              ⏭ Skip
+            </button>
           )}
           <button onClick={toggle} className="text-xs text-white/50 hover:text-white whitespace-nowrap">
             {collapsed ? 'Show steps' : 'Hide'}
@@ -194,28 +210,45 @@ export function DemoGuide({ gameId, onLogin }: Props) {
           <ol className="mt-3 space-y-1.5">
             {steps.map((step, i) => {
               const isCurrent = i === currentIndex;
-              const marker = step.done ? '✓' : step.skip ? '⏭' : step.optional ? '★'
-                : String(steps.slice(0, i + 1).filter(s => !s.skip && !s.optional).length);
+              const marker = step.done
+                ? '✓'
+                : step.skip
+                  ? '⏭'
+                  : step.optional
+                    ? '★'
+                    : String(steps.slice(0, i + 1).filter(s => !s.skip && !s.optional).length);
               return (
                 <li
                   key={step.title}
                   className={`flex items-center gap-3 rounded-lg px-2 py-1.5 ${isCurrent ? 'bg-white/10' : ''} ${step.locked ? 'opacity-40' : ''}`}
                 >
-                  <span className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${
-                    step.done ? 'bg-green-500/25 text-green-300' : isCurrent ? 'bg-orange text-white' : 'bg-white/10 text-white/60'
-                  }`}>
+                  <span
+                    className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${
+                      step.done
+                        ? 'bg-green-500/25 text-green-300'
+                        : isCurrent
+                          ? 'bg-orange text-white'
+                          : 'bg-white/10 text-white/60'
+                    }`}
+                  >
                     {marker}
                   </span>
                   <div className="flex-1 min-w-0">
                     {step.to && !step.locked ? (
-                      <Link to={step.to} className={`hover:underline ${step.done ? 'text-white/50' : 'text-white'}`}>{step.title}</Link>
+                      <Link to={step.to} className={`hover:underline ${step.done ? 'text-white/50' : 'text-white'}`}>
+                        {step.title}
+                      </Link>
                     ) : (
                       <span className={step.done ? 'text-white/50' : 'text-white'}>{step.title}</span>
                     )}
                     {step.detail && <span className="block text-xs text-white/40">{step.detail}</span>}
                   </div>
                   {step.skip && !step.done && !step.locked && (
-                    <button onClick={skip} disabled={busy} className="btn-primary text-xs px-3 py-1.5 whitespace-nowrap">
+                    <button
+                      onClick={skip}
+                      disabled={busy}
+                      className="btn-primary text-xs px-3 py-1.5 whitespace-nowrap"
+                    >
                       {busy ? 'Skipping...' : '⏭ Skip ahead'}
                     </button>
                   )}
@@ -228,9 +261,13 @@ export function DemoGuide({ gameId, onLogin }: Props) {
         {!collapsed && (
           <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/45">
             {finished && (
-              <button onClick={startOver} disabled={busy} className="text-amber hover:underline">🔁 Start a fresh demo</button>
+              <button onClick={startOver} disabled={busy} className="text-amber hover:underline">
+                🔁 Start a fresh demo
+              </button>
             )}
-            <Link to="/about" className="text-lilac hover:underline">How does the game work?</Link>
+            <Link to="/about" className="text-lilac hover:underline">
+              How does the game work?
+            </Link>
             <span>Private to you, deleted on {until}.</span>
           </div>
         )}

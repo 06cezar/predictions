@@ -143,7 +143,13 @@ const count = (sqlite: Database.Database, table: string) =>
  * Rebuild a table with a new definition, copying rows with `select` (the
  * standard SQLite procedure: create new, copy, drop old, rename).
  */
-function rebuildTable(sqlite: Database.Database, table: string, definition: string, insertColumns: string, select: string) {
+function rebuildTable(
+  sqlite: Database.Database,
+  table: string,
+  definition: string,
+  insertColumns: string,
+  select: string,
+) {
   sqlite.exec(`
     CREATE TABLE ${table}_new (${definition});
     INSERT INTO ${table}_new (${insertColumns}) ${select};
@@ -179,16 +185,23 @@ function v2MultiGame(sqlite: Database.Database, options: MigrateOptions) {
 
   if (count(sqlite, 'users') > 0 || count(sqlite, 'bonus_categories') > 0) {
     // Invite-only, like the original game was.
-    sqlite.prepare(`
+    sqlite
+      .prepare(
+        `
       INSERT INTO games (id, name, join_code, open_join, current_phase, submission_deadline, reveal_deadline,
                          rating_threshold, auto_advance_phase, admin_override, anonymous_predictions, bonus_active)
       SELECT 1, ?, ?, 0, current_phase, submission_deadline, reveal_deadline,
              rating_threshold, auto_advance_phase, admin_override, anonymous_predictions, bonus_active
       FROM settings WHERE id = 1
-    `).run(options.legacyGameName || 'Predictions', randomJoinCode());
+    `,
+      )
+      .run(options.legacyGameName || 'Predictions', randomJoinCode());
   }
 
-  rebuildTable(sqlite, 'users', `
+  rebuildTable(
+    sqlite,
+    'users',
+    `
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       game_id INTEGER NOT NULL REFERENCES games(id),
       name TEXT NOT NULL,
@@ -196,9 +209,13 @@ function v2MultiGame(sqlite: Database.Database, options: MigrateOptions) {
       is_admin INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))`,
     'id, game_id, name, token, is_admin, created_at',
-    'SELECT id, 1, name, token, is_admin, created_at FROM users');
+    'SELECT id, 1, name, token, is_admin, created_at FROM users',
+  );
 
-  rebuildTable(sqlite, 'predictions', `
+  rebuildTable(
+    sqlite,
+    'predictions',
+    `
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       game_id INTEGER NOT NULL REFERENCES games(id),
       author_id INTEGER NOT NULL REFERENCES users(id),
@@ -209,18 +226,26 @@ function v2MultiGame(sqlite: Database.Database, options: MigrateOptions) {
       forgiven_edits INTEGER NOT NULL DEFAULT 0`,
     'id, game_id, author_id, target_id, current_text, created_at, updated_at, forgiven_edits',
     `SELECT p.id, COALESCE(u.game_id, 1), p.author_id, p.target_id, p.current_text, p.created_at, p.updated_at, p.forgiven_edits
-     FROM predictions p LEFT JOIN users u ON u.id = p.author_id`);
+     FROM predictions p LEFT JOIN users u ON u.id = p.author_id`,
+  );
 
-  rebuildTable(sqlite, 'bonus_categories', `
+  rebuildTable(
+    sqlite,
+    'bonus_categories',
+    `
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       game_id INTEGER NOT NULL REFERENCES games(id),
       name TEXT NOT NULL,
       points INTEGER NOT NULL DEFAULT 5,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))`,
     'id, game_id, name, points, created_at',
-    'SELECT id, 1, name, points, created_at FROM bonus_categories');
+    'SELECT id, 1, name, points, created_at FROM bonus_categories',
+  );
 
-  rebuildTable(sqlite, 'invite_links', `
+  rebuildTable(
+    sqlite,
+    'invite_links',
+    `
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       game_id INTEGER NOT NULL REFERENCES games(id),
       code TEXT NOT NULL UNIQUE,
@@ -230,7 +255,8 @@ function v2MultiGame(sqlite: Database.Database, options: MigrateOptions) {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))`,
     'id, game_id, code, created_by, used_by, used_at, created_at',
     `SELECT l.id, COALESCE(u.game_id, 1), l.code, l.created_by, l.used_by, l.used_at, l.created_at
-     FROM invite_links l LEFT JOIN users u ON u.id = l.created_by`);
+     FROM invite_links l LEFT JOIN users u ON u.id = l.created_by`,
+  );
 
   sqlite.exec(`
     DROP TABLE settings;
@@ -241,10 +267,7 @@ function v2MultiGame(sqlite: Database.Database, options: MigrateOptions) {
   `);
 }
 
-const MIGRATIONS: ((sqlite: Database.Database, options: MigrateOptions) => void)[] = [
-  v1Baseline,
-  v2MultiGame,
-];
+const MIGRATIONS: ((sqlite: Database.Database, options: MigrateOptions) => void)[] = [v1Baseline, v2MultiGame];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
 

@@ -56,20 +56,25 @@ export function claimToken(requested: unknown, ctx: ClaimContext): TokenClaim {
   db.update(users).set({ token: newToken }).where(eq(users.id, existing.id)).run();
   db.insert(blockedTokens).values({ token }).run();
 
-  const admins = db.select().from(users)
-    .where(and(eq(users.gameId, existing.gameId), eq(users.isAdmin, true))).all();
+  const admins = db
+    .select()
+    .from(users)
+    .where(and(eq(users.gameId, existing.gameId), eq(users.isAdmin, true)))
+    .all();
   for (const admin of admins) {
-    db.insert(notifications).values({
-      userId: admin.id,
-      type: 'token_conflict',
-      meta: JSON.stringify({
-        message: `${existing.name}'s token was regenerated - conflict with ${ctx.playerName} (${ctx.source})`,
-        oldUserName: existing.name,
-        newUserName: ctx.playerName,
-        oldToken: token,
-        newToken,
-      }),
-    }).run();
+    db.insert(notifications)
+      .values({
+        userId: admin.id,
+        type: 'token_conflict',
+        meta: JSON.stringify({
+          message: `${existing.name}'s token was regenerated - conflict with ${ctx.playerName} (${ctx.source})`,
+          oldUserName: existing.name,
+          newUserName: ctx.playerName,
+          oldToken: token,
+          newToken,
+        }),
+      })
+      .run();
   }
 
   return { ok: false, error: TOKEN_TAKEN };

@@ -1,13 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
-import {
-  setupTestDb,
-  createUser,
-  createPrediction,
-  createTestApp,
-  loginAs,
-  setPhase,
-} from './helpers';
+import { setupTestDb, createUser, createPrediction, createTestApp, loginAs, setPhase } from './helpers';
 
 describe('Predictions routes', () => {
   let app: ReturnType<typeof createTestApp>;
@@ -132,9 +125,7 @@ describe('Predictions routes', () => {
     const agent = request.agent(app);
     await loginAs(agent, 'token-alice');
 
-    const res = await agent
-      .post('/api/predictions')
-      .send({ target_id: bob.id, text: 'Bob will be great' });
+    const res = await agent.post('/api/predictions').send({ target_id: bob.id, text: 'Bob will be great' });
 
     expect(res.status).toBe(200);
     expect(res.body.currentText).toBe('Bob will be great');
@@ -151,9 +142,7 @@ describe('Predictions routes', () => {
     const agent = request.agent(app);
     await loginAs(agent, 'token-alice');
 
-    const res = await agent
-      .post('/api/predictions')
-      .send({ target_id: bob.id, text: 'Second prediction' });
+    const res = await agent.post('/api/predictions').send({ target_id: bob.id, text: 'Second prediction' });
 
     expect(res.status).toBe(409);
   });
@@ -164,9 +153,7 @@ describe('Predictions routes', () => {
     const agent = request.agent(app);
     await loginAs(agent, 'token-alice');
 
-    const res = await agent
-      .post('/api/predictions')
-      .send({ target_id: alice.id, text: 'I am great' });
+    const res = await agent.post('/api/predictions').send({ target_id: alice.id, text: 'I am great' });
 
     expect(res.status).toBe(400);
   });
@@ -179,9 +166,7 @@ describe('Predictions routes', () => {
     const agent = request.agent(app);
     await loginAs(agent, 'token-alice');
 
-    const res = await agent
-      .post('/api/predictions')
-      .send({ target_id: bob.id, text: 'Too late' });
+    const res = await agent.post('/api/predictions').send({ target_id: bob.id, text: 'Too late' });
 
     expect(res.status).toBe(403);
   });
@@ -194,9 +179,7 @@ describe('Predictions routes', () => {
     const agent = request.agent(app);
     await loginAs(agent, 'token-alice');
 
-    const res = await agent
-      .post('/api/predictions')
-      .send({ target_id: bob.id, text: 'Override enabled' });
+    const res = await agent.post('/api/predictions').send({ target_id: bob.id, text: 'Override enabled' });
 
     expect(res.status).toBe(200);
   });
@@ -216,9 +199,7 @@ describe('Predictions routes', () => {
     const agent = request.agent(app);
     await loginAs(agent, 'token-alice');
 
-    const res = await agent
-      .put(`/api/predictions/${pred.id}`)
-      .send({ text: 'Updated text' });
+    const res = await agent.put(`/api/predictions/${pred.id}`).send({ text: 'Updated text' });
 
     expect(res.status).toBe(200);
     expect(res.body.currentText).toBe('Updated text');
@@ -242,9 +223,7 @@ describe('Predictions routes', () => {
     const charlieAgent = request.agent(app);
     await loginAs(charlieAgent, 'token-charlie');
 
-    const res = await charlieAgent
-      .put(`/api/predictions/${pred.id}`)
-      .send({ text: 'Hijacked text' });
+    const res = await charlieAgent.put(`/api/predictions/${pred.id}`).send({ text: 'Hijacked text' });
 
     expect(res.status).toBe(403);
   });
@@ -258,9 +237,7 @@ describe('Predictions routes', () => {
     const agent = request.agent(app);
     await loginAs(agent, 'token-alice');
 
-    const res = await agent
-      .put(`/api/predictions/${pred.id}`)
-      .send({ text: 'Updated text' });
+    const res = await agent.put(`/api/predictions/${pred.id}`).send({ text: 'Updated text' });
 
     expect(res.status).toBe(403);
   });
@@ -270,7 +247,7 @@ describe('Predictions routes', () => {
     expect(res.status).toBe(401);
   });
 
-  it('GET /api/predictions/mine returns only the current user\'s predictions', async () => {
+  it("GET /api/predictions/mine returns only the current user's predictions", async () => {
     const alice = createUser(db, 'Alice', 'token-alice');
     const bob = createUser(db, 'Bob', 'token-bob');
     const charlie = createUser(db, 'Charlie', 'token-charlie');

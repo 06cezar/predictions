@@ -23,14 +23,20 @@ export function UsersTab({ settings, stats, onChanged }: Props) {
   const { copied: copiedToken, copy: copyToken } = useCopied();
 
   useEffect(() => {
-    api.admin.users().then(setAdminUsers).catch(() => {});
+    api.admin
+      .users()
+      .then(setAdminUsers)
+      .catch(() => {});
   }, []);
 
   const handleCreateUser = async () => {
     if (!newUserName.trim()) return;
     if (tokenMode === 'custom' && !customToken.trim()) return;
     try {
-      const user = await api.admin.createUser(newUserName.trim(), tokenMode === 'custom' ? customToken.trim() : undefined) as any;
+      const user = (await api.admin.createUser(
+        newUserName.trim(),
+        tokenMode === 'custom' ? customToken.trim() : undefined,
+      )) as any;
       setAdminUsers(prev => [...prev, user]);
       setNewUserToken(user.token);
       setNewUserName('');
@@ -47,26 +53,32 @@ export function UsersTab({ settings, stats, onChanged }: Props) {
       await api.admin.deleteUser(id);
       setAdminUsers(prev => prev.filter(u => u.id !== id));
       onChanged();
-    } catch (err: any) { alert(err.message); }
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   const handleRenameUser = async (id: number) => {
     if (!editName.trim()) return;
     try {
-      const updated = await api.admin.updateUser(id, { name: editName.trim() }) as any;
-      setAdminUsers(prev => prev.map(u => u.id === id ? { ...u, name: updated.name } : u));
+      const updated = (await api.admin.updateUser(id, { name: editName.trim() })) as any;
+      setAdminUsers(prev => prev.map(u => (u.id === id ? { ...u, name: updated.name } : u)));
       setEditingUser(null);
-    } catch (err: any) { alert(err.message); }
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   const handleRegenerateToken = async (id: number) => {
     if (!confirm('Regenerate token? The user will need the new token to log in.')) return;
     try {
-      const updated = await api.admin.updateUser(id, { regenerateToken: true }) as any;
-      setAdminUsers(prev => prev.map(u => u.id === id ? { ...u, token: updated.token } : u));
+      const updated = (await api.admin.updateUser(id, { regenerateToken: true })) as any;
+      setAdminUsers(prev => prev.map(u => (u.id === id ? { ...u, token: updated.token } : u)));
       setNewUserToken(updated.token);
       setEditingUser(null);
-    } catch (err: any) { alert(err.message); }
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   const revealed = settings.currentPhase === 'reveal' || settings.currentPhase === 'done';
@@ -120,7 +132,9 @@ export function UsersTab({ settings, stats, onChanged }: Props) {
             className="input flex-1"
             onKeyDown={e => e.key === 'Enter' && handleCreateUser()}
           />
-          <button onClick={handleCreateUser} className="btn-primary">Add User</button>
+          <button onClick={handleCreateUser} className="btn-primary">
+            Add User
+          </button>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex gap-1">
@@ -151,7 +165,9 @@ export function UsersTab({ settings, stats, onChanged }: Props) {
       {newUserToken && (
         <div className="bg-green-500/20 border border-green-500/30 rounded-xl px-4 py-3 text-green-400 text-sm">
           New user created! Token: <span className="font-mono font-bold">{newUserToken}</span>
-          <button onClick={() => setNewUserToken('')} className="ml-3 text-green-300 hover:text-white">×</button>
+          <button onClick={() => setNewUserToken('')} className="ml-3 text-green-300 hover:text-white">
+            ×
+          </button>
         </div>
       )}
 
@@ -173,7 +189,10 @@ export function UsersTab({ settings, stats, onChanged }: Props) {
                 {copiedToken === u.token ? '✓ Copied' : 'Copy Token'}
               </button>
               <button
-                onClick={() => { setEditingUser(editingUser === u.id ? null : u.id); setEditName(u.name); }}
+                onClick={() => {
+                  setEditingUser(editingUser === u.id ? null : u.id);
+                  setEditName(u.name);
+                }}
                 className="text-white/40 hover:text-white text-sm px-3 py-2"
               >
                 {editingUser === u.id ? '✕' : 'Edit'}
@@ -228,7 +247,9 @@ function ProgressBar({ label, done, total, unit }: { label: string; done: number
       <div className="flex items-center justify-between text-sm">
         <span className="text-white/40 text-xs">{label}</span>
         <span className="font-medium">
-          <span className={complete ? 'text-green-400' : 'text-amber'}>{done}/{total}</span>
+          <span className={complete ? 'text-green-400' : 'text-amber'}>
+            {done}/{total}
+          </span>
           <span className="text-white/30 ml-1">{unit}</span>
         </span>
       </div>
@@ -243,10 +264,15 @@ function ProgressBar({ label, done, total, unit }: { label: string; done: number
 }
 
 function PlayerProgress({ stats, mode, userId }: { stats: any; mode: ProgressMode; userId: number }) {
-  const rows = mode === 'submission' ? stats.userProgress : mode === 'rating' ? stats.ratingProgress : stats.outcomesProgress;
+  const rows =
+    mode === 'submission' ? stats.userProgress : mode === 'rating' ? stats.ratingProgress : stats.outcomesProgress;
   const p = rows?.find((x: any) => x.id === userId);
   if (!p || p.expected === 0) return null;
-  return p.complete
-    ? <span className="text-xs text-green-400 font-normal">✓ Done</span>
-    : <span className="text-xs text-white/30 font-normal">{p.written}/{p.expected}</span>;
+  return p.complete ? (
+    <span className="text-xs text-green-400 font-normal">✓ Done</span>
+  ) : (
+    <span className="text-xs text-white/30 font-normal">
+      {p.written}/{p.expected}
+    </span>
+  );
 }

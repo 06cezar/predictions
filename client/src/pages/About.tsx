@@ -23,7 +23,7 @@ const STEPS = [
   {
     emoji: '👁️',
     title: 'Reveal',
-    text: 'When the deadline passes, you finally see what everyone predicted about you, and you mark each one: happened, or didn\'t.',
+    text: "When the deadline passes, you finally see what everyone predicted about you, and you mark each one: happened, or didn't.",
     example: '"Will jump into the sea in winter": ✅ happened.',
   },
   {
@@ -95,9 +95,8 @@ export function About({ loggedIn, onLogin }: Props) {
         <p className="text-5xl select-none">🔮</p>
         <h1 className="font-display text-4xl font-bold text-glow">How Predictions works</h1>
         <p className="text-white/60 max-w-lg mx-auto">
-          A game about how well you know your friends. Everyone predicts what will happen to everyone
-          else, the group bets on how likely each prediction is, and when time is up you find out who
-          saw it coming.
+          A game about how well you know your friends. Everyone predicts what will happen to everyone else, the group
+          bets on how likely each prediction is, and when time is up you find out who saw it coming.
         </p>
       </div>
 
@@ -109,7 +108,8 @@ export function About({ loggedIn, onLogin }: Props) {
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{step.emoji}</span>
                 <h3 className="font-medium">
-                  <span className="text-white/30 mr-1">{i + 1}.</span>{step.title}
+                  <span className="text-white/30 mr-1">{i + 1}.</span>
+                  {step.title}
                 </h3>
               </div>
               <p className="text-sm text-white/70">{step.text}</p>
@@ -123,8 +123,8 @@ export function About({ loggedIn, onLogin }: Props) {
         <h2 className="font-display text-xl font-bold">Why bold beats safe</h2>
         <p className="text-sm text-white/70">
           A prediction is worth more the less the group believed it. Say Bob writes{' '}
-          <span className="text-white">"Ana will run a marathon"</span>. Most people think there's no way:
-          the average rating is 20%. Then Ana runs it, and Bob gets <span className="text-amber font-medium">4 points</span>.
+          <span className="text-white">"Ana will run a marathon"</span>. Most people think there's no way: the average
+          rating is 20%. Then Ana runs it, and Bob gets <span className="text-amber font-medium">4 points</span>.
           Something everyone saw coming is worth just 1.
         </p>
         <div className="space-y-1.5">
@@ -141,8 +141,8 @@ export function About({ loggedIn, onLogin }: Props) {
           ))}
         </div>
         <p className="text-xs text-white/40">
-          Average rating of a prediction that came true, with the default 50% threshold (the admin can change it).
-          Wrong predictions score nothing.
+          Average rating of a prediction that came true, with the default 50% threshold (the admin can change it). Wrong
+          predictions score nothing.
         </p>
       </section>
 
@@ -151,7 +151,9 @@ export function About({ loggedIn, onLogin }: Props) {
         <div className="grid sm:grid-cols-3 gap-3 text-sm">
           <div className="card space-y-1">
             <p className="font-medium">🎲 Start a game</p>
-            <p className="text-white/60">Name it, and you're the admin: invite friends, set the deadlines, run the reveal.</p>
+            <p className="text-white/60">
+              Name it, and you're the admin: invite friends, set the deadlines, run the reveal.
+            </p>
           </div>
           <div className="card space-y-1">
             <p className="font-medium">🔑 Join one</p>
@@ -159,14 +161,18 @@ export function About({ loggedIn, onLogin }: Props) {
           </div>
           <div className="card space-y-1">
             <p className="font-medium">🧪 Just looking?</p>
-            <p className="text-white/60">Run a demo round as the admin: four bots, a guide, and a button to skip ahead in time.</p>
+            <p className="text-white/60">
+              Run a demo round as the admin: four bots, a guide, and a button to skip ahead in time.
+            </p>
           </div>
         </div>
         <div className="card space-y-1 text-sm">
-          <p className="font-medium">🎖️ Bonus round <span className="text-white/40 font-normal">(optional, for extra laughs... or not 🙂)</span></p>
+          <p className="font-medium">
+            🎖️ Bonus round <span className="text-white/40 font-normal">(optional, for extra laughs... or not 🙂)</span>
+          </p>
           <p className="text-white/60">
-            The admin adds silly categories like "most likely to move abroad" and everyone ranks their top 3.
-            Winners get bonus points, and a category can even cost points if the admin is feeling mean.
+            The admin adds silly categories like "most likely to move abroad" and everyone ranks their top 3. Winners
+            get bonus points, and a category can even cost points if the admin is feeling mean.
           </p>
         </div>
       </section>
@@ -186,13 +192,17 @@ export function About({ loggedIn, onLogin }: Props) {
 
       <div className="flex flex-col sm:flex-row gap-3">
         {loggedIn ? (
-          <Link to="/" className="btn-primary flex-1 text-center py-3">Back to your game →</Link>
+          <Link to="/" className="btn-primary flex-1 text-center py-3">
+            Back to your game →
+          </Link>
         ) : (
           <>
             <button onClick={startDemo} disabled={busy} className="btn-primary flex-1 py-3">
               {busy ? 'Setting up...' : 'Run a demo round →'}
             </button>
-            <Link to="/login" className="btn-secondary flex-1 text-center py-3">Create or join a game</Link>
+            <Link to="/login" className="btn-secondary flex-1 text-center py-3">
+              Create or join a game
+            </Link>
           </>
         )}
       </div>

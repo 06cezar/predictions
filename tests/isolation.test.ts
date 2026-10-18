@@ -2,15 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import { eq } from 'drizzle-orm';
 import * as schema from '../server/schema';
-import {
-  setupTestDb,
-  createGame,
-  createUser,
-  createPrediction,
-  createTestApp,
-  loginAs,
-  setPhase,
-} from './helpers';
+import { setupTestDb, createGame, createUser, createPrediction, createTestApp, loginAs, setPhase } from './helpers';
 
 /**
  * Two games share one database. Nothing a player or admin of game A does may
@@ -46,8 +38,7 @@ describe('Game isolation', () => {
 
   const predictionExists = (id: number) =>
     !!db.select().from(schema.predictions).where(eq(schema.predictions.id, id)).get();
-  const userExists = (id: number) =>
-    !!db.select().from(schema.users).where(eq(schema.users.id, id)).get();
+  const userExists = (id: number) => !!db.select().from(schema.users).where(eq(schema.users.id, id)).get();
 
   describe('players', () => {
     it('only see players of their own game', async () => {
@@ -101,7 +92,11 @@ describe('Game isolation', () => {
       const cleo = createUser(db, 'Cleo', 'token-cleo');
       const res = await (await as('token-bob')).post('/api/bonus/vote').send({
         categoryId: cat.id,
-        votes: [{ rank: 1, nomineeId: ana.id }, { rank: 2, nomineeId: cleo.id }, { rank: 3, nomineeId: dina.id }],
+        votes: [
+          { rank: 1, nomineeId: ana.id },
+          { rank: 2, nomineeId: cleo.id },
+          { rank: 3, nomineeId: dina.id },
+        ],
       });
       expect(res.status).toBe(404);
     });
@@ -135,7 +130,11 @@ describe('Game isolation', () => {
 
     it("cannot change another game's bonus categories or invite links", async () => {
       const cat = db.insert(schema.bonusCategories).values({ gameId: gameB.id, name: 'B only' }).returning().get();
-      const link = db.insert(schema.inviteLinks).values({ gameId: gameB.id, code: 'game-b-link1', createdBy: carl.id }).returning().get();
+      const link = db
+        .insert(schema.inviteLinks)
+        .values({ gameId: gameB.id, code: 'game-b-link1', createdBy: carl.id })
+        .returning()
+        .get();
       const agent = await as('token-ana');
       expect((await agent.put(`/api/bonus/categories/${cat.id}`).send({ name: 'Mine' })).status).toBe(404);
       expect((await agent.delete(`/api/bonus/categories/${cat.id}`)).status).toBe(404);
@@ -154,8 +153,13 @@ describe('Game isolation', () => {
 
     it('notify only their own players about a phase change', async () => {
       await (await as('token-ana')).post('/api/admin/phase/set').send({ phase: 'reveal' });
-      const notified = db.select({ userId: schema.notifications.userId }).from(schema.notifications)
-        .where(eq(schema.notifications.type, 'phase_changed')).all().map(n => n.userId).sort();
+      const notified = db
+        .select({ userId: schema.notifications.userId })
+        .from(schema.notifications)
+        .where(eq(schema.notifications.type, 'phase_changed'))
+        .all()
+        .map(n => n.userId)
+        .sort();
       expect(notified).toEqual([ana.id, bob.id].sort());
     });
 

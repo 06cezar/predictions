@@ -99,19 +99,19 @@ describe('Hall of Fame routes', () => {
   const getAs = (token: string, endpoint: string) => fetchAs(token, `/api/leaderboard/${endpoint}`);
 
   describe('access control', () => {
-    it.each(HOF_ENDPOINTS)('%s requires auth', async (endpoint) => {
+    it.each(HOF_ENDPOINTS)('%s requires auth', async endpoint => {
       const res = await request(app).get(`/api/leaderboard/${endpoint}`);
       expect(res.status).toBe(401);
     });
 
-    it.each(HOF_ENDPOINTS)('%s is hidden from players before the game is done', async (endpoint) => {
+    it.each(HOF_ENDPOINTS)('%s is hidden from players before the game is done', async endpoint => {
       seedGame();
       setPhase(db, 'reveal');
       const res = await getAs('token-ana', endpoint);
       expect(res.status).toBe(403);
     });
 
-    it.each(HOF_ENDPOINTS)('%s is visible to admins before the game is done', async (endpoint) => {
+    it.each(HOF_ENDPOINTS)('%s is visible to admins before the game is done', async endpoint => {
       seedGame();
       setPhase(db, 'reveal');
       const res = await getAs('token-zed', endpoint);

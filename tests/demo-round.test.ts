@@ -37,8 +37,11 @@ describe('Demo round', () => {
     db.select().from(schema.outcomes).where(eq(schema.outcomes.predictionId, predictionId)).get()?.happened ?? null;
 
   const ratingsOf = (predictionId: number) =>
-    db.select({ userId: schema.ratings.userId, score: schema.ratings.score }).from(schema.ratings)
-      .where(eq(schema.ratings.predictionId, predictionId)).all();
+    db
+      .select({ userId: schema.ratings.userId, score: schema.ratings.score })
+      .from(schema.ratings)
+      .where(eq(schema.ratings.predictionId, predictionId))
+      .all();
 
   it("writes the bots' predictions about the visitor without names or pronouns", async () => {
     const { agent } = await startDemo('Ana');
@@ -106,7 +109,11 @@ describe('Demo round', () => {
 
     it('is admin-only', async () => {
       const { id } = await startDemo();
-      const bot = db.select().from(schema.users).where(eq(schema.users.id, id('Casey'))).get()!;
+      const bot = db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.id, id('Casey')))
+        .get()!;
       const asBot = request.agent(app);
       await loginAs(asBot, bot.token);
       expect((await asBot.post('/api/demo/skip')).status).toBe(403);
@@ -159,8 +166,16 @@ describe('Demo round', () => {
     const progress = async () => (await agent.get('/api/demo/progress')).body;
 
     expect(await progress()).toMatchObject({
-      phase: 'submission', written: 0, writeTotal: 4, rated: 0, rateTotal: 0, marked: 0, markTotal: 4,
-      bonusActive: false, bonusVoted: 0, bonusTotal: 1,
+      phase: 'submission',
+      written: 0,
+      writeTotal: 4,
+      rated: 0,
+      rateTotal: 0,
+      marked: 0,
+      markTotal: 4,
+      bonusActive: false,
+      bonusVoted: 0,
+      bonusTotal: 1,
     });
 
     // The optional bonus round: switch it on, vote in the bots' category

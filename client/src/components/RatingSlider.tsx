@@ -51,14 +51,14 @@ export function RatingSlider({ predictionId, initialScore, avgRating, onRate }: 
         <div className="flex flex-col gap-0.5">
           <span className="text-xs text-white/40 uppercase tracking-wider">Probability</span>
           {avgRating !== null && (
-            <span className="text-xs text-white/40">Average: <span className="text-white/60 font-medium">{avgRating}%</span></span>
+            <span className="text-xs text-white/40">
+              Average: <span className="text-white/60 font-medium">{avgRating}%</span>
+            </span>
           )}
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-white/40">{getLabel(score)}</span>
-          <span className={`font-display text-2xl font-bold leading-none ${getScoreColor(score)}`}>
-            {score}%
-          </span>
+          <span className={`font-display text-2xl font-bold leading-none ${getScoreColor(score)}`}>{score}%</span>
         </div>
       </div>
 
@@ -80,7 +80,6 @@ export function RatingSlider({ predictionId, initialScore, avgRating, onRate }: 
         <span>75%</span>
         <span>100%</span>
       </div>
-
 
       <button
         onClick={handleSubmit}

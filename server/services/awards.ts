@@ -44,12 +44,24 @@ function meanRating(g: GameSnapshot, predictions: Prediction[], fallback: number
 
 /** Most Courageous: came true despite the lowest average rating. */
 export function mostCourageous(g: GameSnapshot): Rated | null {
-  return pickBest(rated(g, g.predictions.filter(p => cameTrue(g, p))), (a, b) => a.avg < b.avg);
+  return pickBest(
+    rated(
+      g,
+      g.predictions.filter(p => cameTrue(g, p)),
+    ),
+    (a, b) => a.avg < b.avg,
+  );
 }
 
 /** Biggest Miss: did not happen despite the highest average rating. */
 export function biggestMiss(g: GameSnapshot): Rated | null {
-  return pickBest(rated(g, g.predictions.filter(p => didNotHappen(g, p))), (a, b) => a.avg > b.avg);
+  return pickBest(
+    rated(
+      g,
+      g.predictions.filter(p => didNotHappen(g, p)),
+    ),
+    (a, b) => a.avg > b.avg,
+  );
 }
 
 /** Most Controversial: the widest spread (population std dev) between at least two ratings. */
@@ -70,9 +82,12 @@ export function mostRevised(g: GameSnapshot) {
   const candidates = g.predictions
     .map(prediction => ({ prediction, history: g.history(prediction.id) }))
     .filter(c => c.history.length > 0);
-  return pickBest(candidates, (a, b) =>
-    a.history.length > b.history.length
-    || (a.history.length === b.history.length && a.prediction.id > b.prediction.id));
+  return pickBest(
+    candidates,
+    (a, b) =>
+      a.history.length > b.history.length ||
+      (a.history.length === b.history.length && a.prediction.id > b.prediction.id),
+  );
 }
 
 /** Star of the Show: the most predictions about them came true; ties go to the bolder ones. */

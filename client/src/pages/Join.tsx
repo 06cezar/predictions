@@ -22,7 +22,8 @@ export function Join({ onLogin }: Props) {
 
   useEffect(() => {
     if (!code) return;
-    api.invite.getLink(code)
+    api.invite
+      .getLink(code)
       .then(() => setLinkValid(true))
       .catch((err: any) => {
         setLinkValid(false);
@@ -75,7 +76,12 @@ export function Join({ onLogin }: Props) {
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[480px] h-[480px] rounded-full bg-orange/10 blur-[120px] pointer-events-none" />
       <div className="w-full max-w-md space-y-8 relative">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-float select-none" style={{ filter: 'drop-shadow(0 8px 24px rgba(59,47,245,0.45))' }}>🔮</div>
+          <div
+            className="text-6xl mb-4 animate-float select-none"
+            style={{ filter: 'drop-shadow(0 8px 24px rgba(59,47,245,0.45))' }}
+          >
+            🔮
+          </div>
           <h1 className="font-display text-5xl font-bold text-white mb-2 text-glow">Predictions</h1>
           <p className="text-white/50 italic font-display">You've been invited! Create your account below.</p>
         </div>
@@ -84,54 +90,58 @@ export function Join({ onLogin }: Props) {
           <TokenReveal
             title={`Welcome, ${joined.name}`}
             token={joined.token}
-            onContinue={async () => { await onLogin(); navigate('/'); }}
+            onContinue={async () => {
+              await onLogin();
+              navigate('/');
+            }}
           />
         )}
 
-        {!joined && <form onSubmit={handleSubmit} className="card space-y-5">
-          <div>
-            <label className="block text-sm text-white/60 mb-2">Your name <span className="text-orange">*</span></label>
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="e.g. Alex"
-              className="input"
-              autoFocus
-              autoComplete="off"
-            />
-          </div>
+        {!joined && (
+          <form onSubmit={handleSubmit} className="card space-y-5">
+            <div>
+              <label className="block text-sm text-white/60 mb-2">
+                Your name <span className="text-orange">*</span>
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="e.g. Alex"
+                className="input"
+                autoFocus
+                autoComplete="off"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm text-white/60 mb-2">
-              Token <span className="text-white/30">(optional - leave empty for auto-generated)</span>
-            </label>
-            <input
-              type="text"
-              value={token}
-              onChange={e => setToken(e.target.value)}
-              placeholder="e.g. brave-owl-4821"
-              className="input"
-              autoComplete="off"
-            />
-          </div>
+            <div>
+              <label className="block text-sm text-white/60 mb-2">
+                Token <span className="text-white/30">(optional - leave empty for auto-generated)</span>
+              </label>
+              <input
+                type="text"
+                value={token}
+                onChange={e => setToken(e.target.value)}
+                placeholder="e.g. brave-owl-4821"
+                className="input"
+                autoComplete="off"
+              />
+            </div>
 
-          {error && (
-            <p className="text-orange text-sm text-center">{error}</p>
-          )}
+            {error && <p className="text-orange text-sm text-center">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading || !name.trim()}
-            className="btn-primary w-full text-base py-3"
-          >
-            {loading ? 'Joining...' : 'Join the game →'}
-          </button>
-        </form>}
+            <button type="submit" disabled={loading || !name.trim()} className="btn-primary w-full text-base py-3">
+              {loading ? 'Joining...' : 'Join the game →'}
+            </button>
+          </form>
+        )}
 
         {!joined && (
           <p className="text-center text-white/30 text-sm">
-            Already have a token? <a href="/login" className="text-amber hover:text-amber/80 transition-colors">Sign in here</a>
+            Already have a token?{' '}
+            <a href="/login" className="text-amber hover:text-amber/80 transition-colors">
+              Sign in here
+            </a>
           </p>
         )}
       </div>

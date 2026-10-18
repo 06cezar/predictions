@@ -28,21 +28,25 @@ export function Bonus({ user }: Props) {
   const [notAvailable, setNotAvailable] = useState(false);
 
   useEffect(() => {
-    api.bonus.get().then(data => {
-      setCategories(data.categories);
-      setUsers(data.users);
-      setPhase(data.phase);
-      setBonusActive(data.bonusActive);
-      const initDrafts: Record<number, Array<{ rank: number; nomineeId: number }>> = {};
-      for (const cat of data.categories) {
-        if (cat.myVotes.length > 0) {
-          initDrafts[cat.id] = [...cat.myVotes];
+    api.bonus
+      .get()
+      .then(data => {
+        setCategories(data.categories);
+        setUsers(data.users);
+        setPhase(data.phase);
+        setBonusActive(data.bonusActive);
+        const initDrafts: Record<number, Array<{ rank: number; nomineeId: number }>> = {};
+        for (const cat of data.categories) {
+          if (cat.myVotes.length > 0) {
+            initDrafts[cat.id] = [...cat.myVotes];
+          }
         }
-      }
-      setDrafts(initDrafts);
-    }).catch(err => {
-      if (err.message?.includes('available')) setNotAvailable(true);
-    }).finally(() => setLoading(false));
+        setDrafts(initDrafts);
+      })
+      .catch(err => {
+        if (err.message?.includes('available')) setNotAvailable(true);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const isDone = phase === 'done';
@@ -72,7 +76,7 @@ export function Bonus({ user }: Props) {
     try {
       await api.bonus.vote(catId, votes);
       // Update categories with new myVotes
-      setCategories(prev => prev.map(c => c.id === catId ? { ...c, myVotes: votes } : c));
+      setCategories(prev => prev.map(c => (c.id === catId ? { ...c, myVotes: votes } : c)));
       setSaved(prev => ({ ...prev, [catId]: true }));
       setTimeout(() => setSaved(prev => ({ ...prev, [catId]: false })), 2000);
     } catch (err: any) {
@@ -85,25 +89,33 @@ export function Bonus({ user }: Props) {
   const rankMedals = ['🥇', '🥈', '🥉'];
   const rankLabels = ['1st place', '2nd place', '3rd place'];
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p className="text-white/50">Loading...</p>
-    </div>
-  );
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-white/50">Loading...</p>
+      </div>
+    );
 
-  if (notAvailable) return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
-      <p className="text-5xl">🎖️</p>
-      <h2 className="font-display text-2xl font-bold">Bonus Round not available</h2>
-      <p className="text-white/40 text-sm max-w-xs">The Bonus phase is not currently active. Check back when the organizer activates it.</p>
-      <Link to="/" className="btn-primary mt-2">← Back to Home</Link>
-    </div>
-  );
+  if (notAvailable)
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
+        <p className="text-5xl">🎖️</p>
+        <h2 className="font-display text-2xl font-bold">Bonus Round not available</h2>
+        <p className="text-white/40 text-sm max-w-xs">
+          The Bonus phase is not currently active. Check back when the organizer activates it.
+        </p>
+        <Link to="/" className="btn-primary mt-2">
+          ← Back to Home
+        </Link>
+      </div>
+    );
 
   return (
     <div className="min-h-screen p-4 pb-24 max-w-2xl mx-auto">
       <div className="flex items-center gap-4 py-6 mb-2 animate-fade-up">
-        <Link to="/" className="btn-ghost text-sm px-3">← Back</Link>
+        <Link to="/" className="btn-ghost text-sm px-3">
+          ← Back
+        </Link>
         <div>
           <h1 className="font-display text-2xl font-bold">🎖️ Bonus Round</h1>
           <p className="text-white/40 text-sm mt-0.5">
@@ -123,14 +135,19 @@ export function Bonus({ user }: Props) {
         {categories.map((cat, ci) => {
           const catVotes = getVotesForCat(cat.id);
           const allRanksSet = catVotes.length === required;
-          const hasChanged = JSON.stringify(catVotes.sort((a,b) => a.rank - b.rank)) !==
-            JSON.stringify([...cat.myVotes].sort((a,b) => a.rank - b.rank));
+          const hasChanged =
+            JSON.stringify(catVotes.sort((a, b) => a.rank - b.rank)) !==
+            JSON.stringify([...cat.myVotes].sort((a, b) => a.rank - b.rank));
           const alreadyVoted = cat.myVotes.length === required;
 
           // For the done phase: show tally sorted
           const tallyEntries = cat.tally
             ? Object.entries(cat.tally)
-                .map(([id, pts]) => ({ id: parseInt(id), pts, name: users.find(u => u.id === parseInt(id))?.name ?? '?' }))
+                .map(([id, pts]) => ({
+                  id: parseInt(id),
+                  pts,
+                  name: users.find(u => u.id === parseInt(id))?.name ?? '?',
+                }))
                 .sort((a, b) => b.pts - a.pts)
             : [];
 
@@ -145,10 +162,19 @@ export function Bonus({ user }: Props) {
                   <h2 className="font-display font-bold text-lg">{cat.name}</h2>
                   {isDone && (
                     <p className="text-xs text-white/40 mt-0.5">
-                      {cat.points < 0
-                        ? <>Winner loses <span className="text-orange font-semibold">{Math.abs(cat.points)}</span> bonus point{Math.abs(cat.points) !== 1 ? 's' : ''}{winnerCount > 1 ? ` (split: ${Math.abs(pointsEach)} each)` : ''}</>
-                        : <>Winner gets <span className="text-amber font-semibold">{cat.points}</span> bonus point{cat.points !== 1 ? 's' : ''}{winnerCount > 1 ? ` (split: ${pointsEach} each)` : ''}</>
-                      }
+                      {cat.points < 0 ? (
+                        <>
+                          Winner loses <span className="text-orange font-semibold">{Math.abs(cat.points)}</span> bonus
+                          point{Math.abs(cat.points) !== 1 ? 's' : ''}
+                          {winnerCount > 1 ? ` (split: ${Math.abs(pointsEach)} each)` : ''}
+                        </>
+                      ) : (
+                        <>
+                          Winner gets <span className="text-amber font-semibold">{cat.points}</span> bonus point
+                          {cat.points !== 1 ? 's' : ''}
+                          {winnerCount > 1 ? ` (split: ${pointsEach} each)` : ''}
+                        </>
+                      )}
                     </p>
                   )}
                 </div>
@@ -176,7 +202,9 @@ export function Bonus({ user }: Props) {
                         >
                           <option value="">{rankLabels[rank - 1]}...</option>
                           {availableUsers.map(u => (
-                            <option key={u.id} value={u.id}>{u.name}</option>
+                            <option key={u.id} value={u.id}>
+                              {u.name}
+                            </option>
                           ))}
                           {/* Also show currently selected even if "used" */}
                           {currentVote && !availableUsers.find(u => u.id === currentVote.nomineeId) && (
@@ -193,7 +221,13 @@ export function Bonus({ user }: Props) {
                     disabled={!allRanksSet || saving[cat.id]}
                     className="btn-primary w-full mt-1 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {saving[cat.id] ? 'Saving...' : saved[cat.id] ? '✓ Saved!' : alreadyVoted && !hasChanged ? '✓ Votes submitted' : 'Submit votes'}
+                    {saving[cat.id]
+                      ? 'Saving...'
+                      : saved[cat.id]
+                        ? '✓ Saved!'
+                        : alreadyVoted && !hasChanged
+                          ? '✓ Votes submitted'
+                          : 'Submit votes'}
                   </button>
                 </div>
               )}
@@ -205,9 +239,14 @@ export function Bonus({ user }: Props) {
                   {tallyEntries.map((entry, i) => {
                     const isWinner = cat.winners?.includes(entry.id);
                     return (
-                      <div key={entry.id} className={`flex items-center gap-3 rounded-xl px-3 py-2 ${isWinner ? (cat.points < 0 ? 'bg-orange/10 border border-orange/20' : 'bg-amber/10 border border-amber/20') : 'bg-white/3'}`}>
+                      <div
+                        key={entry.id}
+                        className={`flex items-center gap-3 rounded-xl px-3 py-2 ${isWinner ? (cat.points < 0 ? 'bg-orange/10 border border-orange/20' : 'bg-amber/10 border border-amber/20') : 'bg-white/3'}`}
+                      >
                         <span className="text-sm w-5 text-center text-white/30">{i + 1}</span>
-                        <span className={`flex-1 text-sm font-medium ${isWinner ? (cat.points < 0 ? 'text-orange' : 'text-amber') : 'text-white/70'}`}>
+                        <span
+                          className={`flex-1 text-sm font-medium ${isWinner ? (cat.points < 0 ? 'text-orange' : 'text-amber') : 'text-white/70'}`}
+                        >
                           {entry.name} {isWinner && (cat.points < 0 ? '💀' : '🏆')}
                         </span>
                         <span className="text-xs text-white/40">{entry.pts} vote pts</span>
@@ -216,7 +255,10 @@ export function Bonus({ user }: Props) {
                   })}
                   {cat.winners && cat.winners.length > 0 && (
                     <p className="text-xs text-white/40 text-center pt-1">
-                      {cat.winners.map(wid => users.find(u => u.id === wid)?.name).join(' & ')} {cat.points < 0 ? `loses ${Math.abs(pointsEach)} bonus point${Math.abs(pointsEach) !== 1 ? 's' : ''}` : `wins ${pointsEach} bonus point${pointsEach !== 1 ? 's' : ''}`}
+                      {cat.winners.map(wid => users.find(u => u.id === wid)?.name).join(' & ')}{' '}
+                      {cat.points < 0
+                        ? `loses ${Math.abs(pointsEach)} bonus point${Math.abs(pointsEach) !== 1 ? 's' : ''}`
+                        : `wins ${pointsEach} bonus point${pointsEach !== 1 ? 's' : ''}`}
                     </p>
                   )}
                 </div>

@@ -1,11 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
-import {
-  setupTestDb,
-  createUser,
-  createTestApp,
-  loginAs,
-} from './helpers';
+import { setupTestDb, createUser, createTestApp, loginAs } from './helpers';
 import { eq } from 'drizzle-orm';
 import * as schema from '../server/schema';
 
@@ -150,9 +145,7 @@ describe('Invite link routes', () => {
 
     const { body: link } = await agent.post('/api/invite');
 
-    const res = await request(app)
-      .post(`/api/invite/join/${link.code}`)
-      .send({ name: 'NewPerson' });
+    const res = await request(app).post(`/api/invite/join/${link.code}`).send({ name: 'NewPerson' });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -197,9 +190,7 @@ describe('Invite link routes', () => {
     const { body: link } = await agent.post('/api/invite');
     await request(app).post(`/api/invite/join/${link.code}`).send({ name: 'First' });
 
-    const res = await request(app)
-      .post(`/api/invite/join/${link.code}`)
-      .send({ name: 'Second' });
+    const res = await request(app).post(`/api/invite/join/${link.code}`).send({ name: 'Second' });
 
     expect(res.status).toBe(410);
   });
@@ -211,17 +202,13 @@ describe('Invite link routes', () => {
 
     const { body: link } = await agent.post('/api/invite');
 
-    const res = await request(app)
-      .post(`/api/invite/join/${link.code}`)
-      .send({});
+    const res = await request(app).post(`/api/invite/join/${link.code}`).send({});
 
     expect(res.status).toBe(400);
   });
 
   it('Joining with unknown code → 404', async () => {
-    const res = await request(app)
-      .post('/api/invite/join/badcode')
-      .send({ name: 'Someone' });
+    const res = await request(app).post('/api/invite/join/badcode').send({ name: 'Someone' });
     expect(res.status).toBe(404);
   });
 
@@ -256,14 +243,10 @@ describe('Invite link routes', () => {
 
     const { body: link } = await agent.post('/api/invite');
 
-    await request(app)
-      .post(`/api/invite/join/${link.code}`)
-      .send({ name: 'Newcomer', token: 'taken-token' });
+    await request(app).post(`/api/invite/join/${link.code}`).send({ name: 'Newcomer', token: 'taken-token' });
 
     // Admin should have a notification
-    const notif = db.select().from(schema.notifications)
-      .where(eq(schema.notifications.userId, admin.id))
-      .get();
+    const notif = db.select().from(schema.notifications).where(eq(schema.notifications.userId, admin.id)).get();
     expect(notif).toBeDefined();
     expect(notif!.type).toBe('token_conflict');
     const meta = JSON.parse(notif!.meta!);
@@ -280,9 +263,7 @@ describe('Invite link routes', () => {
     const { body: link } = await agent.post('/api/invite');
 
     // First attempt with taken token → 409
-    await request(app)
-      .post(`/api/invite/join/${link.code}`)
-      .send({ name: 'NewPerson', token: 'taken-token' });
+    await request(app).post(`/api/invite/join/${link.code}`).send({ name: 'NewPerson', token: 'taken-token' });
 
     // Second attempt with different token → success
     const res = await request(app)
@@ -304,9 +285,7 @@ describe('Invite link routes', () => {
     const { body: link } = await agent.post('/api/invite');
 
     // First attempt → conflict → token gets freed + blocked
-    await request(app)
-      .post(`/api/invite/join/${link.code}`)
-      .send({ name: 'Attacker', token: 'taken-token' });
+    await request(app).post(`/api/invite/join/${link.code}`).send({ name: 'Attacker', token: 'taken-token' });
 
     // Second attempt with same token → blocked
     const res = await request(app)
@@ -325,9 +304,7 @@ describe('Invite link routes', () => {
     const { body: link } = await agent.post('/api/invite');
 
     // Trigger conflict → 'soon-blocked' gets freed and blocked
-    await request(app)
-      .post(`/api/invite/join/${link.code}`)
-      .send({ name: 'Attacker', token: 'soon-blocked' });
+    await request(app).post(`/api/invite/join/${link.code}`).send({ name: 'Attacker', token: 'soon-blocked' });
 
     // Admin tries to create user with that blocked token
     const res = await agent.post('/api/admin/users').send({ name: 'NewUser', token: 'soon-blocked' });
@@ -344,14 +321,10 @@ describe('Invite link routes', () => {
     const { body: link } = await agent.post('/api/invite');
 
     // Block 'swift-lion-42'
-    await request(app)
-      .post(`/api/invite/join/${link.code}`)
-      .send({ name: 'Attacker', token: 'swift-lion-42' });
+    await request(app).post(`/api/invite/join/${link.code}`).send({ name: 'Attacker', token: 'swift-lion-42' });
 
     // Verify it's in blocked_tokens
-    const blocked = db.select().from(schema.blockedTokens)
-      .where(eq(schema.blockedTokens.token, 'swift-lion-42'))
-      .get();
+    const blocked = db.select().from(schema.blockedTokens).where(eq(schema.blockedTokens.token, 'swift-lion-42')).get();
     expect(blocked).toBeDefined();
   });
 

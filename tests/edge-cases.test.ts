@@ -4,7 +4,14 @@ import { eq } from 'drizzle-orm';
 import * as schema from '../server/schema';
 import { runScheduledTasks } from '../server/phase-scheduler';
 import {
-  setupTestDb, createUser, createPrediction, createRating, createOutcome, createTestApp, loginAs, setPhase,
+  setupTestDb,
+  createUser,
+  createPrediction,
+  createRating,
+  createOutcome,
+  createTestApp,
+  loginAs,
+  setPhase,
   DEFAULT_GAME_ID,
 } from './helpers';
 
@@ -189,7 +196,7 @@ describe('Edge cases', () => {
       const set = (id: number, updatedAt: string) =>
         db.update(schema.predictions).set({ updatedAt }).where(eq(schema.predictions.id, id)).run();
       set(edited.id, '2026-10-17T19:00:00.000Z'); // edited at 19:00
-      set(written.id, '2026-10-17 20:00:00');     // written later, at 20:00
+      set(written.id, '2026-10-17 20:00:00'); // written later, at 20:00
       createOutcome(db, written.id, true, zed.id);
       setPhase(db, 'done');
 

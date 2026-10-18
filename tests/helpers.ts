@@ -23,12 +23,12 @@ export function createTestDb() {
 }
 
 /** Create a game directly in the DB. */
-export function createGame(
-  db: TestDb,
-  name: string,
-  values: Partial<typeof schema.games.$inferInsert> = {},
-) {
-  return db.insert(schema.games).values({ name, joinCode: randomJoinCode(), ...values }).returning().get()!;
+export function createGame(db: TestDb, name: string, values: Partial<typeof schema.games.$inferInsert> = {}) {
+  return db
+    .insert(schema.games)
+    .values({ name, joinCode: randomJoinCode(), ...values })
+    .returning()
+    .get()!;
 }
 
 export function setupTestDb() {
@@ -56,7 +56,11 @@ export function createPrediction(
   text: string,
 ) {
   const author = db.select().from(schema.users).where(eq(schema.users.id, authorId)).get()!;
-  return db.insert(schema.predictions).values({ gameId: author.gameId, authorId, targetId, currentText: text }).returning().get()!;
+  return db
+    .insert(schema.predictions)
+    .values({ gameId: author.gameId, authorId, targetId, currentText: text })
+    .returning()
+    .get()!;
 }
 
 /** Create a rating directly in the DB. */
@@ -86,17 +90,17 @@ export function setPhase(
   extra: Partial<typeof schema.games.$inferInsert> = {},
   gameId = DEFAULT_GAME_ID,
 ) {
-  db.update(schema.games).set({ currentPhase: phase, ...extra }).where(eq(schema.games.id, gameId)).run();
+  db.update(schema.games)
+    .set({ currentPhase: phase, ...extra })
+    .where(eq(schema.games.id, gameId))
+    .run();
 }
 
 /**
  * Returns a supertest agent that is already logged in as the given user.
  * The agent persists cookies so session is maintained across requests.
  */
-export async function loginAs(
-  agent: ReturnType<typeof request.agent>,
-  token: string,
-) {
+export async function loginAs(agent: ReturnType<typeof request.agent>, token: string) {
   const res = await agent.post('/api/auth/login').send({ token });
   if (res.status !== 200) {
     throw new Error(`Login failed for token ${token}: ${res.status} ${JSON.stringify(res.body)}`);

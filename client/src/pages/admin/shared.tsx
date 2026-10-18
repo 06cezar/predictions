@@ -25,7 +25,13 @@ export function Toggle({ on, onClick, color = 'bg-orange' }: { on: boolean; onCl
 }
 
 /** A labelled on/off setting row. */
-export function ToggleRow({ title, description, on, onClick, color }: {
+export function ToggleRow({
+  title,
+  description,
+  on,
+  onClick,
+  color,
+}: {
   title: string;
   description: string;
   on: boolean;

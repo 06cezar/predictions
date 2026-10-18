@@ -24,9 +24,7 @@ declare global {
 
 /** Load the logged-in player and their game into res.locals, or answer 401. */
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const user = req.session.userId
-    ? db.select().from(users).where(eq(users.id, req.session.userId)).get()
-    : undefined;
+  const user = req.session.userId ? db.select().from(users).where(eq(users.id, req.session.userId)).get() : undefined;
   const game = user && getGame(user.gameId);
   if (!user || !game) {
     return res.status(401).json({ error: 'Unauthorized' });

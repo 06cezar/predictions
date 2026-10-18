@@ -21,9 +21,9 @@ export function predictionPoints(avg: number | null, edits: number, forgivenEdit
   const { tier1, tier2, tier3 } = scoringTiers(threshold);
   let multiplier = 1.0;
   if (avg !== null) {
-    if (avg < tier1)          multiplier = 5.0;
-    else if (avg < tier2)     multiplier = 4.0;
-    else if (avg < tier3)     multiplier = 3.0;
+    if (avg < tier1) multiplier = 5.0;
+    else if (avg < tier2) multiplier = 4.0;
+    else if (avg < tier3) multiplier = 3.0;
     else if (avg < threshold) multiplier = 2.0;
   }
   const penalizedEdits = Math.max(0, edits - forgivenEdits);
@@ -37,16 +37,20 @@ export function tallyVotes(votes: { nomineeId: number; rank: number }[]) {
     tally[vote.nomineeId] = (tally[vote.nomineeId] ?? 0) + (4 - vote.rank);
   }
   const maxPts = Object.values(tally).length > 0 ? Math.max(...Object.values(tally)) : 0;
-  const winners = maxPts > 0
-    ? Object.entries(tally).filter(([, pts]) => pts === maxPts).map(([id]) => parseInt(id))
-    : [];
+  const winners =
+    maxPts > 0
+      ? Object.entries(tally)
+          .filter(([, pts]) => pts === maxPts)
+          .map(([id]) => parseInt(id))
+      : [];
   return { tally, winners };
 }
 
 /** Bonus points per user id: each category's points are split evenly between its winners. */
 export function calcBonusPoints(gameId: number): Record<number, number> {
   const categories = db.select().from(bonusCategories).where(eq(bonusCategories.gameId, gameId)).all();
-  const allVotes = db.select({ categoryId: bonusVotes.categoryId, nomineeId: bonusVotes.nomineeId, rank: bonusVotes.rank })
+  const allVotes = db
+    .select({ categoryId: bonusVotes.categoryId, nomineeId: bonusVotes.nomineeId, rank: bonusVotes.rank })
     .from(bonusVotes)
     .innerJoin(bonusCategories, eq(bonusCategories.id, bonusVotes.categoryId))
     .where(eq(bonusCategories.gameId, gameId))

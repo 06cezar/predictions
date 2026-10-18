@@ -46,10 +46,11 @@ export function Welcome({ onLogin }: Props) {
     navigate('/');
   };
 
-  const startDemo = () => run(async () => {
-    await api.demo.start();
-    await enter();
-  });
+  const startDemo = () =>
+    run(async () => {
+      await api.demo.start();
+      await enter();
+    });
 
   const login = (e: FormEvent) => {
     e.preventDefault();
@@ -82,7 +83,12 @@ export function Welcome({ onLogin }: Props) {
       </Link>
       <div className="w-full max-w-md space-y-8 relative">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-float select-none" style={{ filter: 'drop-shadow(0 8px 24px rgba(59,47,245,0.45))' }}>🔮</div>
+          <div
+            className="text-6xl mb-4 animate-float select-none"
+            style={{ filter: 'drop-shadow(0 8px 24px rgba(59,47,245,0.45))' }}
+          >
+            🔮
+          </div>
           <h1 className="font-display text-5xl font-bold text-white mb-2 text-glow">Predictions</h1>
           <p className="text-white/50 italic font-display">Predict your friends' year. Find out who saw it coming.</p>
         </div>
@@ -102,8 +108,8 @@ export function Welcome({ onLogin }: Props) {
                 {busy ? 'Setting up...' : 'Run a demo round as the admin →'}
               </button>
               <p className="text-white/35 text-xs">
-                Four bot players, a step-by-step guide and a button to skip ahead in time.
-                No sign-up; private to you and deleted after 3 days.
+                Four bot players, a step-by-step guide and a button to skip ahead in time. No sign-up; private to you
+                and deleted after 3 days.
               </p>
             </div>
 
@@ -113,7 +119,10 @@ export function Welcome({ onLogin }: Props) {
                   <button
                     key={t.id}
                     type="button"
-                    onClick={() => { setTab(t.id); setError(''); }}
+                    onClick={() => {
+                      setTab(t.id);
+                      setError('');
+                    }}
                     className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
                       tab === t.id ? 'bg-white/15 text-white' : 'text-white/50 hover:text-white/80'
                     }`}
@@ -166,22 +175,47 @@ export function Welcome({ onLogin }: Props) {
                 <form onSubmit={createGame} className="space-y-4">
                   <div>
                     <label className="block text-sm text-white/60 mb-2">Game name</label>
-                    <input value={gameName} onChange={e => setGameName(e.target.value)} placeholder="e.g. Class of 2026" className="input" maxLength={40} autoFocus />
+                    <input
+                      value={gameName}
+                      onChange={e => setGameName(e.target.value)}
+                      placeholder="e.g. Class of 2026"
+                      className="input"
+                      maxLength={40}
+                      autoFocus
+                    />
                   </div>
                   <div>
                     <label className="block text-sm text-white/60 mb-2">Your name</label>
-                    <input value={playerName} onChange={e => setPlayerName(e.target.value)} placeholder="e.g. Alex" className="input" maxLength={40} />
+                    <input
+                      value={playerName}
+                      onChange={e => setPlayerName(e.target.value)}
+                      placeholder="e.g. Alex"
+                      className="input"
+                      maxLength={40}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm text-white/60 mb-2">
                       Token <span className="text-white/30">(optional, generated if empty)</span>
                     </label>
-                    <input value={customToken} onChange={e => setCustomToken(e.target.value)} placeholder="e.g. brave-owl-4821" className="input" autoComplete="off" />
+                    <input
+                      value={customToken}
+                      onChange={e => setCustomToken(e.target.value)}
+                      placeholder="e.g. brave-owl-4821"
+                      className="input"
+                      autoComplete="off"
+                    />
                   </div>
-                  <button type="submit" disabled={busy || !gameName.trim() || !playerName.trim()} className="btn-primary w-full py-3">
+                  <button
+                    type="submit"
+                    disabled={busy || !gameName.trim() || !playerName.trim()}
+                    className="btn-primary w-full py-3"
+                  >
                     {busy ? 'Creating...' : 'Create game →'}
                   </button>
-                  <p className="text-white/35 text-xs text-center">You'll be the admin: invite friends, set deadlines, run the reveal.</p>
+                  <p className="text-white/35 text-xs text-center">
+                    You'll be the admin: invite friends, set deadlines, run the reveal.
+                  </p>
                 </form>
               )}
 
