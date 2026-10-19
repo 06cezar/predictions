@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api, BonusCategory, Settings, errorMessage } from '../../api';
 import { Toggle } from './shared';
+import { Award } from 'lucide-react';
 
 interface Props {
   settings: Settings;
@@ -100,7 +101,10 @@ export function BonusTab({ settings, onChanged }: Props) {
       <div className="card space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-medium">🎖️ Bonus Round</h3>
+            <h3 className="font-medium">
+              <Award className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+              Bonus Round
+            </h3>
             <p className="text-xs text-white/40 mt-0.5">
               {settings.bonusActive ? 'Active - users can vote now' : 'Inactive - activate to open voting'}
             </p>
@@ -192,7 +196,7 @@ export function BonusTab({ settings, onChanged }: Props) {
                         <span>{entry.pts} pts</span>
                         {cat.winners?.includes(entry.id) && winnerCount > 0 && (
                           <span className={cat.points < 0 ? 'text-orange' : 'text-amber'}>
-                            {cat.points < 0 ? `→ ${pointsEach}` : `→ +${pointsEach}`} bonus
+                            {cat.points < 0 ? pointsEach : `+${pointsEach}`} bonus
                           </span>
                         )}
                       </div>

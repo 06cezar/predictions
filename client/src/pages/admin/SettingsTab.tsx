@@ -3,6 +3,19 @@ import { markDemoSettingsSeen } from '../../demoGuide';
 import { api, Settings, errorMessage } from '../../api';
 import { useCopied } from '../../hooks/useCopied';
 import { SettingsUpdate, ToggleRow, toLocalInput } from './shared';
+import {
+  Award,
+  Check,
+  Database,
+  Eye,
+  FileText,
+  Flag,
+  PenLine,
+  Sparkles,
+  Trash2,
+  TriangleAlert,
+  Trophy,
+} from 'lucide-react';
 
 type Phase = Settings['currentPhase'];
 
@@ -15,9 +28,9 @@ interface Props {
 }
 
 const PHASE_BUTTONS = [
-  { id: 'submission', label: 'Submission', emoji: '✍️', color: 'bg-amber/20 border-amber/40 text-amber' },
-  { id: 'reveal', label: 'Reveal', emoji: '👁️', color: 'bg-violet/20 border-violet/40 text-lilac' },
-  { id: 'done', label: 'Done', emoji: '🏁', color: 'bg-orange/20 border-orange/40 text-orange' },
+  { id: 'submission', label: 'Submission', icon: PenLine, color: 'bg-amber/20 border-amber/40 text-amber' },
+  { id: 'reveal', label: 'Reveal', icon: Eye, color: 'bg-violet/20 border-violet/40 text-lilac' },
+  { id: 'done', label: 'Done', icon: Flag, color: 'bg-orange/20 border-orange/40 text-orange' },
 ] as const;
 
 export function SettingsTab({ settings, onUpdate, onChanged }: Props) {
@@ -124,17 +137,21 @@ export function SettingsTab({ settings, onUpdate, onChanged }: Props) {
             download
             className="btn-secondary flex-1 text-center text-sm py-2"
           >
-            📋 Predictions
+            <FileText className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+            Predictions
           </a>
           <a href="/api/admin/export/scores.csv" download className="btn-secondary flex-1 text-center text-sm py-2">
-            🏆 Scores
+            <Trophy className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+            Scores
           </a>
           <a href="/api/admin/export/hof.csv" download className="btn-secondary flex-1 text-center text-sm py-2">
-            ✨ Hall of Fame
+            <Sparkles className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+            Hall of Fame
           </a>
         </div>
         <a href="/api/admin/export/game.json" download className="btn-secondary w-full text-center text-sm py-2 block">
-          🗄️ Whole game (.json)
+          <Database className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+          Whole game (.json)
         </a>
       </div>
     </div>
@@ -184,7 +201,7 @@ function GameSection({ settings, onUpdate, onChanged }: Props) {
         <div className="flex gap-2">
           <code className="input flex-1 min-w-0 font-mono tracking-[0.3em] text-amber">{settings.joinCode}</code>
           <button onClick={() => copy(joinLink, 'link')} className="btn-secondary text-sm px-3 whitespace-nowrap">
-            {copied === 'link' ? '✓ Copied' : 'Copy link'}
+            {copied === 'link' ? 'Copied' : 'Copy link'}
           </button>
           <button
             onClick={regenerate}
@@ -244,7 +261,7 @@ function PhaseControl({ settings, onChanged }: Pick<Props, 'settings' | 'onChang
     <div className="card space-y-4">
       <h3 className="font-medium">Phase Control</h3>
       <div className="grid grid-cols-3 gap-3">
-        {PHASE_BUTTONS.map(({ id, label, emoji, color }) => {
+        {PHASE_BUTTONS.map(({ id, label, icon: Icon, color }) => {
           const isActive = settings.currentPhase === id;
           const isConfirming = confirming === id;
           return (
@@ -262,11 +279,11 @@ function PhaseControl({ settings, onChanged }: Pick<Props, 'settings' | 'onChang
                       : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white/70 hover:border-white/20'
                 }`}
             >
-              <span className="text-2xl">{emoji}</span>
+              <Icon className="w-6 h-6" strokeWidth={2.2} />
               <span>{isConfirming ? 'Confirm?' : label}</span>
               {isActive && (
                 <span className="absolute -top-2 -right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center text-navy text-xs font-bold">
-                  ✓
+                  <Check className="w-3.5 h-3.5" strokeWidth={3} />
                 </span>
               )}
             </button>
@@ -275,7 +292,10 @@ function PhaseControl({ settings, onChanged }: Pick<Props, 'settings' | 'onChang
       </div>
       {bonusDoneWarning && (
         <div className="bg-amber/10 border border-amber/30 rounded-xl px-4 py-3 space-y-2">
-          <p className="text-sm text-amber font-medium">🎖️ Skip Bonus Round?</p>
+          <p className="text-sm text-amber font-medium">
+            <Award className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+            Skip Bonus Round?
+          </p>
           <p className="text-xs text-white/50">Bonus round is not active. Do you want to go to Done without it?</p>
           <div className="flex gap-2 pt-1">
             <button
@@ -285,7 +305,7 @@ function PhaseControl({ settings, onChanged }: Pick<Props, 'settings' | 'onChang
               }}
               className="px-3 py-1.5 rounded-lg text-xs font-medium bg-orange/20 text-orange hover:bg-orange/30 transition-colors"
             >
-              Skip bonus → Done
+              Skip bonus and finish
             </button>
             <button
               onClick={() => setBonusDoneWarning(false)}
@@ -333,7 +353,17 @@ function DangerZone() {
             : 'bg-red-500/10 text-red-600 border border-red-500/30 hover:bg-red-500/20'
         }`}
       >
-        {confirm ? '⚠️ Click again to confirm reset' : '🗑️ Reset Game'}
+        {confirm ? (
+          <>
+            <TriangleAlert className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+            Click again to confirm reset
+          </>
+        ) : (
+          <>
+            <Trash2 className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+            Reset Game
+          </>
+        )}
       </button>
     </div>
   );

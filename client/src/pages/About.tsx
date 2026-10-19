@@ -1,33 +1,37 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, errorMessage } from '../api';
+import { Award, ChevronLeft, Dices, Eye, FlaskConical, KeyRound, PenLine, Target, Trophy } from 'lucide-react';
+import { Logo, StickerIcon } from '../components/Sticker';
 
 interface Props {
   loggedIn: boolean;
   onLogin: () => Promise<void>;
 }
 
+const STEP_TONES = ['yellow', 'coral', 'violet', 'mint'] as const;
+
 const STEPS = [
   {
-    emoji: '✍️',
+    icon: PenLine,
     title: 'Write',
     text: 'Write one prediction about every other player: something you think will happen to them before the game ends.',
     example: '"Will run a marathon." "Will move to Lisbon." "Will finally learn to cook."',
   },
   {
-    emoji: '🎯',
+    icon: Target,
     title: 'Rate',
     text: "Rate how likely other people's predictions are, from 0% (no chance) to 100% (certain). Predictions about you stay hidden, so no spoilers.",
     example: '"Bob will start a podcast": hmm, 30%.',
   },
   {
-    emoji: '👁️',
+    icon: Eye,
     title: 'Reveal',
     text: "When the deadline passes, you finally see what everyone predicted about you, and you mark each one: happened, or didn't.",
-    example: '"Will jump into the sea in winter": ✅ happened.',
+    example: '"Will jump into the sea in winter": happened.',
   },
   {
-    emoji: '🏆',
+    icon: Trophy,
     title: 'Results',
     text: 'Points go to whoever wrote each prediction that came true. Then the Hall of Fame hands out awards.',
     example: 'Most Courageous, Biggest Miss, Best Friends, The Joker...',
@@ -85,14 +89,14 @@ export function About({ loggedIn, onLogin }: Props) {
 
   return (
     <div className="min-h-screen p-4 pb-24 max-w-2xl mx-auto">
-      <div className="py-6 animate-fade-up">
+      <div className="py-6">
         <Link to={loggedIn ? '/' : '/login'} className="btn-ghost text-sm px-3">
-          ← {loggedIn ? 'Back to your game' : 'Back'}
+          <ChevronLeft className="inline-block w-4 h-4 -mt-0.5" /> {loggedIn ? 'Back to your game' : 'Back'}
         </Link>
       </div>
 
-      <div className="text-center space-y-3 mb-10 animate-fade-up">
-        <p className="text-5xl select-none">🔮</p>
+      <div className="text-center space-y-3 mb-10">
+        <Logo />
         <h1 className="font-display text-4xl font-bold text-glow">How Predictions works</h1>
         <p className="text-white/60 max-w-lg mx-auto">
           A game about how well you know your friends. Everyone predicts what will happen to everyone else, the group
@@ -106,7 +110,7 @@ export function About({ loggedIn, onLogin }: Props) {
           {STEPS.map((step, i) => (
             <div key={step.title} className="card space-y-2">
               <div className="flex items-center gap-2">
-                <span className="text-2xl">{step.emoji}</span>
+                <StickerIcon icon={step.icon} size="sm" tone={STEP_TONES[i]} />
                 <h3 className="font-medium">
                   <span className="text-white/30 mr-1">{i + 1}.</span>
                   {step.title}
@@ -150,17 +154,26 @@ export function About({ loggedIn, onLogin }: Props) {
         <h2 className="font-display text-xl font-bold">Getting in</h2>
         <div className="grid sm:grid-cols-3 gap-3 text-sm">
           <div className="card space-y-1">
-            <p className="font-medium">🎲 Start a game</p>
+            <p className="font-medium">
+              <Dices className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+              Start a game
+            </p>
             <p className="text-white/60">
               Name it, and you're the admin: invite friends, set the deadlines, run the reveal.
             </p>
           </div>
           <div className="card space-y-1">
-            <p className="font-medium">🔑 Join one</p>
+            <p className="font-medium">
+              <KeyRound className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+              Join one
+            </p>
             <p className="text-white/60">Use the 6-letter code or link your admin shares, or a one-use invite link.</p>
           </div>
           <div className="card space-y-1">
-            <p className="font-medium">🧪 Just looking?</p>
+            <p className="font-medium">
+              <FlaskConical className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+              Just looking?
+            </p>
             <p className="text-white/60">
               Run a demo round as the admin: four bots, a guide, and a button to skip ahead in time.
             </p>
@@ -168,7 +181,8 @@ export function About({ loggedIn, onLogin }: Props) {
         </div>
         <div className="card space-y-1 text-sm">
           <p className="font-medium">
-            🎖️ Bonus round <span className="text-white/40 font-normal">(optional, for extra laughs... or not 🙂)</span>
+            <Award className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+            Bonus round <span className="text-white/40 font-normal">(optional, for extra laughs... or not)</span>
           </p>
           <p className="text-white/60">
             The admin adds silly categories like "most likely to move abroad" and everyone ranks their top 3. Winners
@@ -193,12 +207,12 @@ export function About({ loggedIn, onLogin }: Props) {
       <div className="flex flex-col sm:flex-row gap-3">
         {loggedIn ? (
           <Link to="/" className="btn-primary flex-1 text-center py-3">
-            Back to your game →
+            Back to your game
           </Link>
         ) : (
           <>
             <button onClick={startDemo} disabled={busy} className="btn-primary flex-1 py-3">
-              {busy ? 'Setting up...' : 'Run a demo round →'}
+              {busy ? 'Setting up...' : 'Run a demo round'}
             </button>
             <Link to="/login" className="btn-secondary flex-1 text-center py-3">
               Create or join a game

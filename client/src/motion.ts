@@ -4,10 +4,10 @@ import { animate, stagger } from 'animejs';
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
- * Plays the entrance of every `.animate-fade-up` element as it appears: a
- * quick drop-in with a small tilt and overshoot, staggered when several arrive together.
- * Watching the DOM means pages need no extra code, including content that
- * shows up after data loads (a Hall of Fame reveal, a new list).
+ * Plays the entrance of every `[data-reveal]` element as it appears: a quick
+ * drop-in with a small tilt and overshoot, staggered when several arrive
+ * together. Only the big moments are marked (the Hall of Fame cards and the
+ * rankings after their drum roll), so motion means "something happened".
  */
 export function startEntranceAnimations() {
   if (reducedMotion()) return;
@@ -31,8 +31,8 @@ export function startEntranceAnimations() {
 
   const collect = (node: Node) => {
     if (!(node instanceof HTMLElement)) return;
-    const found = node.matches('.animate-fade-up') ? [node] : [];
-    found.push(...node.querySelectorAll<HTMLElement>('.animate-fade-up'));
+    const found = node.matches('[data-reveal]') ? [node] : [];
+    found.push(...node.querySelectorAll<HTMLElement>('[data-reveal]'));
     for (const el of found) {
       if (seen.has(el)) continue;
       seen.add(el);

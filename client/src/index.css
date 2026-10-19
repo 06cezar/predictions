@@ -181,70 +181,6 @@ input[type='range']::-moz-range-thumb:hover {
   transform: scale(1.12);
 }
 
-/* Fade-in for page content */
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes pulseSlow {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
-}
-
-/* Entrances are played by anime.js (see motion.ts) */
-.animate-fade-up {
-  animation: none;
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.3s ease both;
-}
-
-/* Staggered children */
-.stagger > *:nth-child(1) {
-  animation-delay: 0.05s;
-}
-.stagger > *:nth-child(2) {
-  animation-delay: 0.1s;
-}
-.stagger > *:nth-child(3) {
-  animation-delay: 0.15s;
-}
-.stagger > *:nth-child(4) {
-  animation-delay: 0.2s;
-}
-.stagger > *:nth-child(5) {
-  animation-delay: 0.25s;
-}
-.stagger > *:nth-child(6) {
-  animation-delay: 0.3s;
-}
-
-.animate-pulse-slow {
-  animation: pulseSlow 2.5s ease-in-out infinite;
-}
-
 @keyframes outcomeReveal {
   0% {
     opacity: 0;
@@ -266,18 +202,4 @@ input[type='range']::-moz-range-thumb:hover {
 
 .animate-outcome-reveal {
   animation: outcomeReveal 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-/* Floating hero orb */
-@keyframes floatOrb {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-.animate-float {
-  animation: floatOrb 4.5s ease-in-out infinite;
 }

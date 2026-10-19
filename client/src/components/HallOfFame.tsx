@@ -1,6 +1,8 @@
 import { useState, ReactNode } from 'react';
 import type { HallOfFame, PredictionAward } from '../api';
 import { parseServerTime } from '../time';
+import { ChevronDown, Drama, Handshake, RefreshCw, Rocket, Scale, Skull, Star, Sunrise, Zap } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 /** Card colours (written out in full so Tailwind keeps the classes). */
 const THEMES = {
@@ -15,28 +17,41 @@ const THEMES = {
 };
 type Theme = (typeof THEMES)[keyof typeof THEMES];
 
+/** One icon per award, shared with the admin preview. */
+export const AWARD_ICONS: Record<keyof HallOfFame, LucideIcon> = {
+  mostCourageous: Rocket,
+  biggestMiss: Skull,
+  mostControversial: Scale,
+  mostRevised: RefreshCw,
+  lastMinute: Zap,
+  firstToSubmit: Sunrise,
+  starOfTheShow: Star,
+  theJoker: Drama,
+  bestFriends: Handshake,
+};
+
 /** True when at least one award has a winner. */
 export function hasWinners(awards: HallOfFame) {
   return Object.values(awards).some(award => (Array.isArray(award) ? award.length > 0 : award !== null));
 }
 
 function AwardCard({
+  icon: Icon,
   title,
   theme,
-  delay,
   children,
 }: {
+  icon: LucideIcon;
   title: ReactNode;
   theme: Theme;
-  delay?: string;
   children: ReactNode;
 }) {
   return (
-    <div
-      className={`card mb-3 border ${theme.card} space-y-2 animate-fade-up`}
-      style={delay ? { animationDelay: delay } : undefined}
-    >
-      <p className={`text-xs ${theme.accent} uppercase tracking-widest font-medium`}>{title}</p>
+    <div data-reveal className={`card mb-3 border ${theme.card} space-y-2`}>
+      <p className={`flex items-center gap-1.5 text-xs ${theme.accent} uppercase tracking-widest font-bold`}>
+        <Icon className="w-4 h-4 shrink-0" strokeWidth={2.5} />
+        <span>{title}</span>
+      </p>
       {children}
     </div>
   );
@@ -44,22 +59,22 @@ function AwardCard({
 
 /** An award for one prediction: its text, who wrote it about whom, and a detail on the right. */
 function PredictionAwardCard({
+  icon,
   title,
   theme,
-  delay,
   award,
   detail,
   children,
 }: {
+  icon: LucideIcon;
   title: string;
   theme: Theme;
-  delay?: string;
   award: PredictionAward;
   detail: string;
   children?: ReactNode;
 }) {
   return (
-    <AwardCard title={title} theme={theme} delay={delay}>
+    <AwardCard icon={icon} title={title} theme={theme}>
       <p className="text-white/90 leading-relaxed">"{award.text}"</p>
       <div className="flex items-center justify-between text-xs text-white/40 pt-1">
         <span>
@@ -80,16 +95,16 @@ function PredictionAwardCard({
 /** An award that can go to several people at once; ties each get a card. */
 function WinnerCards<T>({
   winners,
+  icon,
   title,
   theme,
-  baseDelay,
   keyOf,
   children,
 }: {
   winners: T[];
+  icon: LucideIcon;
   title: string;
   theme: Theme;
-  baseDelay: number;
   keyOf: (winner: T) => string;
   children: (winner: T) => ReactNode;
 }) {
@@ -99,8 +114,8 @@ function WinnerCards<T>({
       {winners.map((winner, i) => (
         <AwardCard
           key={keyOf(winner)}
+          icon={icon}
           theme={theme}
-          delay={`${baseDelay + i * 0.08}s`}
           title={
             <>
               {title}
@@ -121,7 +136,10 @@ function Expandable({ showLabel, hideLabel, children }: { showLabel: string; hid
   return (
     <>
       <button onClick={() => setOpen(v => !v)} className="text-xs text-white/30 hover:text-white/60 transition-colors">
-        {open ? `▲ ${hideLabel}` : `▼ ${showLabel}`}
+        <ChevronDown
+          className={`inline-block w-3.5 h-3.5 -mt-0.5 mr-1 transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+        {open ? hideLabel : showLabel}
       </button>
       {open && children}
     </>
@@ -148,7 +166,8 @@ export function HallOfFameCards({ awards }: { awards: HallOfFame }) {
     <>
       {mostCourageous && (
         <PredictionAwardCard
-          title="🦁 Most Courageous Prediction"
+          icon={AWARD_ICONS.mostCourageous}
+          title="Most Courageous Prediction"
           theme={THEMES.amber}
           award={mostCourageous}
           detail={`${mostCourageous.avg}% avg rating`}
@@ -156,18 +175,18 @@ export function HallOfFameCards({ awards }: { awards: HallOfFame }) {
       )}
       {biggestMiss && (
         <PredictionAwardCard
-          title="💀 Biggest Miss"
+          icon={AWARD_ICONS.biggestMiss}
+          title="Biggest Miss"
           theme={THEMES.orange}
-          delay="0.1s"
           award={biggestMiss}
           detail={`${biggestMiss.avg}% avg rating`}
         />
       )}
       {mostControversial && (
         <PredictionAwardCard
-          title="📊 Most Controversial Prediction"
+          icon={AWARD_ICONS.mostControversial}
+          title="Most Controversial Prediction"
           theme={THEMES.violet}
-          delay="0.18s"
           award={mostControversial}
           detail={`avg ${mostControversial.avg}% - spread ±${mostControversial.stdDev}%`}
         >
@@ -187,15 +206,15 @@ export function HallOfFameCards({ awards }: { awards: HallOfFame }) {
       )}
       {lastMinute && (
         <PredictionAwardCard
-          title="⚡ Last Minute"
+          icon={AWARD_ICONS.lastMinute}
+          title="Last Minute"
           theme={THEMES.orange}
-          delay="0.30s"
           award={lastMinute}
           detail={parseServerTime(lastMinute.updatedAt).toLocaleString(undefined, { hour12: false })}
         />
       )}
       {firstToSubmit && (
-        <AwardCard title="🌅 First to Submit" theme={THEMES.mint} delay="0.36s">
+        <AwardCard icon={AWARD_ICONS.firstToSubmit} title="First to Submit" theme={THEMES.mint}>
           <p className="text-white/90">
             {firstToSubmit.tied ? (
               <>
@@ -218,9 +237,9 @@ export function HallOfFameCards({ awards }: { awards: HallOfFame }) {
       )}
       <WinnerCards
         winners={bestFriends}
-        title="🤝 Best Friends"
+        icon={AWARD_ICONS.bestFriends}
+        title="Best Friends"
         theme={THEMES.rose}
-        baseDelay={0.22}
         keyOf={p => `${p.userA}-${p.userB}`}
       >
         {pair => (
@@ -235,9 +254,9 @@ export function HallOfFameCards({ awards }: { awards: HallOfFame }) {
       </WinnerCards>
       {mostRevised && (
         <PredictionAwardCard
-          title="🔄 Can't Make Up Their Mind"
+          icon={AWARD_ICONS.mostRevised}
+          title="Can't Make Up Their Mind"
           theme={THEMES.pink}
-          delay="0.26s"
           award={mostRevised}
           detail={plural(mostRevised.editCount, 'edit')}
         >
@@ -252,7 +271,13 @@ export function HallOfFameCards({ awards }: { awards: HallOfFame }) {
           </Expandable>
         </PredictionAwardCard>
       )}
-      <WinnerCards winners={theJoker} title="🃏 The Joker" theme={THEMES.cyan} baseDelay={0.26} keyOf={w => w.name}>
+      <WinnerCards
+        winners={theJoker}
+        icon={AWARD_ICONS.theJoker}
+        title="The Joker"
+        theme={THEMES.cyan}
+        keyOf={w => w.name}
+      >
         {winner => (
           <>
             <p className="text-white/90">
@@ -264,9 +289,9 @@ export function HallOfFameCards({ awards }: { awards: HallOfFame }) {
       </WinnerCards>
       <WinnerCards
         winners={starOfTheShow}
-        title="⭐ Star of the Show"
+        icon={AWARD_ICONS.starOfTheShow}
+        title="Star of the Show"
         theme={THEMES.emerald}
-        baseDelay={0.26}
         keyOf={w => w.name}
       >
         {winner => (

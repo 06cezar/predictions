@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api, AdminPrediction, Settings, errorMessage } from '../../api';
 import { parseServerTime } from '../../time';
+import { ArrowRight, Eye, EyeOff, PenLine, TriangleAlert, User } from 'lucide-react';
 
 interface Props {
   phase: Settings['currentPhase'];
@@ -55,7 +56,8 @@ export function PredictionsTab({ phase, onChanged }: Props) {
     <div className="space-y-3">
       {phase === 'done' && (
         <div className="bg-orange/10 border border-orange/30 rounded-xl px-4 py-3 text-sm text-orange/90">
-          ⚠️ Game is in <span className="font-semibold">done</span> phase — deleting predictions will affect leaderboard
+          <TriangleAlert className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+          Game is in <span className="font-semibold">done</span> phase — deleting predictions will affect leaderboard
           scores and Hall of Fame results.
         </div>
       )}
@@ -64,7 +66,17 @@ export function PredictionsTab({ phase, onChanged }: Props) {
           onClick={() => setShowAboutMe(v => !v)}
           className="w-full card text-sm text-white/50 hover:text-white/80 transition-colors text-center py-3"
         >
-          {showAboutMe ? '🙈 Hide predictions about you' : `👁️ Show predictions about you (${aboutMe.length})`}
+          {showAboutMe ? (
+            <>
+              <EyeOff className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+              Hide predictions about you
+            </>
+          ) : (
+            <>
+              <Eye className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+              Show predictions about you ({aboutMe.length})
+            </>
+          )}
         </button>
       )}
       {predictions
@@ -74,9 +86,15 @@ export function PredictionsTab({ phase, onChanged }: Props) {
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
                 <div className="flex gap-3 text-xs text-white/40 mb-2">
-                  <span>✍️ {p.author?.name}</span>
-                  <span>→</span>
-                  <span>👤 {p.target?.name}</span>
+                  <span>
+                    <PenLine className="inline-block w-3.5 h-3.5 -mt-0.5 mr-1" />
+                    {p.author?.name}
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                  <span>
+                    <User className="inline-block w-3.5 h-3.5 -mt-0.5 mr-1" />
+                    {p.target?.name}
+                  </span>
                   {p.editCount > 0 && (
                     <span className="text-violet/80">
                       Edited ×{p.editCount}

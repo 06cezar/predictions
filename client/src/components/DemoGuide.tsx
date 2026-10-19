@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { api, API_MUTATED, DemoProgress, errorMessage } from '../api';
 import { DEMO_GUIDE_CHANGED, demoSettingsSeen, loadFlag, saveFlag } from '../demoGuide';
+import { Check, FlaskConical, RotateCcw, SkipForward, Star } from 'lucide-react';
 
 interface Props {
   gameId: number;
@@ -72,7 +73,7 @@ function buildSteps(p: DemoProgress, settingsSeen: boolean): Step[] {
           ? 'Voted. Winners get bonus points'
           : p.bonusActive
             ? 'Vote on silly categories like "most likely to become famous"'
-            : 'Optional, for extra laughs (or not 🙂): switch it on in Admin → Bonus, then vote',
+            : 'Optional, for extra laughs (or not): switch it on in Admin → Bonus, then vote',
       done: p.bonusTotal > 0 && p.bonusVoted >= p.bonusTotal,
       locked: done,
       to: p.bonusActive ? '/bonus' : '/admin?tab=bonus',
@@ -187,7 +188,10 @@ export function DemoGuide({ gameId, onLogin }: Props) {
       <div className="rounded-2xl border-2 border-ink bg-[#E9E1FF] shadow-card px-4 py-3 text-sm text-white/80">
         <div className="flex items-center gap-3">
           <p className="flex-1 min-w-0">
-            <span className="font-medium text-lilac">🧪 Demo round</span>
+            <span className="font-medium text-lilac">
+              <FlaskConical className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+              Demo round
+            </span>
             <span className="text-white/50"> · you're the admin, the other four are bots</span>
             {collapsed && current && (
               <span className="block text-white/70 truncate">
@@ -198,7 +202,8 @@ export function DemoGuide({ gameId, onLogin }: Props) {
           </p>
           {collapsed && canSkip && (
             <button onClick={skip} disabled={busy} className="btn-primary text-xs px-3 py-1.5 whitespace-nowrap">
-              ⏭ Skip
+              <SkipForward className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+              Skip
             </button>
           )}
           <button onClick={toggle} className="text-xs text-white/50 hover:text-white whitespace-nowrap">
@@ -210,13 +215,15 @@ export function DemoGuide({ gameId, onLogin }: Props) {
           <ol className="mt-3 space-y-1.5">
             {steps.map((step, i) => {
               const isCurrent = i === currentIndex;
-              const marker = step.done
-                ? '✓'
-                : step.skip
-                  ? '⏭'
-                  : step.optional
-                    ? '★'
-                    : String(steps.slice(0, i + 1).filter(s => !s.skip && !s.optional).length);
+              const marker = step.done ? (
+                <Check className="w-3.5 h-3.5" strokeWidth={3} />
+              ) : step.skip ? (
+                <SkipForward className="w-3.5 h-3.5" />
+              ) : step.optional ? (
+                <Star className="w-3.5 h-3.5" />
+              ) : (
+                String(steps.slice(0, i + 1).filter(s => !s.skip && !s.optional).length)
+              );
               return (
                 <li
                   key={step.title}
@@ -249,7 +256,14 @@ export function DemoGuide({ gameId, onLogin }: Props) {
                       disabled={busy}
                       className="btn-primary text-xs px-3 py-1.5 whitespace-nowrap"
                     >
-                      {busy ? 'Skipping...' : '⏭ Skip ahead'}
+                      {busy ? (
+                        'Skipping...'
+                      ) : (
+                        <>
+                          <SkipForward className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+                          Skip ahead
+                        </>
+                      )}
                     </button>
                   )}
                 </li>
@@ -262,7 +276,8 @@ export function DemoGuide({ gameId, onLogin }: Props) {
           <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/45">
             {finished && (
               <button onClick={startOver} disabled={busy} className="text-amber hover:underline">
-                🔁 Start a fresh demo
+                <RotateCcw className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+                Start a fresh demo
               </button>
             )}
             <Link to="/about" className="text-lilac hover:underline">
