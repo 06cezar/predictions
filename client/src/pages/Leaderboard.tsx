@@ -2,6 +2,7 @@ import { useState, useEffect, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { api, HallOfFame, LeaderboardEntry, ScoringTiers } from '../api';
 import { HallOfFameCards, hasWinners } from '../components/HallOfFame';
+import { useCountUp, useWobble } from '../motion';
 
 const AVATAR_COLORS = ['bg-orange', 'bg-violet', 'bg-amber/80', 'bg-cyan-500', 'bg-pink-500', 'bg-emerald-500'];
 const MEDALS = ['🥇', '🥈', '🥉'];
@@ -35,8 +36,10 @@ function RevealButton({
   rollText: string;
 }) {
   const rolling = state === 'drumroll';
+  const ref = useWobble<HTMLButtonElement>(rolling);
   return (
     <button
+      ref={ref}
       onClick={onClick}
       disabled={rolling}
       className={`w-full card text-center py-6 transition-all ${rolling ? `animate-pulse ${rollClass}` : 'hover:bg-white/10 hover:border-white/20'}`}
@@ -107,6 +110,7 @@ function ScoringRules({ tiers, className }: { tiers: ScoringTiers; className: st
 
 function RankingRow({ entry, place }: { entry: LeaderboardEntry; place: number }) {
   const first = place === 0;
+  const score = useCountUp(entry.weightedScore, Number.isInteger(entry.weightedScore) ? 0 : 1);
   const initials = entry.name
     .split(' ')
     .map(w => w[0])
@@ -116,16 +120,9 @@ function RankingRow({ entry, place }: { entry: LeaderboardEntry; place: number }
   const color = AVATAR_COLORS[entry.id % AVATAR_COLORS.length];
   return (
     <div
-      className={`card flex items-center gap-4 animate-fade-up overflow-hidden ${
-        first
-          ? '!border-amber/40 shadow-[0_0_32px_-8px_rgba(255,179,71,0.35),inset_0_1px_0_rgba(255,255,255,0.07)]'
-          : ''
-      }`}
+      className={`card flex items-center gap-4 animate-fade-up overflow-hidden ${first ? 'bg-[#FFD23F]' : ''}`}
       style={{ animationDelay: `${place * 0.07}s` }}
     >
-      {first && (
-        <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-amber/15 blur-3xl pointer-events-none" />
-      )}
       <div
         className={`w-8 text-center font-display font-bold ${first ? 'text-2xl' : 'text-lg'} ${MEDALS[place] ? 'text-ink' : 'text-white/40'}`}
       >
@@ -143,9 +140,7 @@ function RankingRow({ entry, place }: { entry: LeaderboardEntry; place: number }
         </p>
       </div>
       <div className="text-right relative">
-        <p className={`font-display text-2xl font-bold text-amber ${first ? 'text-glow text-3xl' : ''}`}>
-          {entry.weightedScore}
-        </p>
+        <p className={`font-display text-2xl font-bold text-amber ${first ? 'text-glow text-3xl' : ''}`}>{score}</p>
         <p className="text-xs text-white/40">{entry.score} correct</p>
       </div>
     </div>

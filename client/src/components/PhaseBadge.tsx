@@ -31,7 +31,7 @@ export function PhaseBadge({ phase, bonusActive }: Props) {
   const config = phaseConfig[phase];
   return (
     <span
-      className={`badge text-sm px-3.5 py-2 sm:text-base sm:px-5 sm:py-2.5 flex-shrink-0 ${config.color} animate-fade-in backdrop-blur`}
+      className={`badge text-sm px-3.5 py-2 sm:text-base sm:px-5 sm:py-2.5 flex-shrink-0 ${config.color} !border-ink animate-fade-in`}
     >
       <span className="relative flex h-2 w-2">
         {config.live && (

@@ -184,7 +184,7 @@ export function DemoGuide({ gameId, onLogin }: Props) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 pt-4">
-      <div className="rounded-xl border border-lilac/25 bg-violet/15 px-4 py-3 text-sm text-white/80">
+      <div className="rounded-2xl border-[2.5px] border-ink bg-[#E9E1FF] shadow-card px-4 py-3 text-sm text-white/80">
         <div className="flex items-center gap-3">
           <p className="flex-1 min-w-0">
             <span className="font-medium text-lilac">🧪 Demo round</span>

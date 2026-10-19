@@ -52,10 +52,10 @@ export function Navbar({ user, onLogout }: Props) {
 
   return (
     <nav
-      className="fixed left-1/2 -translate-x-1/2 z-40 flex items-center gap-0.5 sm:gap-1 px-1.5 py-1.5 rounded-[1.4rem] border border-white/10 bg-navy/85 backdrop-blur-xl max-w-[calc(100vw-16px)]"
+      className="fixed left-1/2 -translate-x-1/2 z-40 flex items-center gap-0.5 sm:gap-1 px-1.5 py-1.5 rounded-[1.4rem] border-[2.5px] border-ink bg-navy max-w-[calc(100vw-16px)]"
       style={{
         bottom: 'max(10px, env(safe-area-inset-bottom))',
-        boxShadow: '0 12px 32px -12px rgba(33,28,23,0.25)',
+        boxShadow: '3px 3px 0 #1B1A1F',
       }}
     >
       {links.map(({ to, label, icon }) => {

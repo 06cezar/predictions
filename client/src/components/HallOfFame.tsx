@@ -4,14 +4,14 @@ import { parseServerTime } from '../time';
 
 /** Card colours (written out in full so Tailwind keeps the classes). */
 const THEMES = {
-  amber: { card: 'border-amber/30 bg-amber/5', accent: 'text-amber' },
-  orange: { card: 'border-orange/30 bg-orange/5', accent: 'text-orange' },
-  violet: { card: 'border-violet/30 bg-violet/5', accent: 'text-lilac' },
-  pink: { card: 'border-pink-500/30 bg-pink-500/5', accent: 'text-pink-600' },
-  rose: { card: 'border-pink-400/30 bg-pink-400/5', accent: 'text-pink-600' },
-  cyan: { card: 'border-cyan-500/30 bg-cyan-500/5', accent: 'text-cyan-700' },
-  emerald: { card: 'border-emerald-500/30 bg-emerald-500/5', accent: 'text-emerald-700' },
-  mint: { card: 'border-emerald-400/30 bg-emerald-400/5', accent: 'text-emerald-600' },
+  amber: { card: '!border-ink bg-[#FFE7A3]', accent: 'text-amber' },
+  orange: { card: '!border-ink bg-[#FFD3C4]', accent: 'text-orange' },
+  violet: { card: '!border-ink bg-[#E9E1FF]', accent: 'text-lilac' },
+  pink: { card: '!border-ink bg-[#FFD6EC]', accent: 'text-pink-600' },
+  rose: { card: '!border-ink bg-[#FFE3F1]', accent: 'text-pink-600' },
+  cyan: { card: '!border-ink bg-[#CDF3FF]', accent: 'text-cyan-700' },
+  emerald: { card: '!border-ink bg-[#C9F5E3]', accent: 'text-emerald-700' },
+  mint: { card: '!border-ink bg-[#DFF7CF]', accent: 'text-emerald-600' },
 };
 type Theme = (typeof THEMES)[keyof typeof THEMES];
 

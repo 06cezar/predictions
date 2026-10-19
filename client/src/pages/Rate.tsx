@@ -70,7 +70,7 @@ export function Rate() {
       )}
 
       {predictions.length > 0 && phase === 'submission' && (
-        <div className="rounded-2xl bg-violet/10 border border-violet/20 px-4 py-3 mb-6 flex gap-3 items-start">
+        <div className="rounded-2xl bg-[#E9E1FF] border-[2.5px] border-ink shadow-card px-4 py-3 mb-6 flex gap-3 items-start">
           <span className="text-lg mt-0.5">🎯</span>
           <p className="text-sm text-white/70 leading-relaxed">
             For each prediction, rate{' '}

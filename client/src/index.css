@@ -4,40 +4,31 @@
 
 @layer base {
   body {
-    color: #211c17;
+    color: #1b1a1f;
     font-family: 'DM Sans', system-ui, sans-serif;
     min-height: 100vh;
-    background-color: #faf6ef;
+    background-color: #fff3d1;
+    /* Polka dots, like a sticker sheet */
+    background-image: radial-gradient(rgba(27, 26, 31, 0.09) 1.2px, transparent 1.3px);
+    background-size: 22px 22px;
     -webkit-font-smoothing: antialiased;
   }
 
-  /* A soft warm wash at the top of the page, painted once */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background-image:
-      radial-gradient(ellipse 80% 45% at 15% -10%, rgba(232, 89, 12, 0.08), transparent 60%),
-      radial-gradient(ellipse 60% 40% at 90% -5%, rgba(76, 63, 217, 0.05), transparent 60%);
-    transform: translateZ(0);
-  }
-
   ::selection {
-    background: rgba(217, 72, 15, 0.2);
-    color: #211c17;
+    background: #ffd23f;
+    color: #1b1a1f;
   }
 
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(33, 28, 23, 0.2) transparent;
+    scrollbar-color: #1b1a1f transparent;
   }
   *::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
   *::-webkit-scrollbar-thumb {
-    background: rgba(33, 28, 23, 0.2);
+    background: #1b1a1f;
     border-radius: 8px;
   }
   *::-webkit-scrollbar-track {
@@ -45,97 +36,91 @@
   }
 
   h1,
-  h2 {
-    letter-spacing: -0.02em;
+  h2,
+  .font-display {
+    letter-spacing: -0.03em;
   }
-}
-
-/* Paper grain */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  pointer-events: none;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg width='128' height='128' viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 128px 128px;
-  transform: translateZ(0);
 }
 
 @layer components {
   .card {
-    @apply rounded-2xl p-5 relative;
+    @apply rounded-3xl p-5 relative;
     background: #ffffff;
-    border: 1px solid rgba(33, 28, 23, 0.08);
-    box-shadow:
-      0 1px 2px rgba(33, 28, 23, 0.04),
-      0 8px 24px -16px rgba(33, 28, 23, 0.18);
+    border: 2.5px solid #1b1a1f;
+    box-shadow: 4px 4px 0 #1b1a1f;
     transition:
-      transform 0.2s ease,
-      box-shadow 0.2s ease,
-      border-color 0.2s ease;
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
   }
-  .card:hover {
-    border-color: rgba(33, 28, 23, 0.14);
-    box-shadow:
-      0 1px 2px rgba(33, 28, 23, 0.05),
-      0 14px 32px -16px rgba(33, 28, 23, 0.25);
+  button.card:hover,
+  a.card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #1b1a1f;
+  }
+  button.card:active,
+  a.card:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 #1b1a1f;
   }
 
   .btn-primary {
-    @apply px-5 py-2.5 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply px-5 py-2.5 rounded-2xl font-bold disabled:opacity-50 disabled:cursor-not-allowed;
     color: #ffffff;
-    background: #d9480f;
-    box-shadow: 0 4px 14px -6px rgba(217, 72, 15, 0.55);
+    background: #f2542d;
+    border: 2.5px solid #1b1a1f;
+    box-shadow: 3px 3px 0 #1b1a1f;
     transition:
-      background-color 0.15s ease,
       transform 0.1s ease,
-      box-shadow 0.15s ease;
+      box-shadow 0.1s ease,
+      background-color 0.15s ease;
   }
   .btn-primary:hover:not(:disabled) {
-    background: #c2410c;
-    box-shadow: 0 6px 18px -6px rgba(217, 72, 15, 0.6);
-    transform: translateY(-1px);
+    background: #ff6b3d;
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 #1b1a1f;
   }
   .btn-primary:active:not(:disabled) {
-    transform: translateY(0px);
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 #1b1a1f;
   }
 
   .btn-secondary {
-    @apply px-5 py-2.5 rounded-xl font-medium;
-    color: #211c17;
-    background: #ffffff;
-    border: 1px solid rgba(33, 28, 23, 0.14);
-    box-shadow: 0 1px 2px rgba(33, 28, 23, 0.05);
+    @apply px-5 py-2.5 rounded-2xl font-bold;
+    color: #1b1a1f;
+    background: #ffd23f;
+    border: 2.5px solid #1b1a1f;
+    box-shadow: 3px 3px 0 #1b1a1f;
     transition:
-      background-color 0.15s ease,
       transform 0.1s ease,
-      border-color 0.15s ease;
+      box-shadow 0.1s ease;
   }
   .btn-secondary:hover {
-    border-color: rgba(33, 28, 23, 0.28);
-    transform: translateY(-1px);
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 #1b1a1f;
+  }
+  .btn-secondary:active {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 #1b1a1f;
   }
 
   .btn-ghost {
-    @apply text-white/70 px-4 py-2 rounded-xl hover:bg-white/5 hover:text-white transition-colors;
+    @apply text-white/70 px-4 py-2 rounded-2xl font-medium hover:bg-white/5 hover:text-white transition-colors;
   }
 
   .input {
-    @apply rounded-xl px-4 py-3 text-white placeholder-white/35 focus:outline-none w-full;
+    @apply rounded-2xl px-4 py-3 text-white placeholder-white/40 focus:outline-none w-full;
     background: #ffffff;
-    border: 1px solid rgba(33, 28, 23, 0.16);
+    border: 2.5px solid #1b1a1f;
     transition:
-      border-color 0.15s ease,
-      box-shadow 0.15s ease;
+      box-shadow 0.12s ease,
+      transform 0.12s ease;
   }
   .input:focus {
-    border-color: #d9480f;
-    box-shadow: 0 0 0 3px rgba(217, 72, 15, 0.15);
+    box-shadow: 3px 3px 0 #7b4dff;
+    transform: translate(-1px, -1px);
   }
   .input:disabled {
-    background: rgba(33, 28, 23, 0.03);
+    background: #f4efe2;
   }
   select.input {
     @apply text-white;
@@ -148,10 +133,11 @@ body::after {
   }
 
   .badge {
-    @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold;
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold;
+    border: 2px solid #1b1a1f;
   }
 
-  /* Kept for markup that uses it; the light theme needs no glow */
+  /* Kept for markup that uses it; stickers need no glow */
   .text-glow {
     text-shadow: none;
   }
@@ -161,39 +147,38 @@ body::after {
 input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
-  height: 8px;
+  height: 12px;
   border-radius: 9999px;
-  background: linear-gradient(90deg, #d9480f, #e8590c var(--p, 0%), rgba(33, 28, 23, 0.1) var(--p, 0%));
+  border: 2px solid #1b1a1f;
+  background: linear-gradient(90deg, #f2542d, #ffd23f var(--p, 0%), #ffffff var(--p, 0%));
   outline: none;
   cursor: pointer;
 }
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: #ffffff;
-  border: 2px solid #d9480f;
-  box-shadow: 0 2px 8px rgba(217, 72, 15, 0.35);
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease;
+  border: 2.5px solid #1b1a1f;
+  box-shadow: 2px 2px 0 #1b1a1f;
+  transition: transform 0.12s ease;
 }
 input[type='range']::-webkit-slider-thumb:hover {
-  transform: scale(1.1);
+  transform: scale(1.12) rotate(-8deg);
 }
 input[type='range']::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: #ffffff;
-  border: 2px solid #d9480f;
-  box-shadow: 0 2px 8px rgba(217, 72, 15, 0.35);
+  border: 2.5px solid #1b1a1f;
+  box-shadow: 2px 2px 0 #1b1a1f;
   transition: transform 0.12s ease;
 }
 input[type='range']::-moz-range-thumb:hover {
-  transform: scale(1.1);
+  transform: scale(1.12);
 }
 
 /* Fade-in for page content */
@@ -227,8 +212,9 @@ input[type='range']::-moz-range-thumb:hover {
   }
 }
 
+/* Entrances are played by anime.js (see motion.ts) */
 .animate-fade-up {
-  animation: fadeUp 0.4s ease both;
+  animation: none;
 }
 
 .animate-fade-in {

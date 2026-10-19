@@ -5,6 +5,11 @@ import { api, AppNotification, User, UserRow, PublicSettings } from '../api';
 import { Countdown } from '../components/Countdown';
 import { PhaseBadge } from '../components/PhaseBadge';
 import { UserRow as UserRowComponent } from '../components/UserRow';
+import { useCountUp } from '../motion';
+
+function CountUp({ value }: { value: number }) {
+  return <>{useCountUp(value)}</>;
+}
 
 interface Props {
   user: User;
@@ -113,11 +118,15 @@ export function Dashboard({ user }: Props) {
       {me?.stats && (
         <div className="grid grid-cols-2 gap-3 mb-6 animate-fade-up" style={{ animationDelay: '0.1s' }}>
           <div className="card text-center">
-            <p className="font-display text-4xl font-bold text-orange">{me.stats.predictionsWritten}</p>
+            <p className="font-display text-4xl font-bold text-orange">
+              <CountUp value={me.stats.predictionsWritten} />
+            </p>
             <p className="text-white/50 text-sm mt-1">of {me.stats.totalTargets} written</p>
           </div>
           <div className="card text-center">
-            <p className="font-display text-4xl font-bold text-amber">{me.stats.predictionsReceived}</p>
+            <p className="font-display text-4xl font-bold text-amber">
+              <CountUp value={me.stats.predictionsReceived} />
+            </p>
             <p className="text-white/50 text-sm mt-1">predictions about you</p>
           </div>
         </div>

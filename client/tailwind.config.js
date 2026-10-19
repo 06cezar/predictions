@@ -4,30 +4,30 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Light editorial theme: "white" is the ink colour, so every text-white/60,
-        // bg-white/5 and border-white/10 in the app becomes ink on warm paper.
-        white: '#211C17',
+        // Playful "sticker" theme: "white" is the ink colour, so every text-white/60,
+        // bg-white/5 and border-white/10 in the app becomes ink on a sunny page.
+        white: '#1B1A1F',
         paper: '#FFFFFF', // real white, for text on coloured buttons and avatars
-        cream: '#FAF6EF', // page background
-        navy: '#FFFDF9', // raised surfaces (navbar, selects)
-        ink: '#211C17',
-        orange: '#D9480F',
-        ember: '#E8590C',
-        amber: '#B86E00',
-        violet: '#4C3FD9',
-        lilac: '#5B4BDB',
+        cream: '#FFF3D1', // page background
+        navy: '#FFFFFF', // raised surfaces (navbar, selects)
+        ink: '#1B1A1F',
+        orange: '#F2542D', // tomato: the main action colour
+        ember: '#FF6B3D',
+        amber: '#B76E00',
+        violet: '#7B4DFF',
+        lilac: '#6236E8',
       },
       fontFamily: {
-        display: ['Fraunces', 'Georgia', 'serif'],
+        display: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
         body: ['DM Sans', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        'glow-orange': '0 4px 14px -6px rgba(217, 72, 15, 0.45)',
-        'glow-amber': '0 4px 14px -6px rgba(184, 110, 0, 0.35)',
-        card: '0 1px 2px rgba(33, 28, 23, 0.04), 0 8px 24px -16px rgba(33, 28, 23, 0.18)',
+        'glow-orange': '2px 2px 0 #1B1A1F',
+        'glow-amber': '2px 2px 0 #1B1A1F',
+        card: '4px 4px 0 #1B1A1F',
       },
       backgroundImage: {
-        'ember-gradient': 'linear-gradient(135deg, #E8590C 0%, #D9480F 60%, #C2410C 100%)',
+        'ember-gradient': 'linear-gradient(135deg, #FF6B3D 0%, #F2542D 100%)',
       },
     },
   },
