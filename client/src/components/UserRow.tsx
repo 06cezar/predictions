@@ -20,10 +20,10 @@ export function UserRow({ user }: Props) {
   return (
     <button
       onClick={() => navigate(`/predict/${user.id}`)}
-      className="card w-full flex items-center gap-4 hover:bg-white/10 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 text-left animate-fade-up"
+      className="card w-full flex items-center gap-4 hover:bg-white/10 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 text-left"
     >
       <div
-        className={`${color} w-10 h-10 rounded-full flex items-center justify-center font-display font-bold text-sm text-white flex-shrink-0`}
+        className={`${color} w-10 h-10 rounded-full flex items-center justify-center font-display font-bold text-sm text-paper flex-shrink-0`}
       >
         {initials}
       </div>

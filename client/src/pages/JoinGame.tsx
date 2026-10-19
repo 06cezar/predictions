@@ -112,7 +112,7 @@ export function JoinGame({ onLogin }: Props) {
           </div>
           {error && <p className="text-orange text-sm text-center">{error}</p>}
           <button type="submit" disabled={busy || !name.trim()} className="btn-primary w-full text-base py-3">
-            {busy ? 'Joining...' : 'Join the game →'}
+            {busy ? 'Joining...' : 'Join the game'}
           </button>
         </form>
       )}

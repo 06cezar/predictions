@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api, Prediction, errorMessage } from '../api';
 import { PredictionCard } from '../components/PredictionCard';
+import { ChevronLeft, Eye, Flag, Sparkles } from 'lucide-react';
+import { StickerIcon } from '../components/Sticker';
 
 export function Reveal() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
@@ -48,7 +50,7 @@ export function Reveal() {
     <div className="min-h-screen p-4 pb-24 max-w-2xl mx-auto">
       <div className="flex items-center gap-4 py-6 mb-6">
         <Link to="/" className="btn-ghost text-sm px-3">
-          ← Back
+          <ChevronLeft className="inline-block w-4 h-4 -mt-0.5" /> Back
         </Link>
         <div>
           <h1 className="font-display text-2xl font-bold">Predictions About You</h1>
@@ -58,7 +60,7 @@ export function Reveal() {
 
       {(phase === 'done' || deadlinePassed) && (
         <div className="card mb-4 flex gap-3 items-center border border-orange/20">
-          <span className="text-2xl">🏁</span>
+          <Flag className="w-6 h-6 shrink-0" />
           <div>
             <p className="font-medium text-sm text-white/90">
               {phase === 'done' ? 'Game over - outcomes are locked' : "Time's up - outcomes are locked"}
@@ -69,8 +71,8 @@ export function Reveal() {
       )}
 
       {phase === 'reveal' && !deadlinePassed && predictions.length > 0 && (
-        <div className="rounded-2xl bg-violet/10 border border-violet/20 px-4 py-3 mb-6 flex gap-3 items-start">
-          <span className="text-lg mt-0.5">👁️</span>
+        <div className="rounded-2xl bg-[#E9E1FF] border-2 border-ink shadow-card px-4 py-3 mb-6 flex gap-3 items-start">
+          <Eye className="w-5 h-5 mt-0.5 shrink-0 text-lilac" />
           <p className="text-sm text-white/70 leading-relaxed">
             These are the predictions others made about you.{' '}
             <span className="text-white font-medium">Mark each one</span> as happened or not - this affects the final
@@ -88,7 +90,7 @@ export function Reveal() {
         </div>
       ) : predictions.length === 0 ? (
         <div className="card text-center py-12">
-          <p className="font-display text-3xl mb-3">✨</p>
+          <StickerIcon icon={Sparkles} className="mb-3" />
           <p className="text-white font-medium mb-2">No predictions yet</p>
           <p className="text-white/50 text-sm">The future is wide open!</p>
         </div>

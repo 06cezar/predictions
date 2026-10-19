@@ -4,160 +4,142 @@
 
 @layer base {
   body {
-    color: white;
+    color: #1b1a1f;
     font-family: 'DM Sans', system-ui, sans-serif;
     min-height: 100vh;
-    background-color: #0f0e1e;
-  }
-
-  /* Fixed gradient backdrop — painted once, composited, no scroll repaints */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background-image:
-      radial-gradient(ellipse 80% 50% at 20% -10%, rgba(232, 68, 10, 0.13), transparent 60%),
-      radial-gradient(ellipse 60% 40% at 85% 0%, rgba(59, 47, 245, 0.12), transparent 60%),
-      radial-gradient(ellipse 90% 60% at 50% 115%, rgba(59, 47, 245, 0.08), transparent 65%);
-    transform: translateZ(0);
+    background-color: #fff3d1;
+    /* Polka dots, like a sticker sheet */
+    background-image: radial-gradient(rgba(27, 26, 31, 0.09) 1.2px, transparent 1.3px);
+    background-size: 22px 22px;
+    -webkit-font-smoothing: antialiased;
   }
 
   ::selection {
-    background: rgba(232, 68, 10, 0.55);
-    color: white;
+    background: #ffd23f;
+    color: #1b1a1f;
   }
 
-  /* Thin dark scrollbar */
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    scrollbar-color: #1b1a1f transparent;
   }
   *::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
   *::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
+    background: #1b1a1f;
     border-radius: 8px;
   }
   *::-webkit-scrollbar-track {
     background: transparent;
   }
-}
 
-/* Film grain overlay for depth */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  pointer-events: none;
-  opacity: 0.022;
-  background-image: url("data:image/svg+xml,%3Csvg width='128' height='128' viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 128px 128px;
-  transform: translateZ(0);
+  h1,
+  h2,
+  .font-display {
+    letter-spacing: -0.03em;
+  }
 }
 
 @layer components {
   .card {
-    @apply rounded-2xl p-5 relative;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.028));
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.07),
-      0 8px 24px -12px rgba(0, 0, 0, 0.5);
+    @apply rounded-3xl p-5 relative;
+    background: #ffffff;
+    border: 2px solid #1b1a1f;
+    box-shadow: 3px 3px 0 #1b1a1f;
     transition:
-      transform 0.2s ease,
-      box-shadow 0.2s ease,
-      border-color 0.2s ease;
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
   }
-  .card:hover {
-    border-color: rgba(255, 255, 255, 0.14);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.09),
-      0 14px 36px -14px rgba(0, 0, 0, 0.6);
+  button.card:hover,
+  a.card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 #1b1a1f;
+  }
+  button.card:active,
+  a.card:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 #1b1a1f;
   }
 
   .btn-primary {
-    @apply text-white px-5 py-2.5 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed;
-    background-image: linear-gradient(180deg, #ff5a1f, #e8440a 55%, #d03d09);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.28),
-      0 4px 16px -6px rgba(232, 68, 10, 0.55);
+    @apply px-5 py-2.5 rounded-2xl font-bold disabled:opacity-50 disabled:cursor-not-allowed;
+    color: #ffffff;
+    background: #f2542d;
+    border: 2.5px solid #1b1a1f;
+    box-shadow: 3px 3px 0 #1b1a1f;
     transition:
-      filter 0.15s ease,
       transform 0.1s ease,
-      box-shadow 0.15s ease;
+      box-shadow 0.1s ease,
+      background-color 0.15s ease;
   }
   .btn-primary:hover:not(:disabled) {
-    filter: brightness(1.08);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.28),
-      0 6px 22px -6px rgba(232, 68, 10, 0.7);
-    transform: translateY(-1px);
+    background: #ff6b3d;
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 #1b1a1f;
   }
   .btn-primary:active:not(:disabled) {
-    transform: translateY(0px);
-    filter: brightness(0.97);
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 #1b1a1f;
   }
 
   .btn-secondary {
-    @apply text-white px-5 py-2.5 rounded-xl font-medium;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.08));
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    @apply px-5 py-2.5 rounded-2xl font-bold;
+    color: #1b1a1f;
+    background: #ffd23f;
+    border: 2.5px solid #1b1a1f;
+    box-shadow: 3px 3px 0 #1b1a1f;
     transition:
-      background-color 0.15s ease,
       transform 0.1s ease,
-      border-color 0.15s ease;
+      box-shadow 0.1s ease;
   }
   .btn-secondary:hover {
-    border-color: rgba(255, 255, 255, 0.2);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.12));
-    transform: translateY(-1px);
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 #1b1a1f;
+  }
+  .btn-secondary:active {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 #1b1a1f;
   }
 
   .btn-ghost {
-    @apply text-white/70 px-4 py-2 rounded-xl hover:bg-white/10 hover:text-white transition-colors;
+    @apply text-white/70 px-4 py-2 rounded-2xl font-medium hover:bg-white/5 hover:text-white transition-colors;
   }
 
   .input {
-    @apply rounded-xl px-4 py-3 text-white placeholder-white/35 focus:outline-none w-full;
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.13);
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+    @apply rounded-2xl px-4 py-3 text-white placeholder-white/40 focus:outline-none w-full;
+    background: #ffffff;
+    border: 2.5px solid #1b1a1f;
     transition:
-      border-color 0.15s ease,
-      box-shadow 0.15s ease,
-      background-color 0.15s ease;
+      box-shadow 0.12s ease,
+      transform 0.12s ease;
   }
   .input:focus {
-    border-color: rgba(232, 68, 10, 0.65);
-    background: rgba(0, 0, 0, 0.3);
-    box-shadow:
-      inset 0 1px 2px rgba(0, 0, 0, 0.2),
-      0 0 0 3px rgba(232, 68, 10, 0.18);
+    box-shadow: 3px 3px 0 #7b4dff;
+    transform: translate(-1px, -1px);
+  }
+  .input:disabled {
+    background: #f4efe2;
   }
   select.input {
-    @apply border border-white/15 text-white;
-    background-color: #15142a;
-    color-scheme: dark;
+    @apply text-white;
+    background-color: #ffffff;
+    color-scheme: light;
   }
   select.input option {
     @apply text-white;
-    background-color: #15142a;
+    background-color: #ffffff;
   }
 
   .badge {
-    @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold;
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold;
+    border: 2px solid #1b1a1f;
   }
 
-  /* Warm glow for hero display text */
+  /* Kept for markup that uses it; stickers need no glow */
   .text-glow {
-    text-shadow:
-      0 0 32px rgba(255, 179, 71, 0.25),
-      0 0 80px rgba(232, 68, 10, 0.15);
+    text-shadow: none;
   }
 }
 
@@ -165,107 +147,38 @@ body::after {
 input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
-  height: 8px;
+  height: 12px;
   border-radius: 9999px;
-  background: linear-gradient(90deg, #e8440a, #ffb347 var(--p, 0%), rgba(255, 255, 255, 0.1) var(--p, 0%));
+  border: 2px solid #1b1a1f;
+  background: linear-gradient(90deg, #f2542d, #ffd23f var(--p, 0%), #ffffff var(--p, 0%));
   outline: none;
   cursor: pointer;
 }
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: white;
-  border: 2px solid #e8440a;
-  box-shadow:
-    0 2px 10px rgba(232, 68, 10, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease;
+  background: #ffffff;
+  border: 2.5px solid #1b1a1f;
+  box-shadow: 2px 2px 0 #1b1a1f;
+  transition: transform 0.12s ease;
 }
 input[type='range']::-webkit-slider-thumb:hover {
-  transform: scale(1.12);
-  box-shadow:
-    0 2px 16px rgba(232, 68, 10, 0.7),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transform: scale(1.12) rotate(-8deg);
 }
 input[type='range']::-moz-range-thumb {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: white;
-  border: 2px solid #e8440a;
-  box-shadow: 0 2px 10px rgba(232, 68, 10, 0.5);
+  background: #ffffff;
+  border: 2.5px solid #1b1a1f;
+  box-shadow: 2px 2px 0 #1b1a1f;
   transition: transform 0.12s ease;
 }
 input[type='range']::-moz-range-thumb:hover {
   transform: scale(1.12);
-}
-
-/* Fade-in for page content */
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes pulseSlow {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
-}
-
-.animate-fade-up {
-  animation: fadeUp 0.4s ease both;
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.3s ease both;
-}
-
-/* Staggered children */
-.stagger > *:nth-child(1) {
-  animation-delay: 0.05s;
-}
-.stagger > *:nth-child(2) {
-  animation-delay: 0.1s;
-}
-.stagger > *:nth-child(3) {
-  animation-delay: 0.15s;
-}
-.stagger > *:nth-child(4) {
-  animation-delay: 0.2s;
-}
-.stagger > *:nth-child(5) {
-  animation-delay: 0.25s;
-}
-.stagger > *:nth-child(6) {
-  animation-delay: 0.3s;
-}
-
-.animate-pulse-slow {
-  animation: pulseSlow 2.5s ease-in-out infinite;
 }
 
 @keyframes outcomeReveal {
@@ -289,18 +202,4 @@ input[type='range']::-moz-range-thumb:hover {
 
 .animate-outcome-reveal {
   animation: outcomeReveal 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-/* Floating hero orb */
-@keyframes floatOrb {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-.animate-float {
-  animation: floatOrb 4.5s ease-in-out infinite;
 }

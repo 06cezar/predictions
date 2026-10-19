@@ -1,4 +1,6 @@
 import { useCopied } from '../hooks/useCopied';
+import { PartyPopper } from 'lucide-react';
+import { StickerIcon } from './Sticker';
 
 interface Props {
   title: string;
@@ -29,9 +31,9 @@ export function TokenReveal({ title, token, joinCode, onContinue }: Props) {
   const joinLink = joinCode ? `${window.location.origin}/game/${joinCode}` : null;
 
   return (
-    <div className="card space-y-5 animate-fade-up">
+    <div className="card space-y-5">
       <div className="text-center">
-        <p className="text-4xl mb-2">🎉</p>
+        <StickerIcon icon={PartyPopper} className="mb-2" />
         <h2 className="font-display text-2xl font-bold">{title}</h2>
       </div>
 
@@ -49,7 +51,7 @@ export function TokenReveal({ title, token, joinCode, onContinue }: Props) {
       )}
 
       <button onClick={onContinue} className="btn-primary w-full py-3">
-        Enter the game →
+        Enter the game
       </button>
     </div>
   );

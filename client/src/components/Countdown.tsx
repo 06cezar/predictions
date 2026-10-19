@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Clock, TriangleAlert } from 'lucide-react';
 
 interface Props {
   deadline: string | null;
@@ -52,12 +53,14 @@ export function Countdown({ deadline, label, warnings = true }: Props) {
     <div>
       {warning === 'hours' && (
         <div className="bg-orange/20 border border-orange/30 rounded-xl px-4 py-3 mb-3 text-orange text-sm font-medium">
-          ⚠️ Less than 2 hours remaining!
+          <TriangleAlert className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+          Less than 2 hours remaining!
         </div>
       )}
       {warning === 'day' && (
         <div className="bg-amber/20 border border-amber/30 rounded-xl px-4 py-3 mb-3 text-amber text-sm font-medium">
-          ⏰ Last day! {label} closes soon.
+          <Clock className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+          Last day! {label} closes soon.
         </div>
       )}
       <div className="card overflow-hidden">

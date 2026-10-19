@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api, User, errorMessage } from '../api';
+import { Award, Check, ChevronLeft, Skull, Target, Trophy } from 'lucide-react';
+import { StickerIcon } from '../components/Sticker';
+import { RankBadge } from '../components/Sticker';
 
 type BonusUser = { id: number; name: string };
 type Category = {
@@ -86,7 +89,6 @@ export function Bonus({ user }: Props) {
     }
   };
 
-  const rankMedals = ['🥇', '🥈', '🥉'];
   const rankLabels = ['1st place', '2nd place', '3rd place'];
 
   if (loading)
@@ -99,25 +101,25 @@ export function Bonus({ user }: Props) {
   if (notAvailable)
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
-        <p className="text-5xl">🎖️</p>
+        <StickerIcon icon={Award} size="lg" />
         <h2 className="font-display text-2xl font-bold">Bonus Round not available</h2>
         <p className="text-white/40 text-sm max-w-xs">
           The Bonus phase is not currently active. Check back when the organizer activates it.
         </p>
         <Link to="/" className="btn-primary mt-2">
-          ← Back to Home
+          <ChevronLeft className="inline-block w-4 h-4 -mt-0.5" /> Back to Home
         </Link>
       </div>
     );
 
   return (
     <div className="min-h-screen p-4 pb-24 max-w-2xl mx-auto">
-      <div className="flex items-center gap-4 py-6 mb-2 animate-fade-up">
+      <div className="flex items-center gap-4 py-6 mb-2">
         <Link to="/" className="btn-ghost text-sm px-3">
-          ← Back
+          <ChevronLeft className="inline-block w-4 h-4 -mt-0.5" /> Back
         </Link>
         <div>
-          <h1 className="font-display text-2xl font-bold">🎖️ Bonus Round</h1>
+          <h1 className="font-display text-2xl font-bold">Bonus Round</h1>
           <p className="text-white/40 text-sm mt-0.5">
             {isVoting ? `Vote for your top ${required} in each category` : 'Bonus round results'}
           </p>
@@ -126,13 +128,13 @@ export function Bonus({ user }: Props) {
 
       {categories.length === 0 && (
         <div className="card text-center py-10 text-white/40">
-          <p className="text-4xl mb-3">🎯</p>
+          <StickerIcon icon={Target} className="mb-3" />
           <p>No bonus categories yet.</p>
         </div>
       )}
 
       <div className="space-y-6">
-        {categories.map((cat, ci) => {
+        {categories.map(cat => {
           const catVotes = getVotesForCat(cat.id);
           const allRanksSet = catVotes.length === required;
           const hasChanged =
@@ -156,7 +158,7 @@ export function Bonus({ user }: Props) {
           const pointsEach = winnerCount > 0 ? Math.round((cat.points / winnerCount) * 10) / 10 : cat.points;
 
           return (
-            <div key={cat.id} className="card space-y-4 animate-fade-up" style={{ animationDelay: `${ci * 0.05}s` }}>
+            <div key={cat.id} className="card space-y-4">
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="font-display font-bold text-lg">{cat.name}</h2>
@@ -179,7 +181,10 @@ export function Bonus({ user }: Props) {
                   )}
                 </div>
                 {alreadyVoted && isVoting && !hasChanged && (
-                  <span className="text-xs text-green-400 bg-green-400/10 px-2 py-1 rounded-lg">✓ Voted</span>
+                  <span className="text-xs text-green-700 bg-green-400/10 px-2 py-1 rounded-lg">
+                    <Check className="inline-block w-3.5 h-3.5 -mt-0.5 mr-1" strokeWidth={3} />
+                    Voted
+                  </span>
                 )}
               </div>
 
@@ -194,7 +199,9 @@ export function Bonus({ user }: Props) {
 
                     return (
                       <div key={rank} className="flex items-center gap-3">
-                        <span className="text-xl w-8 text-center">{rankMedals[rank - 1]}</span>
+                        <span className="w-8 flex justify-center">
+                          <RankBadge rank={rank} />
+                        </span>
                         <select
                           value={currentVote?.nomineeId ?? ''}
                           onChange={e => setRankNominee(cat.id, rank, e.target.value ? parseInt(e.target.value) : null)}
@@ -224,9 +231,9 @@ export function Bonus({ user }: Props) {
                     {saving[cat.id]
                       ? 'Saving...'
                       : saved[cat.id]
-                        ? '✓ Saved!'
+                        ? 'Saved!'
                         : alreadyVoted && !hasChanged
-                          ? '✓ Votes submitted'
+                          ? 'Votes submitted'
                           : 'Submit votes'}
                   </button>
                 </div>
@@ -247,7 +254,13 @@ export function Bonus({ user }: Props) {
                         <span
                           className={`flex-1 text-sm font-medium ${isWinner ? (cat.points < 0 ? 'text-orange' : 'text-amber') : 'text-white/70'}`}
                         >
-                          {entry.name} {isWinner && (cat.points < 0 ? '💀' : '🏆')}
+                          {entry.name}{' '}
+                          {isWinner &&
+                            (cat.points < 0 ? (
+                              <Skull className="inline-block w-4 h-4 -mt-0.5" />
+                            ) : (
+                              <Trophy className="inline-block w-4 h-4 -mt-0.5 text-amber" />
+                            ))}
                         </span>
                         <span className="text-xs text-white/40">{entry.pts} vote pts</span>
                       </div>
@@ -270,7 +283,7 @@ export function Bonus({ user }: Props) {
                   <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Your votes</p>
                   {cat.myVotes.map(v => (
                     <div key={v.rank} className="flex items-center gap-2 text-sm text-white/60">
-                      <span>{rankMedals[v.rank - 1]}</span>
+                      <RankBadge rank={v.rank} />
                       <span>{users.find(u => u.id === v.nomineeId)?.name ?? '?'}</span>
                     </div>
                   ))}

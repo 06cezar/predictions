@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { api, User } from '../api';
+import { Award, Eye, House, LogOut, Settings, Target, Trophy } from 'lucide-react';
 
 interface Props {
   user: User;
@@ -42,23 +43,23 @@ export function Navbar({ user, onLogout }: Props) {
   };
 
   const links = [
-    { to: '/', label: 'Home', icon: '🏠' },
-    { to: '/rate', label: 'Rate', icon: '🎯' },
-    ...(phase !== 'submission' ? [{ to: '/reveal', label: 'Reveal', icon: '👁️' }] : []),
-    ...(bonusActive ? [{ to: '/bonus', label: 'Bonus', icon: '🎖️' }] : []),
-    { to: '/leaderboard', label: 'Board', icon: '🏆' },
-    ...(user.isAdmin ? [{ to: '/admin', label: 'Admin', icon: '⚙️' }] : []),
+    { to: '/', label: 'Home', icon: House },
+    { to: '/rate', label: 'Rate', icon: Target },
+    ...(phase !== 'submission' ? [{ to: '/reveal', label: 'Reveal', icon: Eye }] : []),
+    ...(bonusActive ? [{ to: '/bonus', label: 'Bonus', icon: Award }] : []),
+    { to: '/leaderboard', label: 'Board', icon: Trophy },
+    ...(user.isAdmin ? [{ to: '/admin', label: 'Admin', icon: Settings }] : []),
   ];
 
   return (
     <nav
-      className="fixed left-1/2 -translate-x-1/2 z-40 flex items-center gap-0.5 sm:gap-1 px-1.5 py-1.5 rounded-[1.4rem] border border-white/10 bg-navy/85 backdrop-blur-xl max-w-[calc(100vw-16px)]"
+      className="fixed left-1/2 -translate-x-1/2 z-40 flex items-center gap-0.5 sm:gap-1 px-1.5 py-1.5 rounded-[1.4rem] border-2 border-ink bg-navy max-w-[calc(100vw-16px)]"
       style={{
         bottom: 'max(10px, env(safe-area-inset-bottom))',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 40px -8px rgba(0,0,0,0.6)',
+        boxShadow: '3px 3px 0 #1B1A1F',
       }}
     >
-      {links.map(({ to, label, icon }) => {
+      {links.map(({ to, label, icon: Icon }) => {
         const active = location.pathname === to;
         const isHome = to === '/';
         return (
@@ -71,9 +72,9 @@ export function Navbar({ user, onLogout }: Props) {
                 : 'text-white/40 hover:text-white/75 hover:bg-white/5'
             }`}
           >
-            <span className={`text-base transition-transform ${active ? 'scale-110' : ''}`}>{icon}</span>
+            <Icon className={`w-5 h-5 transition-transform ${active ? 'scale-110' : ''}`} strokeWidth={2.2} />
             {isHome && unread > 0 && (
-              <span className="absolute -top-0.5 right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-ember-gradient text-white text-[10px] font-bold flex items-center justify-center leading-none shadow-glow-orange">
+              <span className="absolute -top-0.5 right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-ember-gradient text-paper text-[10px] font-bold flex items-center justify-center leading-none shadow-glow-orange">
                 {unread > 9 ? '9+' : unread}
               </span>
             )}
@@ -90,7 +91,7 @@ export function Navbar({ user, onLogout }: Props) {
         onClick={handleLogout}
         className="flex flex-col items-center gap-0.5 px-2.5 sm:px-3.5 py-1.5 rounded-2xl text-[10px] sm:text-xs font-medium text-white/30 hover:text-white/60 hover:bg-white/5 transition-all"
       >
-        <span className="text-base">🚪</span>
+        <LogOut className="w-5 h-5" strokeWidth={2.2} />
         <span>Logout</span>
       </button>
     </nav>

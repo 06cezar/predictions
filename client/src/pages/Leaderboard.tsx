@@ -2,9 +2,12 @@ import { useState, useEffect, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { api, HallOfFame, LeaderboardEntry, ScoringTiers } from '../api';
 import { HallOfFameCards, hasWinners } from '../components/HallOfFame';
+import { useCountUp, useWobble } from '../motion';
+import { ChevronLeft, Download, Drum, Lock, Trophy } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { RankBadge, StickerIcon } from '../components/Sticker';
 
 const AVATAR_COLORS = ['bg-orange', 'bg-violet', 'bg-amber/80', 'bg-cyan-500', 'bg-pink-500', 'bg-emerald-500'];
-const MEDALS = ['🥇', '🥈', '🥉'];
 
 type Reveal = 'hidden' | 'drumroll' | 'shown';
 
@@ -21,34 +24,36 @@ function useDrumRoll() {
 function RevealButton({
   state,
   onClick,
-  icon,
+  icon: Icon,
   label,
   rollClass,
   rollText,
 }: {
   state: Reveal;
   onClick: () => void;
-  icon: string;
+  icon: LucideIcon;
   label: string;
   /** Border and background while the drum rolls. */
   rollClass: string;
   rollText: string;
 }) {
   const rolling = state === 'drumroll';
+  const ref = useWobble<HTMLButtonElement>(rolling);
   return (
     <button
+      ref={ref}
       onClick={onClick}
       disabled={rolling}
       className={`w-full card text-center py-6 transition-all ${rolling ? `animate-pulse ${rollClass}` : 'hover:bg-white/10 hover:border-white/20'}`}
     >
       {rolling ? (
         <div className="space-y-1">
-          <p className="text-3xl">🥁</p>
+          <Drum className="w-8 h-8 mx-auto" />
           <p className={`${rollText} font-medium text-sm`}>drum roll...</p>
         </div>
       ) : (
         <div className="space-y-1">
-          <p className="text-2xl">{icon}</p>
+          <Icon className="w-7 h-7 mx-auto" />
           <p className="text-white/50 text-sm">{label}</p>
         </div>
       )}
@@ -58,7 +63,7 @@ function RevealButton({
 
 function Divider({ children }: { children: ReactNode }) {
   return (
-    <div className="flex items-center gap-3 mb-4 animate-fade-up">
+    <div className="flex items-center gap-3 mb-4">
       <div className="flex-1 h-px bg-white/10" />
       <p className="text-xs text-white/30 uppercase tracking-widest font-medium">{children}</p>
       <div className="flex-1 h-px bg-white/10" />
@@ -76,7 +81,10 @@ function ScoringRules({ tiers, className }: { tiers: ScoringTiers; className: st
   const { tier1, tier2, tier3, threshold } = tiers;
   return (
     <div className={`rounded-2xl bg-white/5 border border-white/10 px-4 py-3 space-y-1.5 ${className}`}>
-      <p className="text-sm font-medium text-white/80">🏆 How scoring works</p>
+      <p className="text-sm font-medium text-white/80">
+        <Trophy className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+        How scoring works
+      </p>
       <p className="text-xs text-white/40">
         Points go to the person who <span className="text-white/60">wrote</span> the prediction, not the one it's about.
       </p>
@@ -93,8 +101,8 @@ function ScoringRules({ tiers, className }: { tiers: ScoringTiers; className: st
           rating on a correct prediction, the more points:
         </li>
         <li className="pl-3">
-          under {tier1}% → {pts(5)} · {tier1}-{tier2}% → {pts(4)} · {tier2}-{tier3}% → {pts(3)} · {tier3}-{threshold}% →{' '}
-          {pts(2)} · {threshold}%+ → {pts(1)}
+          under {tier1}%: {pts(5)} · {tier1}-{tier2}%: {pts(4)} · {tier2}-{tier3}%: {pts(3)} · {tier3}-{threshold}%:{' '}
+          {pts(2)} · {threshold}%+: {pts(1)}
         </li>
         <li>
           · Each edit costs <span className="text-orange font-medium">-0.5 pts</span>, minimum 0.5 pts - only counts if
@@ -107,6 +115,7 @@ function ScoringRules({ tiers, className }: { tiers: ScoringTiers; className: st
 
 function RankingRow({ entry, place }: { entry: LeaderboardEntry; place: number }) {
   const first = place === 0;
+  const score = useCountUp(entry.weightedScore, Number.isInteger(entry.weightedScore) ? 0 : 1);
   const initials = entry.name
     .split(' ')
     .map(w => w[0])
@@ -115,22 +124,12 @@ function RankingRow({ entry, place }: { entry: LeaderboardEntry; place: number }
     .slice(0, 2);
   const color = AVATAR_COLORS[entry.id % AVATAR_COLORS.length];
   return (
-    <div
-      className={`card flex items-center gap-4 animate-fade-up overflow-hidden ${
-        first
-          ? '!border-amber/40 shadow-[0_0_32px_-8px_rgba(255,179,71,0.35),inset_0_1px_0_rgba(255,255,255,0.07)]'
-          : ''
-      }`}
-      style={{ animationDelay: `${place * 0.07}s` }}
-    >
-      {first && (
-        <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-amber/15 blur-3xl pointer-events-none" />
-      )}
-      <div className={`w-8 text-center font-display font-bold ${first ? 'text-2xl' : 'text-lg'} text-white/40`}>
-        {MEDALS[place] || `#${entry.rank}`}
+    <div data-reveal className={`card flex items-center gap-4 overflow-hidden ${first ? 'bg-[#FFD23F]' : ''}`}>
+      <div className={`w-8 text-center font-display font-bold ${first ? 'text-2xl' : 'text-lg'}`}>
+        <RankBadge rank={entry.rank} large={first} />
       </div>
       <div
-        className={`${color} w-10 h-10 rounded-full flex items-center justify-center font-display font-bold text-sm text-white flex-shrink-0 ${first ? 'ring-2 ring-amber/60 ring-offset-2 ring-offset-[#15142A]' : ''}`}
+        className={`${color} w-10 h-10 rounded-full flex items-center justify-center font-display font-bold text-sm text-paper flex-shrink-0 ${first ? 'ring-2 ring-amber/60 ring-offset-2 ring-offset-cream' : ''}`}
       >
         {initials}
       </div>
@@ -141,9 +140,7 @@ function RankingRow({ entry, place }: { entry: LeaderboardEntry; place: number }
         </p>
       </div>
       <div className="text-right relative">
-        <p className={`font-display text-2xl font-bold text-amber ${first ? 'text-glow text-3xl' : ''}`}>
-          {entry.weightedScore}
-        </p>
+        <p className={`font-display text-2xl font-bold text-amber ${first ? 'text-glow text-3xl' : ''}`}>{score}</p>
         <p className="text-xs text-white/40">{entry.score} correct</p>
       </div>
     </div>
@@ -176,12 +173,13 @@ export function Leaderboard() {
   const header = (
     <div className="flex items-center gap-4 py-6 mb-6">
       <Link to="/" className="btn-ghost text-sm px-3">
-        ← Back
+        <ChevronLeft className="inline-block w-4 h-4 -mt-0.5" /> Back
       </Link>
       <h1 className="font-display text-2xl font-bold flex-1">Leaderboard</h1>
       {rankingsReveal === 'shown' && entries.length > 0 && (
         <a href="/api/leaderboard/export.csv" download className="btn-secondary text-sm px-4 py-2">
-          ↓ Export
+          <Download className="inline-block w-4 h-4 -mt-0.5 mr-1" />
+          Export
         </a>
       )}
     </div>
@@ -192,7 +190,7 @@ export function Leaderboard() {
       <div className="min-h-screen p-4 pb-24 max-w-2xl mx-auto">
         {header}
         <div className="card text-center py-12 space-y-3">
-          <p className="text-4xl">🔒</p>
+          <StickerIcon icon={Lock} />
           <p className="font-medium text-white/80">Results are not out yet</p>
           <p className="text-sm text-white/40">The leaderboard will be revealed when the game is done.</p>
         </div>
@@ -212,14 +210,14 @@ export function Leaderboard() {
 
           {awards && hasWinners(awards) && (
             <div className="mb-6">
-              <Divider>✨ Hall of Fame</Divider>
+              <Divider>Hall of Fame</Divider>
               {hofReveal === 'shown' ? (
                 <HallOfFameCards awards={awards} />
               ) : (
                 <RevealButton
                   state={hofReveal}
                   onClick={revealHof}
-                  icon="🥁"
+                  icon={Drum}
                   label="Reveal Hall of Fame"
                   rollClass="border-amber/40 bg-amber/5"
                   rollText="text-amber"
@@ -228,10 +226,10 @@ export function Leaderboard() {
             </div>
           )}
 
-          <Divider>🏆 Rankings</Divider>
+          <Divider>Rankings</Divider>
           {entries.length === 0 ? (
             <div className="card text-center py-12">
-              <p className="font-display text-3xl mb-3">🏆</p>
+              <StickerIcon icon={Trophy} className="mb-3" />
               <p className="text-white/50">No scores yet - mark some outcomes first!</p>
             </div>
           ) : rankingsReveal === 'shown' ? (
@@ -244,10 +242,10 @@ export function Leaderboard() {
             <RevealButton
               state={rankingsReveal}
               onClick={revealRankings}
-              icon="🏆"
+              icon={Trophy}
               label="Reveal Rankings"
               rollClass="border-violet/40 bg-violet/5"
-              rollText="text-[#a99eff]"
+              rollText="text-lilac"
             />
           )}
         </>

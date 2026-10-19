@@ -30,7 +30,7 @@ export function RatingSlider({ predictionId, initialScore, avgRating, onRate }: 
   };
 
   const getScoreColor = (val: number) => {
-    if (val >= 70) return 'text-green-400';
+    if (val >= 70) return 'text-green-700';
     if (val >= 40) return 'text-amber';
     return 'text-orange';
   };
@@ -86,7 +86,7 @@ export function RatingSlider({ predictionId, initialScore, avgRating, onRate }: 
         disabled={saving}
         className={`btn-primary w-full text-sm transition-colors ${saved ? '!bg-green-600' : ''}`}
       >
-        {saved ? '✓ Saved!' : saving ? 'Saving...' : initialScore !== null ? 'Update Rating' : 'Submit Rating'}
+        {saved ? 'Saved!' : saving ? 'Saving...' : initialScore !== null ? 'Update Rating' : 'Submit Rating'}
       </button>
       {error && <p className="text-xs text-orange text-center">{error}</p>}
     </div>

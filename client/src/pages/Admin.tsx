@@ -7,6 +7,7 @@ import { SettingsTab } from './admin/SettingsTab';
 import { BonusTab } from './admin/BonusTab';
 import { PreviewTab } from './admin/PreviewTab';
 import { InvitesTab } from './admin/InvitesTab';
+import { ChevronLeft } from 'lucide-react';
 
 const TABS = ['users', 'predictions', 'settings', 'bonus', 'preview', 'invites'] as const;
 type Tab = (typeof TABS)[number];
@@ -72,7 +73,7 @@ export function Admin() {
     <div className="min-h-screen p-4 pb-24 max-w-4xl mx-auto">
       <div className="flex items-center gap-4 py-6 mb-6">
         <Link to="/" className="btn-ghost text-sm px-3">
-          ← Back
+          <ChevronLeft className="inline-block w-4 h-4 -mt-0.5" /> Back
         </Link>
         <div>
           <h1 className="font-display text-2xl font-bold">{settings.name} · Admin</h1>
@@ -90,7 +91,7 @@ export function Admin() {
             key={t}
             onClick={() => setTab(t)}
             className={`px-5 py-2 rounded-xl text-sm font-medium capitalize transition-colors ${
-              tab === t ? 'bg-orange text-white' : 'bg-white/10 text-white/60 hover:bg-white/20'
+              tab === t ? 'bg-orange text-paper' : 'bg-white/10 text-white/60 hover:bg-white/20'
             }`}
           >
             {t}

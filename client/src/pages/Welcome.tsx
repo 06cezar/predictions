@@ -2,6 +2,8 @@ import { useState, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, JoinedGame, errorMessage } from '../api';
 import { TokenReveal } from '../components/TokenReveal';
+import { CircleHelp } from 'lucide-react';
+import { Logo } from '../components/Sticker';
 
 interface Props {
   onLogin: () => Promise<void>;
@@ -79,15 +81,12 @@ export function Welcome({ onLogin }: Props) {
         to="/about"
         className="absolute top-4 right-4 flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
       >
-        <span aria-hidden>❓</span> What is this?
+        <CircleHelp className="w-4 h-4" /> What is this?
       </Link>
       <div className="w-full max-w-md space-y-8 relative">
         <div className="text-center">
-          <div
-            className="text-6xl mb-4 animate-float select-none"
-            style={{ filter: 'drop-shadow(0 8px 24px rgba(59,47,245,0.45))' }}
-          >
-            🔮
+          <div className="mb-4">
+            <Logo />
           </div>
           <h1 className="font-display text-5xl font-bold text-white mb-2 text-glow">Predictions</h1>
           <p className="text-white/50 italic font-display">Predict your friends' year. Find out who saw it coming.</p>
@@ -105,7 +104,7 @@ export function Welcome({ onLogin }: Props) {
             <div className="card text-center space-y-3">
               <p className="text-white/80">Want a quick feel for how it works?</p>
               <button onClick={startDemo} disabled={busy} className="btn-primary w-full text-base py-3">
-                {busy ? 'Setting up...' : 'Run a demo round as the admin →'}
+                {busy ? 'Setting up...' : 'Run a demo round as the admin'}
               </button>
               <p className="text-white/35 text-xs">
                 Four bot players, a step-by-step guide and a button to skip ahead in time. No sign-up; private to you
@@ -146,7 +145,7 @@ export function Welcome({ onLogin }: Props) {
                     />
                   </div>
                   <button type="submit" disabled={busy || !token.trim()} className="btn-primary w-full py-3">
-                    {busy ? 'Signing in...' : 'Enter the future →'}
+                    {busy ? 'Signing in...' : 'Log in'}
                   </button>
                 </form>
               )}
@@ -166,7 +165,7 @@ export function Welcome({ onLogin }: Props) {
                     />
                   </div>
                   <button type="submit" disabled={code.trim().length < 6} className="btn-primary w-full py-3">
-                    Find game →
+                    Find game
                   </button>
                 </form>
               )}
@@ -211,7 +210,7 @@ export function Welcome({ onLogin }: Props) {
                     disabled={busy || !gameName.trim() || !playerName.trim()}
                     className="btn-primary w-full py-3"
                   >
-                    {busy ? 'Creating...' : 'Create game →'}
+                    {busy ? 'Creating...' : 'Create game'}
                   </button>
                   <p className="text-white/35 text-xs text-center">
                     You'll be the admin: invite friends, set deadlines, run the reveal.

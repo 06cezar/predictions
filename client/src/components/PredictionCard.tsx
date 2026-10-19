@@ -2,6 +2,7 @@ import type { Prediction } from '../api';
 import { RatingSlider } from './RatingSlider';
 import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { Check, CircleCheck, CircleX, Hourglass, PenLine, X } from 'lucide-react';
 
 interface Props {
   prediction: Prediction;
@@ -42,7 +43,13 @@ export function PredictionCard({ prediction, showRating = false, showOutcome = f
         animPos &&
         createPortal(
           <div className="fixed pointer-events-none z-50" style={{ top: animPos.top, left: animPos.left }}>
-            <span className="animate-outcome-reveal text-4xl select-none">{animating ? '✅' : '❌'}</span>
+            <span className="animate-outcome-reveal select-none">
+              {animating ? (
+                <CircleCheck className="w-12 h-12 text-green-600" />
+              ) : (
+                <CircleX className="w-12 h-12 text-red-600" />
+              )}
+            </span>
           </div>,
           document.body,
         )}
@@ -50,7 +57,8 @@ export function PredictionCard({ prediction, showRating = false, showOutcome = f
         <div className="flex-1">
           {prediction.authorName && (
             <p className="text-xs text-amber/80 uppercase tracking-wider mb-1 font-semibold">
-              ✍️ {prediction.authorName}
+              <PenLine className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+              {prediction.authorName}
             </p>
           )}
           {prediction.targetName && (
@@ -67,7 +75,10 @@ export function PredictionCard({ prediction, showRating = false, showOutcome = f
             </span>
           )}
           {showRating && isRated && (
-            <span className="badge bg-green-500/20 text-green-400 border border-green-500/30 text-xs">✓ Rated</span>
+            <span className="badge bg-green-500/20 text-green-700 border border-green-500/30 text-xs">
+              <Check className="inline-block w-3.5 h-3.5 -mt-0.5 mr-1" strokeWidth={3} />
+              Rated
+            </span>
           )}
         </div>
       </div>
@@ -104,22 +115,24 @@ export function PredictionCard({ prediction, showRating = false, showOutcome = f
               disabled={!onOutcome}
               className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                 outcome?.happened === true
-                  ? 'bg-gradient-to-b from-green-400 to-green-600 text-white shadow-[0_4px_16px_-4px_rgba(34,197,94,0.5)]'
+                  ? 'bg-gradient-to-b from-green-400 to-green-600 text-paper shadow-[0_4px_16px_-4px_rgba(34,197,94,0.5)]'
                   : 'bg-white/10 hover:bg-white/20'
               }`}
             >
-              ✅ Happened
+              <Check className="inline-block w-4 h-4 -mt-0.5 mr-1.5" strokeWidth={3} />
+              Happened
             </button>
             <button
               onClick={() => onOutcome && handleOutcome(false)}
               disabled={!onOutcome}
               className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                 outcome?.happened === false
-                  ? 'bg-gradient-to-b from-red-400 to-red-600 text-white shadow-[0_4px_16px_-4px_rgba(239,68,68,0.5)]'
+                  ? 'bg-gradient-to-b from-red-400 to-red-600 text-paper shadow-[0_4px_16px_-4px_rgba(239,68,68,0.5)]'
                   : 'bg-white/10 hover:bg-white/20'
               }`}
             >
-              ❌ Didn't happen
+              <X className="inline-block w-4 h-4 -mt-0.5 mr-1.5" strokeWidth={3} />
+              Didn't happen
             </button>
             <button
               onClick={() => onOutcome && handleOutcome(null)}
@@ -130,7 +143,8 @@ export function PredictionCard({ prediction, showRating = false, showOutcome = f
                   : 'bg-white/10 hover:bg-white/20'
               }`}
             >
-              ⏳ Pending
+              <Hourglass className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+              Pending
             </button>
           </div>
         </div>

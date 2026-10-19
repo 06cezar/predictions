@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api, Prediction } from '../api';
 import { PredictionCard } from '../components/PredictionCard';
+import { ChevronLeft, Lock, PenLine, Star, Target } from 'lucide-react';
+import { StickerIcon } from '../components/Sticker';
 
 export function Rate() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
@@ -47,7 +49,7 @@ export function Rate() {
     <div className="min-h-screen p-4 pb-24 max-w-2xl mx-auto">
       <div className="flex items-center gap-4 py-6 mb-4">
         <Link to="/" className="btn-ghost text-sm px-3">
-          ← Back
+          <ChevronLeft className="inline-block w-4 h-4 -mt-0.5" /> Back
         </Link>
         <div>
           <h1 className="font-display text-2xl font-bold">Rate Predictions</h1>
@@ -61,7 +63,7 @@ export function Rate() {
 
       {phase !== 'submission' && (
         <div className="card mb-4 flex gap-3 items-center border border-orange/20">
-          <span className="text-2xl">🔒</span>
+          <Lock className="w-6 h-6 shrink-0" />
           <div>
             <p className="font-medium text-sm text-white/90">Rating is closed</p>
             <p className="text-xs text-white/40 mt-0.5">Predictions can only be rated during the submission phase.</p>
@@ -70,8 +72,8 @@ export function Rate() {
       )}
 
       {predictions.length > 0 && phase === 'submission' && (
-        <div className="rounded-2xl bg-violet/10 border border-violet/20 px-4 py-3 mb-6 flex gap-3 items-start">
-          <span className="text-lg mt-0.5">🎯</span>
+        <div className="rounded-2xl bg-[#E9E1FF] border-2 border-ink shadow-card px-4 py-3 mb-6 flex gap-3 items-start">
+          <Target className="w-5 h-5 mt-0.5 shrink-0 text-lilac" />
           <p className="text-sm text-white/70 leading-relaxed">
             For each prediction, rate{' '}
             <span className="text-white font-medium">how likely you think it is to come true</span> - 0% means no
@@ -86,18 +88,18 @@ export function Rate() {
         <div className="card text-center py-12">
           {myPredictionsCount === 0 ? (
             <>
-              <p className="font-display text-3xl mb-3">✍️</p>
+              <StickerIcon icon={PenLine} className="mb-3" />
               <p className="text-white font-medium mb-2">Write your predictions first</p>
               <p className="text-white/50 text-sm">
                 You can only rate predictions about people you've already written a prediction for.
               </p>
               <Link to="/" className="btn-secondary mt-4 inline-block text-sm px-4 py-2">
-                Go write predictions →
+                Go write predictions
               </Link>
             </>
           ) : (
             <>
-              <p className="font-display text-3xl mb-3">🌟</p>
+              <StickerIcon icon={Star} tone="mint" className="mb-3" />
               <p className="text-white font-medium mb-2">All caught up!</p>
               <p className="text-white/50 text-sm">No predictions to rate right now.</p>
             </>

@@ -2,6 +2,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api, Prediction, PublicSettings, errorMessage } from '../api';
 import { parseServerTime } from '../time';
+import { ChevronLeft, Lightbulb, TriangleAlert } from 'lucide-react';
 
 interface UserInfo {
   id: number;
@@ -81,14 +82,17 @@ export function Predict() {
     <div className="min-h-screen p-4 pb-24 max-w-2xl mx-auto">
       <div className="flex items-center gap-4 py-6 mb-6">
         <Link to="/" className="btn-ghost text-sm px-3">
-          ← Back
+          <ChevronLeft className="inline-block w-4 h-4 -mt-0.5" /> Back
         </Link>
         <h1 className="font-display text-2xl font-bold">Predict {targetUser?.name}</h1>
       </div>
 
       {!isSubmissionClosed && (
         <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-4 space-y-1.5">
-          <p className="text-sm font-medium text-white/80">💡 Tips for a good prediction</p>
+          <p className="text-sm font-medium text-white/80">
+            <Lightbulb className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+            Tips for a good prediction
+          </p>
           <ul className="text-xs text-white/50 space-y-1 list-none">
             <li>
               · Aim for something <span className="text-white/70">non-obvious</span> - if everyone knows it'll happen,
@@ -115,8 +119,9 @@ export function Predict() {
 
       {showLowRatingWarning && (
         <div className="bg-amber/20 border border-amber/30 rounded-xl px-4 py-3 mb-4 text-amber text-sm">
-          ⚠️ This prediction is rated high ({prediction.avgRating}%) - everyone thinks it'll happen, so you'll score
-          fewer points if it does.
+          <TriangleAlert className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+          This prediction is rated high ({prediction.avgRating}%) - everyone thinks it'll happen, so you'll score fewer
+          points if it does.
         </div>
       )}
 
@@ -145,7 +150,7 @@ export function Predict() {
           disabled={saving || !text.trim() || text.trim() === prediction?.currentText || !!isSubmissionClosed}
           className={`btn-primary w-full ${saved ? 'bg-green-600' : ''}`}
         >
-          {saved ? '✓ Saved!' : saving ? 'Saving...' : prediction ? 'Update Prediction' : 'Save Prediction'}
+          {saved ? 'Saved!' : saving ? 'Saving...' : prediction ? 'Update Prediction' : 'Save Prediction'}
         </button>
       </form>
 

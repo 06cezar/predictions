@@ -2,6 +2,8 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, errorMessage } from '../api';
 import { TokenReveal } from '../components/TokenReveal';
+import { TriangleAlert } from 'lucide-react';
+import { Logo } from '../components/Sticker';
 
 interface Props {
   onLogin: () => Promise<void>;
@@ -63,7 +65,10 @@ export function Join({ onLogin }: Props) {
         <div className="w-full max-w-md text-center space-y-4">
           <h1 className="font-display text-4xl font-bold text-white">Predictions</h1>
           <div className="card space-y-3">
-            <p className="text-orange text-lg">⚠ Invite link invalid</p>
+            <p className="text-orange text-lg">
+              <TriangleAlert className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
+              Invite link invalid
+            </p>
             <p className="text-white/50 text-sm">{linkError}</p>
           </div>
         </div>
@@ -76,11 +81,8 @@ export function Join({ onLogin }: Props) {
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[480px] h-[480px] rounded-full bg-orange/10 blur-[120px] pointer-events-none" />
       <div className="w-full max-w-md space-y-8 relative">
         <div className="text-center">
-          <div
-            className="text-6xl mb-4 animate-float select-none"
-            style={{ filter: 'drop-shadow(0 8px 24px rgba(59,47,245,0.45))' }}
-          >
-            🔮
+          <div className="mb-4">
+            <Logo />
           </div>
           <h1 className="font-display text-5xl font-bold text-white mb-2 text-glow">Predictions</h1>
           <p className="text-white/50 italic font-display">You've been invited! Create your account below.</p>
@@ -131,7 +133,7 @@ export function Join({ onLogin }: Props) {
             {error && <p className="text-orange text-sm text-center">{error}</p>}
 
             <button type="submit" disabled={loading || !name.trim()} className="btn-primary w-full text-base py-3">
-              {loading ? 'Joining...' : 'Join the game →'}
+              {loading ? 'Joining...' : 'Join the game'}
             </button>
           </form>
         )}
