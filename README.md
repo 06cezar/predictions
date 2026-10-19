@@ -1,4 +1,4 @@
-# 🔮 Predictions
+# Predictions
 
 **A social prediction game: predict your friends' year, rate how bold each call is, and find out
 who saw it coming.**
@@ -24,8 +24,8 @@ I built it for my own friend group, and we played a real game on it. I then turn
 multi-tenant app: anyone can host their own game on the same deployment, and visitors can play a
 full round alone against deterministic bots.
 
-**Stack:** TypeScript · React 18 · Vite · Tailwind CSS · Node.js · Express · SQLite · Drizzle ORM ·
-Vitest · Supertest · Docker · Fly.io · GitHub Actions
+**Stack:** TypeScript · React 18 · Vite · Tailwind CSS · anime.js · Node.js · Express · SQLite ·
+Drizzle ORM · Vitest · Supertest · Docker · Fly.io · GitHub Actions
 
 ## Screenshots
 
@@ -67,9 +67,10 @@ predictions about each other both came true) and The Joker (the player nobody co
 - Optional bonus round: ranked-choice voting on categories like "most likely to move abroad", worth extra points
 - In-app notifications (new predictions about you, outcomes, phase changes), anonymous or named predictions
 - No passwords: a token like `brave-owl-4821` is your login
+- Works on phones; the Hall of Fame and rankings are revealed with a drum roll and an anime.js entrance (skipped if the device asks for reduced motion)
 
 **For hosts (game admins)**
-- Create a game in one step; invite people with a six-letter join code, a link, or one-use invite links
+- Create a game in one step; invite people with a six-character join code, a link, or one-use invite links
 - Turn open joining off, issue a new code, add players and rotate their tokens
 - Set deadlines, rating threshold and anonymity; phases advance automatically or by hand
 - Track who has written, rated and marked outcomes; preview scores and awards before the end
@@ -85,7 +86,7 @@ predictions about each other both came true) and The Joker (the player nobody co
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18, TypeScript, Vite, React Router, Tailwind CSS |
+| Frontend | React 18, TypeScript, Vite, React Router, Tailwind CSS, Lucide icons, anime.js |
 | Backend | Node.js 20, Express 4, TypeScript |
 | Database | SQLite (better-sqlite3, WAL mode) with Drizzle ORM, versioned migrations |
 | Sessions | express-session with a SQLite session store |

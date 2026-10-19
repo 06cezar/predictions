@@ -167,7 +167,9 @@ export function About({ loggedIn, onLogin }: Props) {
               <KeyRound className="inline-block w-4 h-4 -mt-0.5 mr-1.5" />
               Join one
             </p>
-            <p className="text-white/60">Use the 6-letter code or link your admin shares, or a one-use invite link.</p>
+            <p className="text-white/60">
+              Use the 6-character code or link your admin shares, or a one-use invite link.
+            </p>
           </div>
           <div className="card space-y-1">
             <p className="font-medium">
