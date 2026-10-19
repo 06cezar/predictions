@@ -225,9 +225,9 @@ export function DemoGuide({ gameId, onLogin }: Props) {
                   <span
                     className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${
                       step.done
-                        ? 'bg-green-500/25 text-green-300'
+                        ? 'bg-green-500/25 text-green-700'
                         : isCurrent
-                          ? 'bg-orange text-white'
+                          ? 'bg-orange text-paper'
                           : 'bg-white/10 text-white/60'
                     }`}
                   >

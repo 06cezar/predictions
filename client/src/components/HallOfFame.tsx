@@ -6,12 +6,12 @@ import { parseServerTime } from '../time';
 const THEMES = {
   amber: { card: 'border-amber/30 bg-amber/5', accent: 'text-amber' },
   orange: { card: 'border-orange/30 bg-orange/5', accent: 'text-orange' },
-  violet: { card: 'border-violet/30 bg-violet/5', accent: 'text-[#a99eff]' },
-  pink: { card: 'border-pink-500/30 bg-pink-500/5', accent: 'text-pink-400' },
-  rose: { card: 'border-pink-400/30 bg-pink-400/5', accent: 'text-pink-300' },
-  cyan: { card: 'border-cyan-500/30 bg-cyan-500/5', accent: 'text-cyan-400' },
-  emerald: { card: 'border-emerald-500/30 bg-emerald-500/5', accent: 'text-emerald-400' },
-  mint: { card: 'border-emerald-400/30 bg-emerald-400/5', accent: 'text-emerald-300' },
+  violet: { card: 'border-violet/30 bg-violet/5', accent: 'text-lilac' },
+  pink: { card: 'border-pink-500/30 bg-pink-500/5', accent: 'text-pink-600' },
+  rose: { card: 'border-pink-400/30 bg-pink-400/5', accent: 'text-pink-600' },
+  cyan: { card: 'border-cyan-500/30 bg-cyan-500/5', accent: 'text-cyan-700' },
+  emerald: { card: 'border-emerald-500/30 bg-emerald-500/5', accent: 'text-emerald-700' },
+  mint: { card: 'border-emerald-400/30 bg-emerald-400/5', accent: 'text-emerald-600' },
 };
 type Theme = (typeof THEMES)[keyof typeof THEMES];
 

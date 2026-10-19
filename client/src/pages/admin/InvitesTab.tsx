@@ -65,7 +65,7 @@ export function InvitesTab() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       {isUsed ? (
-                        <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">✓ Used</span>
+                        <span className="text-xs bg-green-500/20 text-green-700 px-2 py-0.5 rounded-full">✓ Used</span>
                       ) : (
                         <span className="text-xs bg-amber/20 text-amber px-2 py-0.5 rounded-full">Active</span>
                       )}

@@ -55,7 +55,7 @@ export function Navbar({ user, onLogout }: Props) {
       className="fixed left-1/2 -translate-x-1/2 z-40 flex items-center gap-0.5 sm:gap-1 px-1.5 py-1.5 rounded-[1.4rem] border border-white/10 bg-navy/85 backdrop-blur-xl max-w-[calc(100vw-16px)]"
       style={{
         bottom: 'max(10px, env(safe-area-inset-bottom))',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 40px -8px rgba(0,0,0,0.6)',
+        boxShadow: '0 12px 32px -12px rgba(33,28,23,0.25)',
       }}
     >
       {links.map(({ to, label, icon }) => {
@@ -71,9 +71,11 @@ export function Navbar({ user, onLogout }: Props) {
                 : 'text-white/40 hover:text-white/75 hover:bg-white/5'
             }`}
           >
-            <span className={`text-base transition-transform ${active ? 'scale-110' : ''}`}>{icon}</span>
+            <span className={`text-base text-ink transition-transform ${active ? 'scale-110' : 'opacity-75'}`}>
+              {icon}
+            </span>
             {isHome && unread > 0 && (
-              <span className="absolute -top-0.5 right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-ember-gradient text-white text-[10px] font-bold flex items-center justify-center leading-none shadow-glow-orange">
+              <span className="absolute -top-0.5 right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-ember-gradient text-paper text-[10px] font-bold flex items-center justify-center leading-none shadow-glow-orange">
                 {unread > 9 ? '9+' : unread}
               </span>
             )}
@@ -90,7 +92,7 @@ export function Navbar({ user, onLogout }: Props) {
         onClick={handleLogout}
         className="flex flex-col items-center gap-0.5 px-2.5 sm:px-3.5 py-1.5 rounded-2xl text-[10px] sm:text-xs font-medium text-white/30 hover:text-white/60 hover:bg-white/5 transition-all"
       >
-        <span className="text-base">🚪</span>
+        <span className="text-base text-ink opacity-75">🚪</span>
         <span>Logout</span>
       </button>
     </nav>

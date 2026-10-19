@@ -126,11 +126,13 @@ function RankingRow({ entry, place }: { entry: LeaderboardEntry; place: number }
       {first && (
         <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-amber/15 blur-3xl pointer-events-none" />
       )}
-      <div className={`w-8 text-center font-display font-bold ${first ? 'text-2xl' : 'text-lg'} text-white/40`}>
+      <div
+        className={`w-8 text-center font-display font-bold ${first ? 'text-2xl' : 'text-lg'} ${MEDALS[place] ? 'text-ink' : 'text-white/40'}`}
+      >
         {MEDALS[place] || `#${entry.rank}`}
       </div>
       <div
-        className={`${color} w-10 h-10 rounded-full flex items-center justify-center font-display font-bold text-sm text-white flex-shrink-0 ${first ? 'ring-2 ring-amber/60 ring-offset-2 ring-offset-[#15142A]' : ''}`}
+        className={`${color} w-10 h-10 rounded-full flex items-center justify-center font-display font-bold text-sm text-paper flex-shrink-0 ${first ? 'ring-2 ring-amber/60 ring-offset-2 ring-offset-cream' : ''}`}
       >
         {initials}
       </div>
@@ -247,7 +249,7 @@ export function Leaderboard() {
               icon="🏆"
               label="Reveal Rankings"
               rollClass="border-violet/40 bg-violet/5"
-              rollText="text-[#a99eff]"
+              rollText="text-lilac"
             />
           )}
         </>

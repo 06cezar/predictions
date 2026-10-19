@@ -179,7 +179,7 @@ export function Bonus({ user }: Props) {
                   )}
                 </div>
                 {alreadyVoted && isVoting && !hasChanged && (
-                  <span className="text-xs text-green-400 bg-green-400/10 px-2 py-1 rounded-lg">✓ Voted</span>
+                  <span className="text-xs text-green-700 bg-green-400/10 px-2 py-1 rounded-lg">✓ Voted</span>
                 )}
               </div>
 

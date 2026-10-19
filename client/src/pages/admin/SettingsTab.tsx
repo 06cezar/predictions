@@ -16,7 +16,7 @@ interface Props {
 
 const PHASE_BUTTONS = [
   { id: 'submission', label: 'Submission', emoji: '✍️', color: 'bg-amber/20 border-amber/40 text-amber' },
-  { id: 'reveal', label: 'Reveal', emoji: '👁️', color: 'bg-violet/20 border-violet/40 text-[#a99eff]' },
+  { id: 'reveal', label: 'Reveal', emoji: '👁️', color: 'bg-violet/20 border-violet/40 text-lilac' },
   { id: 'done', label: 'Done', emoji: '🏁', color: 'bg-orange/20 border-orange/40 text-orange' },
 ] as const;
 
@@ -189,7 +189,7 @@ function GameSection({ settings, onUpdate, onChanged }: Props) {
           <button
             onClick={regenerate}
             onBlur={() => setRegenerateConfirm(false)}
-            className={`text-sm px-3 rounded-xl whitespace-nowrap transition-colors ${regenerateConfirm ? 'bg-orange text-white' : 'btn-ghost'}`}
+            className={`text-sm px-3 rounded-xl whitespace-nowrap transition-colors ${regenerateConfirm ? 'bg-orange text-paper' : 'btn-ghost'}`}
           >
             {regenerateConfirm ? 'Confirm?' : 'New code'}
           </button>
@@ -319,7 +319,7 @@ function DangerZone() {
 
   return (
     <div className="card border border-red-500/20 space-y-3">
-      <h3 className="font-medium text-red-400">Danger Zone</h3>
+      <h3 className="font-medium text-red-600">Danger Zone</h3>
       <p className="text-xs text-white/40">
         Reset the game - all predictions, ratings and outcomes will be deleted. Users are kept. Phase resets to
         submission.
@@ -329,8 +329,8 @@ function DangerZone() {
         onBlur={() => setConfirm(false)}
         className={`w-full py-2.5 rounded-xl font-medium text-sm transition-all ${
           confirm
-            ? 'bg-red-500 text-white animate-pulse'
-            : 'bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20'
+            ? 'bg-red-500 text-paper animate-pulse'
+            : 'bg-red-500/10 text-red-600 border border-red-500/30 hover:bg-red-500/20'
         }`}
       >
         {confirm ? '⚠️ Click again to confirm reset' : '🗑️ Reset Game'}

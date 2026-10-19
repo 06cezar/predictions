@@ -67,7 +67,7 @@ export function PredictionCard({ prediction, showRating = false, showOutcome = f
             </span>
           )}
           {showRating && isRated && (
-            <span className="badge bg-green-500/20 text-green-400 border border-green-500/30 text-xs">✓ Rated</span>
+            <span className="badge bg-green-500/20 text-green-700 border border-green-500/30 text-xs">✓ Rated</span>
           )}
         </div>
       </div>
@@ -104,7 +104,7 @@ export function PredictionCard({ prediction, showRating = false, showOutcome = f
               disabled={!onOutcome}
               className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                 outcome?.happened === true
-                  ? 'bg-gradient-to-b from-green-400 to-green-600 text-white shadow-[0_4px_16px_-4px_rgba(34,197,94,0.5)]'
+                  ? 'bg-gradient-to-b from-green-400 to-green-600 text-paper shadow-[0_4px_16px_-4px_rgba(34,197,94,0.5)]'
                   : 'bg-white/10 hover:bg-white/20'
               }`}
             >
@@ -115,7 +115,7 @@ export function PredictionCard({ prediction, showRating = false, showOutcome = f
               disabled={!onOutcome}
               className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                 outcome?.happened === false
-                  ? 'bg-gradient-to-b from-red-400 to-red-600 text-white shadow-[0_4px_16px_-4px_rgba(239,68,68,0.5)]'
+                  ? 'bg-gradient-to-b from-red-400 to-red-600 text-paper shadow-[0_4px_16px_-4px_rgba(239,68,68,0.5)]'
                   : 'bg-white/10 hover:bg-white/20'
               }`}
             >

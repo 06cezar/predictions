@@ -30,7 +30,7 @@ export function RatingSlider({ predictionId, initialScore, avgRating, onRate }: 
   };
 
   const getScoreColor = (val: number) => {
-    if (val >= 70) return 'text-green-400';
+    if (val >= 70) return 'text-green-700';
     if (val >= 40) return 'text-amber';
     return 'text-orange';
   };

@@ -163,9 +163,9 @@ export function UsersTab({ settings, stats, onChanged }: Props) {
       </div>
 
       {newUserToken && (
-        <div className="bg-green-500/20 border border-green-500/30 rounded-xl px-4 py-3 text-green-400 text-sm">
+        <div className="bg-green-500/20 border border-green-500/30 rounded-xl px-4 py-3 text-green-700 text-sm">
           New user created! Token: <span className="font-mono font-bold">{newUserToken}</span>
-          <button onClick={() => setNewUserToken('')} className="ml-3 text-green-300 hover:text-white">
+          <button onClick={() => setNewUserToken('')} className="ml-3 text-green-700 hover:text-white">
             ×
           </button>
         </div>
@@ -247,7 +247,7 @@ function ProgressBar({ label, done, total, unit }: { label: string; done: number
       <div className="flex items-center justify-between text-sm">
         <span className="text-white/40 text-xs">{label}</span>
         <span className="font-medium">
-          <span className={complete ? 'text-green-400' : 'text-amber'}>
+          <span className={complete ? 'text-green-700' : 'text-amber'}>
             {done}/{total}
           </span>
           <span className="text-white/30 ml-1">{unit}</span>
@@ -269,7 +269,7 @@ function PlayerProgress({ stats, mode, userId }: { stats: AdminStats; mode: Prog
   const p = rows.find(x => x.id === userId);
   if (!p || p.expected === 0) return null;
   return p.complete ? (
-    <span className="text-xs text-green-400 font-normal">✓ Done</span>
+    <span className="text-xs text-green-700 font-normal">✓ Done</span>
   ) : (
     <span className="text-xs text-white/30 font-normal">
       {p.written}/{p.expected}

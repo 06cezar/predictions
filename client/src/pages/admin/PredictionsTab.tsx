@@ -105,7 +105,7 @@ export function PredictionsTab({ phase, onChanged }: Props) {
                 </div>
                 <button
                   onClick={() => handleDelete(p.id)}
-                  className="text-red-400/50 hover:text-red-400 text-xs px-2 py-1 rounded-lg hover:bg-red-500/10 transition-colors"
+                  className="text-red-600/50 hover:text-red-600 text-xs px-2 py-1 rounded-lg hover:bg-red-500/10 transition-colors"
                 >
                   Delete
                 </button>
@@ -122,7 +122,7 @@ export function PredictionsTab({ phase, onChanged }: Props) {
                 {p.editCount > (p.forgivenEdits ?? 0) && (
                   <button
                     onClick={() => forgive(p.id, false)}
-                    className="text-xs text-green-400/60 hover:text-green-400 hover:bg-green-500/10 px-2 py-0.5 rounded transition-colors"
+                    className="text-xs text-green-700/60 hover:text-green-700 hover:bg-green-500/10 px-2 py-0.5 rounded transition-colors"
                   >
                     Forgive 1 edit
                   </button>
@@ -130,7 +130,7 @@ export function PredictionsTab({ phase, onChanged }: Props) {
                 {(p.forgivenEdits ?? 0) > 0 && (
                   <button
                     onClick={() => forgive(p.id, true)}
-                    className="text-xs text-red-400/60 hover:text-red-400 hover:bg-red-500/10 px-2 py-0.5 rounded transition-colors"
+                    className="text-xs text-red-600/60 hover:text-red-600 hover:bg-red-500/10 px-2 py-0.5 rounded transition-colors"
                   >
                     Unforgive 1 edit
                   </button>

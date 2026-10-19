@@ -90,7 +90,7 @@ export function Admin() {
             key={t}
             onClick={() => setTab(t)}
             className={`px-5 py-2 rounded-xl text-sm font-medium capitalize transition-colors ${
-              tab === t ? 'bg-orange text-white' : 'bg-white/10 text-white/60 hover:bg-white/20'
+              tab === t ? 'bg-orange text-paper' : 'bg-white/10 text-white/60 hover:bg-white/20'
             }`}
           >
             {t}

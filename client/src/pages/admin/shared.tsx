@@ -19,7 +19,9 @@ export function Toggle({ on, onClick, color = 'bg-orange' }: { on: boolean; onCl
       onClick={onClick}
       className={`w-12 h-6 rounded-full transition-colors shrink-0 ${on ? color : 'bg-white/20'}`}
     >
-      <div className={`w-5 h-5 bg-white rounded-full transition-transform mx-0.5 ${on ? 'translate-x-6' : ''}`} />
+      <div
+        className={`w-5 h-5 bg-paper shadow rounded-full transition-transform mx-0.5 ${on ? 'translate-x-6' : ''}`}
+      />
     </button>
   );
 }
