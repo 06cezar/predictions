@@ -46,8 +46,8 @@
   .card {
     @apply rounded-3xl p-5 relative;
     background: #ffffff;
-    border: 2.5px solid #1b1a1f;
-    box-shadow: 4px 4px 0 #1b1a1f;
+    border: 2px solid #1b1a1f;
+    box-shadow: 3px 3px 0 #1b1a1f;
     transition:
       transform 0.15s ease,
       box-shadow 0.15s ease;
@@ -55,7 +55,7 @@
   button.card:hover,
   a.card:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0 #1b1a1f;
+    box-shadow: 5px 5px 0 #1b1a1f;
   }
   button.card:active,
   a.card:active {

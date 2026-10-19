@@ -69,7 +69,7 @@ export function Reveal() {
       )}
 
       {phase === 'reveal' && !deadlinePassed && predictions.length > 0 && (
-        <div className="rounded-2xl bg-[#E9E1FF] border-[2.5px] border-ink shadow-card px-4 py-3 mb-6 flex gap-3 items-start">
+        <div className="rounded-2xl bg-[#E9E1FF] border-2 border-ink shadow-card px-4 py-3 mb-6 flex gap-3 items-start">
           <span className="text-lg mt-0.5">👁️</span>
           <p className="text-sm text-white/70 leading-relaxed">
             These are the predictions others made about you.{' '}

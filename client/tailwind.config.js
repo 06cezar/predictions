@@ -21,10 +21,19 @@ module.exports = {
         display: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
         body: ['DM Sans', 'system-ui', 'sans-serif'],
       },
+      // Faint ink (text-white/30 and friends) was too light to read on the yellow page
+      opacity: {
+        25: '0.45',
+        30: '0.5',
+        35: '0.54',
+        40: '0.58',
+        45: '0.62',
+        50: '0.66',
+      },
       boxShadow: {
         'glow-orange': '2px 2px 0 #1B1A1F',
         'glow-amber': '2px 2px 0 #1B1A1F',
-        card: '4px 4px 0 #1B1A1F',
+        card: '3px 3px 0 #1B1A1F',
       },
       backgroundImage: {
         'ember-gradient': 'linear-gradient(135deg, #FF6B3D 0%, #F2542D 100%)',

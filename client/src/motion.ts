@@ -5,7 +5,7 @@ const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)'
 
 /**
  * Plays the entrance of every `.animate-fade-up` element as it appears: a
- * springy drop-in with a small tilt, staggered when several arrive together.
+ * quick drop-in with a small tilt and overshoot, staggered when several arrive together.
  * Watching the DOM means pages need no extra code, including content that
  * shows up after data loads (a Hall of Fame reveal, a new list).
  */
@@ -19,12 +19,13 @@ export function startEntranceAnimations() {
     batch = [];
     animate(targets, {
       opacity: [0, 1],
-      translateY: [28, 0],
-      scale: [0.94, 1],
-      rotate: [(_el: unknown, i = 0) => (i % 2 === 0 ? -2.5 : 2.5), 0],
-      delay: stagger(55, { start: 0 }),
-      duration: 700,
-      ease: 'outElastic(1, .7)',
+      translateY: [18, 0],
+      scale: [0.96, 1],
+      rotate: [(_el: unknown, i = 0) => (i % 2 === 0 ? -1.5 : 1.5), 0],
+      // Short and snappy: long entrances get tiring by the third page
+      delay: stagger(35, { start: 0 }),
+      duration: 420,
+      ease: 'outBack(1.6)',
     });
   };
 
@@ -58,7 +59,7 @@ export function useCountUp(value: number, decimals = 0) {
     const counter = { n: from.current };
     const animation = animate(counter, {
       n: value,
-      duration: 900,
+      duration: 700,
       ease: 'outExpo',
       onUpdate: () => setShown(counter.n),
       onComplete: () => (from.current = value),
